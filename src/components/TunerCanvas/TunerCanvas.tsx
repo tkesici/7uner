@@ -16,10 +16,6 @@ export const TunerCanvas: React.FC<Props> = ({ detected, micStatus, error }) => 
         drawCanvas(canvasRef.current, micStatus, detected, error);
     }, [detected, micStatus, error]);
 
-    useEffect(() => {
-        drawCanvas(canvasRef.current, micStatus, detected, error);
-    }, []);
-
     return (
         <canvas
             ref={canvasRef}
