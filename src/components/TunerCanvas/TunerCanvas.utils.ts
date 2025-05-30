@@ -1,4 +1,34 @@
-import {DetectedNote} from "../../utils/usePitchDetector";
+import { DetectedNote, MicrophoneStatus } from "../../utils/usePitchDetector";
+
+export const drawCanvas = (
+    canvas: HTMLCanvasElement | null,
+    micStatus: MicrophoneStatus,
+    detected: DetectedNote | null,
+    error?: string
+) => {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(0, 0, width, height);
+
+    if (micStatus === 'requesting') {
+        drawRequestingState(ctx, width, height);
+    } else if (micStatus === 'denied') {
+        drawPermissionDeniedState(ctx, width, height);
+    } else if (micStatus === 'error') {
+        drawErrorState(ctx, width, height, error);
+    } else if (micStatus === 'granted') {
+        drawTunerInterface(ctx, width, height, detected);
+    } else {
+        drawInitialState(ctx, width, height);
+    }
+};
 
 export const drawRequestingState = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.fillStyle = '#FFF';
@@ -103,3 +133,4 @@ export const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: 
     lines.push(currentLine);
     return lines;
 };
+

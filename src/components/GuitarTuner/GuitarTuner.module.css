@@ -1,0 +1,26 @@
+.container {
+    font-family: 'Arial', sans-serif;
+    background-color: #121212;
+    color: #FFFFFF;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.title {
+    color: #4CAF50;
+    margin-bottom: 40px;
+}
+
+.wrapper {
+    width: 100%;
+    max-width: 600px;
+    background-color: #1E1E1E;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
