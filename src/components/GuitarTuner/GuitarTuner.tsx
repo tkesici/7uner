@@ -8,7 +8,6 @@ export const GuitarTuner: React.FC = () => {
 
     return (
         <div className={styles.container}>
-            <h1 className={styles.title}>7uner</h1>
             <div className={styles.wrapper}>
                 <TunerCanvas
                     detected={detected}
