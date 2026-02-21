@@ -7,7 +7,8 @@ export const drawCanvas = (
     detected: DetectedNote | null,
     smoothedCents: number,
     history: HistoryPoint[],
-    error?: string
+    error?: string,
+    isHolding: boolean = false
 ) => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -16,13 +17,16 @@ export const drawCanvas = (
     const width = canvas.width;
     const height = canvas.height;
 
-    // Arkaplan
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#121212';
+    ctx.fillStyle = '#1e1e1e';
     ctx.fillRect(0, 0, width, height);
 
     if (micStatus === 'granted') {
         drawVerticalHistoryGraph(ctx, width, height, history);
+        drawReferenceLine(ctx, width, height);
+        if (isHolding) {
+            drawDashedHoldLine(ctx, width, height, history);
+        }
         drawTunerInterface(ctx, width, height, detected, smoothedCents);
     } else if (micStatus === 'requesting') {
         drawRequestingState(ctx, width, height);
@@ -33,6 +37,49 @@ export const drawCanvas = (
     } else {
         drawInitialState(ctx, width, height);
     }
+};
+
+export const drawReferenceLine = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    ctx.beginPath();
+    ctx.strokeStyle = '#2c2c2c';
+    ctx.lineWidth = 2;
+    ctx.moveTo(width / 2, 250);
+    ctx.lineTo(width / 2, height);
+    ctx.stroke();
+}
+
+export const drawDashedHoldLine = (
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    history: HistoryPoint[]
+) => {
+    if (history.length === 0) return;
+
+    const lastPoint = history[history.length - 1];
+    const now = Date.now();
+
+    const centerX = width / 2;
+    const startY = 250;
+    const graphHeight = height - startY;
+    const timeWindow = 10000;
+    const maxDeviation = (width / 2) * 0.8;
+
+    const timeDiff = now - lastPoint.timestamp;
+    const lastY = startY + ((timeDiff / timeWindow) * graphHeight);
+    const safeCents = isNaN(lastPoint.cents) ? 0 : lastPoint.cents;
+    const normalizedCents = safeCents / 50;
+    const lastX = centerX + (normalizedCents * maxDeviation);
+
+    ctx.save();
+    ctx.strokeStyle = '#4CAF50';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(lastX, startY);
+    ctx.stroke();
+    ctx.restore();
 };
 
 export const drawVerticalHistoryGraph = (ctx: CanvasRenderingContext2D, width: number, height: number, history: HistoryPoint[]) => {
@@ -46,20 +93,10 @@ export const drawVerticalHistoryGraph = (ctx: CanvasRenderingContext2D, width: n
 
     ctx.save();
 
-    // Referans çizgisi (Center Line)
-    ctx.beginPath();
-    ctx.strokeStyle = '#222';
-    ctx.lineWidth = 2;
-    ctx.moveTo(centerX, startY);
-    ctx.lineTo(centerX, height);
-    ctx.stroke();
-
-    // Grafik Ayarları
     ctx.lineWidth = 4;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // Renk Gradyanı (Sadece Pitch'e göre)
     const colorGradient = ctx.createLinearGradient(0, 0, width, 0);
     colorGradient.addColorStop(0.3, '#F44336');   // Flat (Kırmızı)
     colorGradient.addColorStop(0.45, '#4CAF50'); // In Tune (Yeşil)
