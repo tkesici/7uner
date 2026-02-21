@@ -24,9 +24,6 @@ export const drawCanvas = (
     if (micStatus === 'granted') {
         drawVerticalHistoryGraph(ctx, width, height, history);
         drawReferenceLine(ctx, width, height);
-        if (isHolding) {
-            drawDashedHoldLine(ctx, width, height, history);
-        }
         drawTunerInterface(ctx, width, height, detected, smoothedCents);
     } else if (micStatus === 'requesting') {
         drawRequestingState(ctx, width, height);
@@ -48,40 +45,6 @@ export const drawReferenceLine = (ctx: CanvasRenderingContext2D, width: number, 
     ctx.stroke();
 }
 
-export const drawDashedHoldLine = (
-    ctx: CanvasRenderingContext2D,
-    width: number,
-    height: number,
-    history: HistoryPoint[]
-) => {
-    if (history.length === 0) return;
-
-    const lastPoint = history[history.length - 1];
-    const now = Date.now();
-
-    const centerX = width / 2;
-    const startY = 250;
-    const graphHeight = height - startY;
-    const timeWindow = 10000;
-    const maxDeviation = (width / 2) * 0.8;
-
-    const timeDiff = now - lastPoint.timestamp;
-    const lastY = startY + ((timeDiff / timeWindow) * graphHeight);
-    const safeCents = isNaN(lastPoint.cents) ? 0 : lastPoint.cents;
-    const normalizedCents = safeCents / 50;
-    const lastX = centerX + (normalizedCents * maxDeviation);
-
-    ctx.save();
-    ctx.strokeStyle = '#4CAF50';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([8, 6]);
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(lastX, startY);
-    ctx.stroke();
-    ctx.restore();
-};
-
 export const drawVerticalHistoryGraph = (ctx: CanvasRenderingContext2D, width: number, height: number, history: HistoryPoint[]) => {
     if (history.length < 2) return;
 
@@ -90,52 +53,110 @@ export const drawVerticalHistoryGraph = (ctx: CanvasRenderingContext2D, width: n
     const centerX = width / 2;
     const startY = 250;
     const graphHeight = height - startY;
+    const maxDeviation = (width / 2) * 0.8;
+
+    const getCoords = (point: HistoryPoint) => {
+        const timeDiff = now - point.timestamp;
+        const y = startY + ((timeDiff / timeWindow) * graphHeight);
+        const safeCents = isNaN(point.cents) ? 0 : point.cents;
+        const normalizedCents = safeCents / 50;
+        const x = centerX + (normalizedCents * maxDeviation);
+        return { x, y };
+    };
+
+    // Segmentlere ayır (gap'lere göre)
+    const segments: HistoryPoint[][] = [];
+    let currentSegment: HistoryPoint[] = [];
+
+    for (const point of history) {
+        if (point.isGap) {
+            if (currentSegment.length > 0) {
+                segments.push(currentSegment);
+            }
+            currentSegment = [];
+        } else {
+            const timeDiff = now - point.timestamp;
+            if (timeDiff <= timeWindow) {
+                currentSegment.push(point);
+            }
+        }
+    }
+    if (currentSegment.length > 0) {
+        segments.push(currentSegment);
+    }
 
     ctx.save();
-
-    ctx.lineWidth = 4;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
     const colorGradient = ctx.createLinearGradient(0, 0, width, 0);
-    colorGradient.addColorStop(0.3, '#F44336');   // Flat (Kırmızı)
-    colorGradient.addColorStop(0.45, '#4CAF50'); // In Tune (Yeşil)
-    colorGradient.addColorStop(0.55, '#4CAF50'); // In Tune (Yeşil)
-    colorGradient.addColorStop(0.7, '#F44336');   // Sharp (Kırmızı)
+    colorGradient.addColorStop(0.3, '#F44336');
+    colorGradient.addColorStop(0.45, '#4CAF50');
+    colorGradient.addColorStop(0.55, '#4CAF50');
+    colorGradient.addColorStop(0.7, '#F44336');
+
+    // Her segment için düz çizgi çiz
+    ctx.lineWidth = 4;
     ctx.strokeStyle = colorGradient;
 
-    ctx.beginPath();
+    for (const segment of segments) {
+        if (segment.length < 2) continue;
 
-    let started = false;
+        ctx.beginPath();
+        const firstCoords = getCoords(segment[0]);
+        ctx.moveTo(firstCoords.x, firstCoords.y);
 
-    for (let i = 0; i < history.length; i++) {
-        const point = history[i];
-        const timeDiff = now - point.timestamp;
+        for (let i = 1; i < segment.length; i++) {
+            const coords = getCoords(segment[i]);
+            ctx.lineTo(coords.x, coords.y);
+        }
+        ctx.stroke();
+    }
 
-        // Eğer 10 saniyeden eskiyse çizme (performans)
-        if (timeDiff > timeWindow) continue;
+    // Segmentler arası kesikli bağlantı çizgileri
+    ctx.setLineDash([6, 4]);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#454545';
 
-        const y = startY + ((timeDiff / timeWindow) * graphHeight);
+    for (let i = 0; i < segments.length - 1; i++) {
+        const currentSeg = segments[i];
+        const nextSeg = segments[i + 1];
 
-        // X Hesabı
-        const maxDeviation = (width / 2) * 0.8;
-        const safeCents = isNaN(point.cents) ? 0 : point.cents;
-        const normalizedCents = safeCents / 50;
-        const x = centerX + (normalizedCents * maxDeviation);
+        if (currentSeg.length === 0 || nextSeg.length === 0) continue;
 
-        if (!started) {
-            ctx.moveTo(x, y);
-            started = true;
-        } else {
-            // Quadratic Curve daha yumuşak bir çizgi sağlar (köşeli olmaz)
-            // Bir önceki nokta ile şimdiki nokta arasına curve atıyoruz
-            // Ancak performans için lineTo da yeterlidir.
-            // Daha pürüzsüz görünüm için lineTo yeterli çünkü data zaten smoothed.
-            ctx.lineTo(x, y);
+        const endPoint = currentSeg[currentSeg.length - 1];
+        const startPoint = nextSeg[0];
+
+        const endCoords = getCoords(endPoint);
+        const startCoords = getCoords(startPoint);
+
+        ctx.beginPath();
+        ctx.moveTo(endCoords.x, endCoords.y);
+        ctx.lineTo(startCoords.x, startCoords.y);
+        ctx.stroke();
+    }
+
+    // Son segmentin en yeni noktasından yukarıya kesikli çizgi (ses yokken)
+    if (segments.length > 0) {
+        const lastSegment = segments[segments.length - 1];
+        if (lastSegment.length > 0) {
+            // En yeni nokta (timestamp'i en büyük olan)
+            const newestPoint = lastSegment.reduce((a, b) =>
+                a.timestamp > b.timestamp ? a : b
+            );
+            const newestCoords = getCoords(newestPoint);
+
+            // Eğer en yeni nokta yukarıda değilse (yani ses kesilmişse)
+            const timeSinceNewest = now - newestPoint.timestamp;
+            if (timeSinceNewest > 100) { // 100ms'den fazla geçmişse ses kesilmiş demektir
+                ctx.beginPath();
+                ctx.moveTo(newestCoords.x, newestCoords.y);
+                ctx.lineTo(newestCoords.x, startY); // Yukarıya doğru kesikli çizgi
+                ctx.stroke();
+            }
         }
     }
 
-    ctx.stroke();
     ctx.restore();
 };
 

@@ -12,6 +12,7 @@ interface Props {
 export interface HistoryPoint {
     cents: number;
     timestamp: number;
+    isGap?: boolean;
 }
 
 export const TunerCanvas: React.FC<Props> = ({ detected, micStatus, error }) => {
@@ -33,9 +34,8 @@ export const TunerCanvas: React.FC<Props> = ({ detected, micStatus, error }) => 
         const animate = () => {
             if (canvasRef.current) {
                 const now = Date.now();
-                let targetCents = 0;
                 let displayDetected = detected;
-                let isHolding = false; // Ses kesildi ve değer tutuluyor mu?
+                let isHolding = false;
 
                 if (detected) {
                     if (lastNoteRef.current !== detected.note) {
@@ -44,6 +44,12 @@ export const TunerCanvas: React.FC<Props> = ({ detected, micStatus, error }) => 
                         lastNoteRef.current = detected.note;
                         noteStartTimeRef.current = now;
                         wasNoteValidRef.current = false;
+
+                        graphHistoryRef.current.push({
+                            cents: 0,
+                            timestamp: now,
+                            isGap: true
+                        });
                     }
 
                     const noteDuration = now - noteStartTimeRef.current;
@@ -64,10 +70,8 @@ export const TunerCanvas: React.FC<Props> = ({ detected, micStatus, error }) => 
                     const sum = smoothingBufferRef.current.reduce((a, b) => a + b, 0);
                     const averageCents = sum / smoothingBufferRef.current.length;
 
-                    targetCents = averageCents;
-
                     const SMOOTHING_FACTOR = 0.01;
-                    visualCentsRef.current += (targetCents - visualCentsRef.current) * SMOOTHING_FACTOR;
+                    visualCentsRef.current += (averageCents - visualCentsRef.current) * SMOOTHING_FACTOR;
 
                     if (Math.abs(visualCentsRef.current) < 0.1) visualCentsRef.current = 0;
 
@@ -83,7 +87,7 @@ export const TunerCanvas: React.FC<Props> = ({ detected, micStatus, error }) => 
                     if (wasNoteValidRef.current && lastValidDetectedRef.current) {
                         displayDetected = lastValidDetectedRef.current;
                         visualCentsRef.current = lastValidCentsRef.current;
-                        isHolding = true; // Kesikli çizgi için flag
+                        isHolding = true;
                     } else {
                         if (smoothingBufferRef.current.length > 0) {
                             smoothingBufferRef.current = [];
