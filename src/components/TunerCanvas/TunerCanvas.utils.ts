@@ -8,11 +8,19 @@ export const drawCanvas = (
     smoothedCents: number,
     history: HistoryPoint[],
     error?: string,
-    isHolding: boolean = false
+    lastDetected?: DetectedNote | null
 ) => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    if(detected) {
+        console.log('Detected:', detected.note, 'Cents:', detected.cents.toFixed(2));
+    }
+
+    if(lastDetected) {
+        console.log('Last Detected:', lastDetected?.note);
+    }
 
     const width = canvas.width;
     const height = canvas.height;
@@ -24,7 +32,7 @@ export const drawCanvas = (
     if (micStatus === 'granted') {
         drawVerticalHistoryGraph(ctx, width, height, history);
         drawReferenceLine(ctx, width, height);
-        drawTunerInterface(ctx, width, height, detected, smoothedCents);
+        drawTunerInterface(ctx, width, height, detected, smoothedCents, lastDetected);
     } else if (micStatus === 'requesting') {
         drawRequestingState(ctx, width, height);
     } else if (micStatus === 'denied') {
@@ -165,10 +173,11 @@ export const drawTunerInterface = (
     width: number,
     height: number,
     detected: DetectedNote | null,
-    smoothedCents: number
+    smoothedCents: number,
+    lastDetected?: DetectedNote | null // Yeni parametre
 ) => {
     const centerX = width / 2;
-    const scaleY = 200; // Cetvelin Y konumu
+    const scaleY = 200;
 
     // --- CETVEL (SCALE) ---
     const scaleWidth = width * 0.8;
@@ -182,77 +191,78 @@ export const drawTunerInterface = (
     for (let i = -5; i <= 5; i++) {
         const x = i * (scaleWidth / 10 / 2);
         ctx.beginPath();
-        // Ana çizgiler
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, i === 0 ? 25 : 15); // Orta çizgi daha uzun
+        ctx.lineTo(x, i === 0 ? 25 : 15);
         ctx.stroke();
 
-        // Sayılar
         if (i % 5 === 0) {
             ctx.fillText(`${i * 10}`, x, 40);
         }
     }
     ctx.restore();
 
-    if (detected) {
-        const { note, freq } = detected;
+    // Aktif ses varsa onu göster, yoksa son bilinen değeri göster
+    const displayNote = detected || lastDetected;
+    const isActive = !!detected; // Ses aktif mi?
 
-        // Renk Belirleme (±5 cents içi yeşil)
-        const isInTune = Math.abs(smoothedCents) < 5;
-        const color = isInTune ? '#4CAF50' : '#F44336';
+    if (displayNote) {
+        const { note, freq } = displayNote;
 
-        // --- İBRE (CURSOR) ---
-        const maxCents = 100;
-        // Değeri sınırla (-50 ile +50 arası)
-        const displayCents = Math.max(Math.min(smoothedCents, maxCents), -maxCents);
-        const pos = displayCents / maxCents;
+        // Renk Belirleme - ses yoksa soluk göster
+        const isInTune = isActive && Math.abs(smoothedCents) < 5;
+        const color = !isActive ? '#666' : (isInTune ? '#4CAF50' : '#F44336');
 
-        const maxDeviationPixels = (width * 0.8) / 2;
-        const cursorX = centerX + (pos * maxDeviationPixels);
-        const cursorY = scaleY;
+        // --- İBRE (CURSOR) - sadece aktif seste göster ---
+        if (isActive) {
+            const maxCents = 100;
+            const displayCents = Math.max(Math.min(smoothedCents, maxCents), -maxCents);
+            const pos = displayCents / maxCents;
 
-        // Üçgen İbre
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(cursorX, cursorY);           // Uç nokta (cetvele değen)
-        ctx.lineTo(cursorX - 12, cursorY - 24); // Sol üst
-        ctx.lineTo(cursorX + 12, cursorY - 24); // Sağ üst
-        ctx.fill();
+            const maxDeviationPixels = (width * 0.8) / 2;
+            const cursorX = centerX + (pos * maxDeviationPixels);
+            const cursorY = scaleY;
 
-        // İbre Ucu Noktası (Takip kolaylığı için)
-        ctx.beginPath();
-        ctx.arc(cursorX, cursorY + 5, 4, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(cursorX, cursorY);
+            ctx.lineTo(cursorX - 12, cursorY - 24);
+            ctx.lineTo(cursorX + 12, cursorY - 24);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(cursorX, cursorY + 5, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // --- METİNLER ---
         ctx.textAlign = 'center';
 
         // Nota Adı
-        ctx.font = 'bold 90px Arial'; // Biraz daha büyüttüm
+        ctx.font = 'bold 90px Arial';
         ctx.fillStyle = color;
         ctx.shadowColor = color;
-        ctx.shadowBlur = isInTune ? 30 : 0; // Akortluysa parlasın
+        ctx.shadowBlur = isInTune ? 30 : 0;
         ctx.fillText(note, centerX, 110);
-        ctx.shadowBlur = 0; // Reset
+        ctx.shadowBlur = 0;
 
         // Frekans
         ctx.font = '24px Arial';
-        ctx.fillStyle = '#FFF';
+        ctx.fillStyle = isActive ? '#FFF' : '#888';
         ctx.fillText(`${freq.toFixed(1)} Hz`, centerX, 150);
 
         // Cents Sayısı
-        const roundedCents = Math.round(smoothedCents);
-        const sign = roundedCents > 0 ? '+' : '';
-        ctx.font = '18px Arial';
-        ctx.fillStyle = isInTune ? '#4CAF50' : '#AAA';
-        // ctx.fillText(`${sign}${roundedCents} cents`, centerX, 160); // Cetvelin altına aldım, daha temiz
-
+        if (isActive) {
+            const roundedCents = Math.round(smoothedCents);
+            ctx.font = '18px Arial';
+            ctx.fillStyle = isInTune ? '#4CAF50' : '#AAA';
+        }
     } else {
         ctx.font = '20px Arial';
         ctx.fillStyle = '#444';
         ctx.textAlign = 'center';
     }
 };
+
 export const drawRequestingState = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.fillStyle = '#FFF';
     ctx.font = '24px Arial';

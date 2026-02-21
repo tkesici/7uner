@@ -35,7 +35,6 @@ export const TunerCanvas: React.FC<Props> = ({ detected, micStatus, error }) => 
             if (canvasRef.current) {
                 const now = Date.now();
                 let displayDetected = detected;
-                let isHolding = false;
 
                 if (detected) {
                     if (lastNoteRef.current !== detected.note) {
@@ -87,7 +86,6 @@ export const TunerCanvas: React.FC<Props> = ({ detected, micStatus, error }) => 
                     if (wasNoteValidRef.current && lastValidDetectedRef.current) {
                         displayDetected = lastValidDetectedRef.current;
                         visualCentsRef.current = lastValidCentsRef.current;
-                        isHolding = true;
                     } else {
                         if (smoothingBufferRef.current.length > 0) {
                             smoothingBufferRef.current = [];
@@ -106,7 +104,7 @@ export const TunerCanvas: React.FC<Props> = ({ detected, micStatus, error }) => 
                     visualCentsRef.current,
                     graphHistoryRef.current,
                     error,
-                    isHolding
+                    lastValidDetectedRef.current
                 );
             }
             requestRef.current = requestAnimationFrame(animate);
