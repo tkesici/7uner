@@ -1,5 +1,5 @@
 export function yinDetector(buffer: Float32Array, sampleRate: number): number {
-    const threshold = 0.1;
+    const threshold = 0.15;
     const bufferSize = buffer.length;
     const yinBuffer = new Float32Array(bufferSize / 2);
 

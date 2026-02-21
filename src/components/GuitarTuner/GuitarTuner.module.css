@@ -3,24 +3,55 @@
     background-color: #121212;
     color: #FFFFFF;
     min-height: 100vh;
+    /* Mobilde adres çubuğu sorununu çözmek için dvh kullanımı */
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    /* Masaüstünde biraz boşluk olsun ama mobilde sıfırlayacağız */
     padding: 20px;
     box-sizing: border-box;
+    overflow: hidden; /* Kaydırma çubuklarını engelle */
 }
 
 .title {
     color: #4CAF50;
-    margin-bottom: 40px;
+    margin-bottom: 20px;
+    z-index: 10; /* Canvasın üstünde kalması gerekirse diye */
 }
 
 .wrapper {
     width: 100%;
-    max-width: 600px;
+    /* Masaüstünde maksimum genişlik */
+    max-width: 1000px;
     background-color: #1E1E1E;
     border-radius: 10px;
-    padding: 20px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    /* İçeriğin taşmasını engelle */
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- MOBİL UYUMLULUK --- */
+@media (max-width: 768px) {
+    .container {
+        padding: 0;
+        justify-content: flex-start; /* Mobilde en üstten başlasın */
+    }
+
+    .title {
+        display: none; /* Mobilde yer kazanmak için başlığı gizleyebilirsin */
+        /* Veya çok küçük yapabilirsin: font-size: 14px; margin: 10px; */
+    }
+
+    .wrapper {
+        max-width: 100%;
+        height: 100dvh; /* Tüm ekranı kapla */
+        border-radius: 0; /* Köşeleri düzleştir */
+        box-shadow: none;
+        background-color: #121212; /* Arkaplanla bütünleşsin */
+    }
 }
