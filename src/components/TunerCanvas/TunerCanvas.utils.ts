@@ -240,7 +240,6 @@ export const drawTunerInterface = (
 
         // Cents Sayısı
         if (isActive) {
-            const roundedCents = Math.round(smoothedCents);
             ctx.font = '18px Arial';
             ctx.fillStyle = isInTune ? '#4CAF50' : '#AAA';
         }
