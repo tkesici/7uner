@@ -1,5 +1,54 @@
+.canvasFrame {
+    width: 100%;
+    max-width: 920px;
+    margin-inline: auto;
+
+    /* Stable responsive sizing */
+    aspect-ratio: 16 / 9;
+
+    display: grid;
+    place-items: center;
+
+    position: relative;
+    padding: clamp(10px, 2vw, 16px);
+    box-sizing: border-box;
+
+    border-radius: 14px;
+    background:
+            radial-gradient(900px 260px at 50% 0%, rgba(76, 175, 80, 0.12), transparent 60%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow:
+            0 14px 40px rgba(0, 0, 0, 0.45),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+    overflow: clip;
+    contain: layout paint;
+}
+
 .canvas {
     width: 100%;
-    height: auto;
-    border-radius: 5px;
+    height: 100%;
+    display: block;
+
+    border-radius: 10px;
+    background: radial-gradient(700px 240px at 50% 15%, rgba(255, 255, 255, 0.05), transparent 60%);
+    outline: 1px solid rgba(255, 255, 255, 0.10);
+
+    /* Avoid blurry scaling artifacts */
+    image-rendering: auto;
+}
+
+@media (max-width: 768px) {
+    .canvasFrame {
+        max-width: 100%;
+        aspect-ratio: 3 / 4;
+        border-radius: 12px;
+        padding: 10px;
+        box-shadow: none;
+    }
+
+    .canvas {
+        border-radius: 12px;
+    }
 }
