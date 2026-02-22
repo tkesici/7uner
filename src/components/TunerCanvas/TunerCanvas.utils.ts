@@ -251,49 +251,60 @@ export const drawTunerInterface = (
 };
 
 export const drawRequestingState = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
     ctx.fillStyle = '#FFF';
     ctx.font = '24px Arial';
-    ctx.fillText('Requesting microphone access...', width / 2, height / 2 + 20);
+    ctx.fillText('Requesting microphone access...', width / 2, height / 2);
 
     ctx.font = '16px Arial';
     ctx.fillStyle = '#AAA';
-    ctx.fillText('Please allow microphone access in your browser', width / 2, height / 2 + 50);
+    ctx.fillText('Please allow microphone access in your browser', width / 2, height / 2 + 35);
 };
 
 export const drawPermissionDeniedState = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
     ctx.fillStyle = '#F44336';
     ctx.font = '24px Arial';
-    ctx.fillText('Microphone Access Denied', width / 2, height / 2 - 10);
+    ctx.fillText('Microphone Access Denied', width / 2, height / 2 - 40);
 
     ctx.fillStyle = '#FFF';
     ctx.font = '16px Arial';
-    ctx.fillText('Please allow microphone access to use the tuner', width / 2, height / 2 + 20);
+    ctx.fillText('Please allow microphone access to use the tuner', width / 2, height / 2);
 
     ctx.fillStyle = '#AAA';
     ctx.font = '14px Arial';
-    ctx.fillText('Click the microphone icon in your browser\'s address bar', width / 2, height / 2 + 45);
-    ctx.fillText('or refresh the page and try again', width / 2, height / 2 + 65);
+    ctx.fillText('Click the microphone icon in your browser\'s address bar', width / 2, height / 2 + 30);
+    ctx.fillText('or refresh the page and try again', width / 2, height / 2 + 50);
 };
 
 export const drawErrorState = (ctx: CanvasRenderingContext2D, width: number, height: number, error?: string) => {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
     ctx.fillStyle = '#FF5722';
     ctx.font = '24px Arial';
-    ctx.fillText('Microphone Error', width / 2, height / 2 - 10);
+    ctx.fillText('Microphone Error', width / 2, height / 2 - 30);
 
     if (error) {
         ctx.fillStyle = '#FFF';
         ctx.font = '16px Arial';
         const lines = wrapText(ctx, error, width - 100);
         lines.forEach((line, index) => {
-            ctx.fillText(line, width / 2, height / 2 + 20 + (index * 20));
+            ctx.fillText(line, width / 2, height / 2 + 10 + (index * 25));
         });
     }
 };
 
 export const drawInitialState = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    ctx.font = '16px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Initializing...', width / 2, height / 2 + 20);
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#AAA';
+    ctx.font = '16px Arial';
+    ctx.fillText('Initializing...', width / 2, height / 2);
 };
 
 export const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
@@ -314,4 +325,3 @@ export const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: 
     lines.push(currentLine);
     return lines;
 };
-
