@@ -120,7 +120,7 @@ export const TunerCanvas: React.FC<Props> = ({ detected, micStatus, error }) => 
         return () => {
             if (requestRef.current) cancelAnimationFrame(requestRef.current);
         };
-    }, [detected, micStatus, error]);
+    }, [detected, micStatus, error, REFRESH_INTERVAL]);
 
     return (
         <canvas
