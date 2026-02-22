@@ -7,7 +7,8 @@ export const drawCanvas = (
     detected: DetectedNote | null,
     smoothedCents: number,
     history: HistoryPoint[],
-    error?: string
+    error?: string,
+    lastDetected?: DetectedNote | null
 ) => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -16,14 +17,14 @@ export const drawCanvas = (
     const width = canvas.width;
     const height = canvas.height;
 
-    // Arkaplan
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#121212';
+    ctx.fillStyle = '#1e1e1e';
     ctx.fillRect(0, 0, width, height);
 
     if (micStatus === 'granted') {
         drawVerticalHistoryGraph(ctx, width, height, history);
-        drawTunerInterface(ctx, width, height, detected, smoothedCents);
+        // drawReferenceLine(ctx, width, height);
+        drawTunerInterface(ctx, width, height, detected, smoothedCents, lastDetected);
     } else if (micStatus === 'requesting') {
         drawRequestingState(ctx, width, height);
     } else if (micStatus === 'denied') {
@@ -35,6 +36,15 @@ export const drawCanvas = (
     }
 };
 
+export const drawReferenceLine = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    ctx.beginPath();
+    ctx.strokeStyle = '#434343';
+    ctx.lineWidth = 2;
+    ctx.moveTo(width / 2, 250);
+    ctx.lineTo(width / 2, height);
+    ctx.stroke();
+}
+
 export const drawVerticalHistoryGraph = (ctx: CanvasRenderingContext2D, width: number, height: number, history: HistoryPoint[]) => {
     if (history.length < 2) return;
 
@@ -43,62 +53,106 @@ export const drawVerticalHistoryGraph = (ctx: CanvasRenderingContext2D, width: n
     const centerX = width / 2;
     const startY = 250;
     const graphHeight = height - startY;
+    const maxDeviation = (width / 2) * 0.8;
 
-    ctx.save();
-
-    // Referans çizgisi (Center Line)
-    ctx.beginPath();
-    ctx.strokeStyle = '#222';
-    ctx.lineWidth = 2;
-    ctx.moveTo(centerX, startY);
-    ctx.lineTo(centerX, height);
-    ctx.stroke();
-
-    // Grafik Ayarları
-    ctx.lineWidth = 4;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    // Renk Gradyanı (Sadece Pitch'e göre)
-    const colorGradient = ctx.createLinearGradient(0, 0, width, 0);
-    colorGradient.addColorStop(0.3, '#F44336');   // Flat (Kırmızı)
-    colorGradient.addColorStop(0.45, '#4CAF50'); // In Tune (Yeşil)
-    colorGradient.addColorStop(0.55, '#4CAF50'); // In Tune (Yeşil)
-    colorGradient.addColorStop(0.7, '#F44336');   // Sharp (Kırmızı)
-    ctx.strokeStyle = colorGradient;
-
-    ctx.beginPath();
-
-    let started = false;
-
-    for (let i = 0; i < history.length; i++) {
-        const point = history[i];
+    const getCoords = (point: HistoryPoint) => {
         const timeDiff = now - point.timestamp;
-
-        // Eğer 10 saniyeden eskiyse çizme (performans)
-        if (timeDiff > timeWindow) continue;
-
         const y = startY + ((timeDiff / timeWindow) * graphHeight);
-
-        // X Hesabı
-        const maxDeviation = (width / 2) * 0.8;
         const safeCents = isNaN(point.cents) ? 0 : point.cents;
         const normalizedCents = safeCents / 50;
         const x = centerX + (normalizedCents * maxDeviation);
+        return { x, y };
+    };
 
-        if (!started) {
-            ctx.moveTo(x, y);
-            started = true;
+    // Segmentlere ayır (gap'lere göre)
+    const segments: HistoryPoint[][] = [];
+    let currentSegment: HistoryPoint[] = [];
+
+    for (const point of history) {
+        if (point.isGap) {
+            if (currentSegment.length > 0) {
+                segments.push(currentSegment);
+            }
+            currentSegment = [];
         } else {
-            // Quadratic Curve daha yumuşak bir çizgi sağlar (köşeli olmaz)
-            // Bir önceki nokta ile şimdiki nokta arasına curve atıyoruz
-            // Ancak performans için lineTo da yeterlidir.
-            // Daha pürüzsüz görünüm için lineTo yeterli çünkü data zaten smoothed.
-            ctx.lineTo(x, y);
+            const timeDiff = now - point.timestamp;
+            if (timeDiff <= 300_000) {
+                currentSegment.push(point);
+            }
+        }
+    }
+    if (currentSegment.length > 0) {
+        segments.push(currentSegment);
+    }
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const colorGradient = ctx.createLinearGradient(0, 0, width, 0);
+    colorGradient.addColorStop(0.3, '#F44336');
+    colorGradient.addColorStop(0.45, '#4CAF50');
+    colorGradient.addColorStop(0.55, '#4CAF50');
+    colorGradient.addColorStop(0.7, '#F44336');
+
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = colorGradient;
+
+    for (const segment of segments) {
+        if (segment.length < 2) continue;
+
+        ctx.beginPath();
+        const firstCoords = getCoords(segment[0]);
+        ctx.moveTo(firstCoords.x, firstCoords.y);
+
+        for (let i = 1; i < segment.length; i++) {
+            const coords = getCoords(segment[i]);
+            ctx.lineTo(coords.x, coords.y);
+        }
+        ctx.stroke();
+    }
+
+    for (let i = 0; i < segments.length - 1; i++) {
+        const currentSeg = segments[i];
+        const nextSeg = segments[i + 1];
+
+        if (currentSeg.length === 0 || nextSeg.length === 0) continue;
+
+        const endPoint = currentSeg[currentSeg.length - 1];
+        const startPoint = nextSeg[0];
+
+        const endCoords = getCoords(endPoint);
+        const startCoords = getCoords(startPoint);
+
+        ctx.beginPath();
+        ctx.moveTo(endCoords.x, endCoords.y);
+        ctx.lineTo(startCoords.x, startCoords.y);
+        ctx.stroke();
+    }
+
+    if (segments.length > 0) {
+        const lastSegment = segments[segments.length - 1];
+        if (lastSegment.length > 0) {
+            const newestPoint = lastSegment.reduce((a, b) =>
+                a.timestamp > b.timestamp ? a : b
+            );
+            const timeSinceNewest = now - newestPoint.timestamp;
+
+            if (timeSinceNewest > 100) {
+                const newestCoords = getCoords(newestPoint);
+                if (newestCoords.y > startY && newestCoords.y <= height) {
+                    ctx.setLineDash([6, 4]);
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#676767';
+                    ctx.beginPath();
+                    ctx.moveTo(newestCoords.x, startY);
+                    ctx.lineTo(newestCoords.x, newestCoords.y);
+                    ctx.stroke();
+                }
+            }
         }
     }
 
-    ctx.stroke();
     ctx.restore();
 };
 
@@ -107,10 +161,11 @@ export const drawTunerInterface = (
     width: number,
     height: number,
     detected: DetectedNote | null,
-    smoothedCents: number
+    smoothedCents: number,
+    lastDetected?: DetectedNote | null // Yeni parametre
 ) => {
     const centerX = width / 2;
-    const scaleY = 200; // Cetvelin Y konumu
+    const scaleY = 200;
 
     // --- CETVEL (SCALE) ---
     const scaleWidth = width * 0.8;
@@ -124,77 +179,78 @@ export const drawTunerInterface = (
     for (let i = -5; i <= 5; i++) {
         const x = i * (scaleWidth / 10 / 2);
         ctx.beginPath();
-        // Ana çizgiler
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, i === 0 ? 25 : 15); // Orta çizgi daha uzun
+        ctx.lineTo(x, i === 0 ? 25 : 15);
         ctx.stroke();
 
-        // Sayılar
         if (i % 5 === 0) {
             ctx.fillText(`${i * 10}`, x, 40);
         }
     }
     ctx.restore();
 
-    if (detected) {
-        const { note, freq } = detected;
+    // Aktif ses varsa onu göster, yoksa son bilinen değeri göster
+    const displayNote = detected || lastDetected;
+    const isActive = !!detected; // Ses aktif mi?
 
-        // Renk Belirleme (±5 cents içi yeşil)
-        const isInTune = Math.abs(smoothedCents) < 5;
-        const color = isInTune ? '#4CAF50' : '#F44336';
+    if (displayNote) {
+        const { note, freq } = displayNote;
 
-        // --- İBRE (CURSOR) ---
-        const maxCents = 100;
-        // Değeri sınırla (-50 ile +50 arası)
-        const displayCents = Math.max(Math.min(smoothedCents, maxCents), -maxCents);
-        const pos = displayCents / maxCents;
+        // Renk Belirleme - ses yoksa soluk göster
+        const isInTune = isActive && Math.abs(smoothedCents) < 5;
+        const color = !isActive ? '#666' : (isInTune ? '#4CAF50' : '#F44336');
 
-        const maxDeviationPixels = (width * 0.8) / 2;
-        const cursorX = centerX + (pos * maxDeviationPixels);
-        const cursorY = scaleY;
+        // --- İBRE (CURSOR) - sadece aktif seste göster ---
+        if (isActive) {
+            const maxCents = 100;
+            const displayCents = Math.max(Math.min(smoothedCents, maxCents), -maxCents);
+            const pos = displayCents / maxCents;
 
-        // Üçgen İbre
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(cursorX, cursorY);           // Uç nokta (cetvele değen)
-        ctx.lineTo(cursorX - 12, cursorY - 24); // Sol üst
-        ctx.lineTo(cursorX + 12, cursorY - 24); // Sağ üst
-        ctx.fill();
+            const maxDeviationPixels = (width * 0.8) / 2;
+            const cursorX = centerX + (pos * maxDeviationPixels);
+            const cursorY = scaleY;
 
-        // İbre Ucu Noktası (Takip kolaylığı için)
-        ctx.beginPath();
-        ctx.arc(cursorX, cursorY + 5, 4, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(cursorX, cursorY);
+            ctx.lineTo(cursorX - 12, cursorY - 24);
+            ctx.lineTo(cursorX + 12, cursorY - 24);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(cursorX, cursorY + 5, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // --- METİNLER ---
         ctx.textAlign = 'center';
 
         // Nota Adı
-        ctx.font = 'bold 90px Arial'; // Biraz daha büyüttüm
+        ctx.font = 'bold 90px Arial';
         ctx.fillStyle = color;
         ctx.shadowColor = color;
-        ctx.shadowBlur = isInTune ? 30 : 0; // Akortluysa parlasın
+        ctx.shadowBlur = isInTune ? 30 : 0;
         ctx.fillText(note, centerX, 110);
-        ctx.shadowBlur = 0; // Reset
+        ctx.shadowBlur = 0;
 
         // Frekans
         ctx.font = '24px Arial';
-        ctx.fillStyle = '#FFF';
+        ctx.fillStyle = isActive ? '#FFF' : '#888';
         ctx.fillText(`${freq.toFixed(1)} Hz`, centerX, 150);
 
         // Cents Sayısı
-        const roundedCents = Math.round(smoothedCents);
-        const sign = roundedCents > 0 ? '+' : '';
-        ctx.font = '18px Arial';
-        ctx.fillStyle = isInTune ? '#4CAF50' : '#AAA';
-        // ctx.fillText(`${sign}${roundedCents} cents`, centerX, 160); // Cetvelin altına aldım, daha temiz
-
+        if (isActive) {
+            const roundedCents = Math.round(smoothedCents);
+            ctx.font = '18px Arial';
+            ctx.fillStyle = isInTune ? '#4CAF50' : '#AAA';
+        }
     } else {
         ctx.font = '20px Arial';
         ctx.fillStyle = '#444';
         ctx.textAlign = 'center';
     }
 };
+
 export const drawRequestingState = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.fillStyle = '#FFF';
     ctx.font = '24px Arial';
