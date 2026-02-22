@@ -14,14 +14,6 @@ export const drawCanvas = (
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    if(detected) {
-        console.log('Detected:', detected.note, 'Cents:', detected.cents.toFixed(2));
-    }
-
-    if(lastDetected) {
-        console.log('Last Detected:', lastDetected?.note);
-    }
-
     const width = canvas.width;
     const height = canvas.height;
 
@@ -31,7 +23,7 @@ export const drawCanvas = (
 
     if (micStatus === 'granted') {
         drawVerticalHistoryGraph(ctx, width, height, history);
-        drawReferenceLine(ctx, width, height);
+        // drawReferenceLine(ctx, width, height);
         drawTunerInterface(ctx, width, height, detected, smoothedCents, lastDetected);
     } else if (micStatus === 'requesting') {
         drawRequestingState(ctx, width, height);
@@ -46,7 +38,7 @@ export const drawCanvas = (
 
 export const drawReferenceLine = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.beginPath();
-    ctx.strokeStyle = '#2c2c2c';
+    ctx.strokeStyle = '#434343';
     ctx.lineWidth = 2;
     ctx.moveTo(width / 2, 250);
     ctx.lineTo(width / 2, height);
@@ -103,7 +95,6 @@ export const drawVerticalHistoryGraph = (ctx: CanvasRenderingContext2D, width: n
     colorGradient.addColorStop(0.55, '#4CAF50');
     colorGradient.addColorStop(0.7, '#F44336');
 
-    // Her segment için düz çizgi çiz
     ctx.lineWidth = 4;
     ctx.strokeStyle = colorGradient;
 
@@ -120,11 +111,6 @@ export const drawVerticalHistoryGraph = (ctx: CanvasRenderingContext2D, width: n
         }
         ctx.stroke();
     }
-
-    // Segmentler arası kesikli bağlantı çizgileri
-    ctx.setLineDash([6, 4]);
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#454545';
 
     for (let i = 0; i < segments.length - 1; i++) {
         const currentSeg = segments[i];
@@ -144,23 +130,25 @@ export const drawVerticalHistoryGraph = (ctx: CanvasRenderingContext2D, width: n
         ctx.stroke();
     }
 
-    // Son segmentin en yeni noktasından yukarıya kesikli çizgi (ses yokken)
     if (segments.length > 0) {
         const lastSegment = segments[segments.length - 1];
         if (lastSegment.length > 0) {
-            // En yeni nokta (timestamp'i en büyük olan)
             const newestPoint = lastSegment.reduce((a, b) =>
                 a.timestamp > b.timestamp ? a : b
             );
-            const newestCoords = getCoords(newestPoint);
-
-            // Eğer en yeni nokta yukarıda değilse (yani ses kesilmişse)
             const timeSinceNewest = now - newestPoint.timestamp;
-            if (timeSinceNewest > 100) { // 100ms'den fazla geçmişse ses kesilmiş demektir
-                ctx.beginPath();
-                ctx.moveTo(newestCoords.x, newestCoords.y);
-                ctx.lineTo(newestCoords.x, startY); // Yukarıya doğru kesikli çizgi
-                ctx.stroke();
+
+            if (timeSinceNewest > 100) {
+                const newestCoords = getCoords(newestPoint);
+                if (newestCoords.y > startY && newestCoords.y <= height) {
+                    ctx.setLineDash([6, 4]);
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#676767';
+                    ctx.beginPath();
+                    ctx.moveTo(newestCoords.x, startY);
+                    ctx.lineTo(newestCoords.x, newestCoords.y);
+                    ctx.stroke();
+                }
             }
         }
     }
