@@ -28,6 +28,9 @@ export const TunerCanvas: React.FC<Props> = ({ detected, micStatus, error }) => 
     const lastValidCentsRef = useRef<number>(0);
     const wasNoteValidRef = useRef<boolean>(false);
 
+    const lastRefreshRef = useRef<number>(Date.now());
+    const REFRESH_INTERVAL = 2 * 60 * 1000; // 2 dakika
+
     const MIN_HOLD_DURATION = 500;
 
     useEffect(() => {
@@ -44,11 +47,14 @@ export const TunerCanvas: React.FC<Props> = ({ detected, micStatus, error }) => 
                         noteStartTimeRef.current = now;
                         wasNoteValidRef.current = false;
 
-                        graphHistoryRef.current.push({
-                            cents: 0,
-                            timestamp: now,
-                            isGap: true
-                        });
+                        if (now - lastRefreshRef.current >= REFRESH_INTERVAL) {
+                            graphHistoryRef.current.push({
+                                cents: 0,
+                                timestamp: now,
+                                isGap: true
+                            });
+                            lastRefreshRef.current = now;
+                        }
                     }
 
                     const noteDuration = now - noteStartTimeRef.current;
@@ -94,8 +100,7 @@ export const TunerCanvas: React.FC<Props> = ({ detected, micStatus, error }) => 
                     }
                 }
 
-                const timeWindow = 20000;
-                graphHistoryRef.current = graphHistoryRef.current.filter(p => now - p.timestamp < timeWindow);
+                graphHistoryRef.current = graphHistoryRef.current.filter(p => now - p.timestamp < 600_000);
 
                 drawCanvas(
                     canvasRef.current,

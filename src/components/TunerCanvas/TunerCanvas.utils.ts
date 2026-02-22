@@ -84,7 +84,7 @@ export const drawVerticalHistoryGraph = (ctx: CanvasRenderingContext2D, width: n
             currentSegment = [];
         } else {
             const timeDiff = now - point.timestamp;
-            if (timeDiff <= timeWindow) {
+            if (timeDiff <= 300_000) {
                 currentSegment.push(point);
             }
         }
