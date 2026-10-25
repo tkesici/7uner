@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3d690bae-c403-47d3-ab78-9a8710c1b7fb" name="Changes" comment="7uner-v2: Add initial HTML structure, favicon, and README">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/css/style.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
+    <list default="true" id="3d690bae-c403-47d3-ab78-9a8710c1b7fb" name="Changes" comment="Implement guitar mode with tuning presets and UI enhancements for improved user experience">
       <change beforePath="$PROJECT_DIR$/js/tuner.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/tuner.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -128,7 +124,7 @@
       <workItem from="1771686060177" duration="11802000" />
       <workItem from="1771867030703" duration="622000" />
       <workItem from="1776266907355" duration="142000" />
-      <workItem from="1792942215184" duration="1674000" />
+      <workItem from="1792942215184" duration="2035000" />
     </task>
     <task id="LOCAL-00001" summary="Add ads.txt for Google AdSense configuration">
       <option name="closed" value="true" />
@@ -234,7 +230,15 @@
       <option name="project" value="LOCAL" />
       <updated>1792942696423</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="Implement guitar mode with tuning presets and UI enhancements for improved user experience">
+      <option name="closed" value="true" />
+      <created>1792943917353</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1792943917353</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -275,6 +279,7 @@
     <MESSAGE value="Update TunerCanvas to include REFRESH_INTERVAL in effect dependencies for improved responsiveness" />
     <MESSAGE value="Refactor TunerCanvas drawing functions to improve text alignment and spacing for better user feedback" />
     <MESSAGE value="7uner-v2: Add initial HTML structure, favicon, and README" />
-    <option name="LAST_COMMIT_MESSAGE" value="7uner-v2: Add initial HTML structure, favicon, and README" />
+    <MESSAGE value="Implement guitar mode with tuning presets and UI enhancements for improved user experience" />
+    <option name="LAST_COMMIT_MESSAGE" value="Implement guitar mode with tuning presets and UI enhancements for improved user experience" />
   </component>
 </project>

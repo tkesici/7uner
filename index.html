@@ -26,10 +26,7 @@
 
 <section class="page" id="page-tuner">
   <div class="tuner" id="tRoot">
-    <div class="modes" role="radiogroup" aria-label="Tuner mode">
-      <button role="radio" data-mode="chromatic" aria-checked="true">Chromatic</button>
-      <button role="radio" data-mode="guitar" aria-checked="false">Guitar</button>
-    </div>
+    <div class="modes" id="tModes" role="radiogroup" aria-label="Instrument"></div>
     <div class="readout idle" id="tReadout">
       <div class="tsub" id="tSub"></div>
       <div class="note"><span id="tNote">A</span><sub id="tOct">4</sub></div>
@@ -57,7 +54,7 @@
         <div id="tHead"></div>
         <div class="pegs right" id="pegsR"></div>
       </div>
-      <p class="hint">Use − and + to retune any string by a semitone. Tap a note to lock the tuner to that string; this helps with big changes like drop A, where an untuned string can sound like its neighbour.</p>
+      <p class="hint">Use − and + to retune any string by a semitone. Tap a note to lock the tuner to that string; this helps with big retunings, where a string you haven’t tuned yet can sound like its neighbour.</p>
     </div>
 
     <div class="trace-wrap">

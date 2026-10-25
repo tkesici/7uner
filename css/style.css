@@ -71,7 +71,7 @@ button{cursor:pointer}
 .advice.in{color:var(--ok)}
 
 .trace-wrap{position:relative;margin-top:1.2rem;height:min(44vh,440px);border-top:1px dashed var(--line)}
-.tuner.mode-guitar .trace-wrap{height:min(26vh,260px)}
+.tuner.mode-instrument .trace-wrap{height:min(26vh,260px)}
 .trace-wrap canvas{display:block;width:100%;height:100%}
 .cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;background:color-mix(in srgb,var(--bg) 70%,transparent);padding:1rem}
 .cover p{max-width:36ch;color:var(--muted);font-size:.92rem}
@@ -82,9 +82,16 @@ button{cursor:pointer}
 .a4 button{width:1.9rem;height:1.9rem;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
 
 /* tuner: mode switch */
-.modes{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;margin-bottom:1.3rem;background:var(--panel)}
-.modes button{border:0;background:none;padding:.4rem 1.2rem;border-radius:999px;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.1rem;color:var(--muted)}
+.modes{display:inline-flex;gap:.25rem;padding:.3rem;border:1px solid var(--line);border-radius:16px;margin-bottom:1.3rem;background:var(--panel);max-width:100%}
+.modes button{display:flex;flex-direction:column;align-items:center;gap:.2rem;min-width:4.3rem;border:0;background:none;padding:.5rem .6rem .4rem;border-radius:12px;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:.98rem;line-height:1;color:var(--muted);transition:background-color .15s,color .15s}
+.modes button:hover{color:var(--ink)}
+.modes svg{width:38px;height:38px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .modes button[aria-checked="true"]{background:var(--ink);color:var(--bg)}
+@media (max-width:420px){
+  .modes{display:flex;width:100%;gap:.1rem;padding:.25rem}
+  .modes button{min-width:0;flex:1;padding:.45rem .1rem .35rem;font-size:.8rem}
+  .modes svg{width:30px;height:30px}
+}
 .tsub{min-height:1.4rem;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.1rem;color:var(--muted)}
 
 /* tuner: guitar */
@@ -95,8 +102,8 @@ button{cursor:pointer}
 #tAuto[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
 .gbody{--hw:170px;display:grid;grid-template-columns:1fr var(--hw) 1fr;align-items:start;gap:.3rem}
 .headstock{display:block;width:var(--hw);height:calc(var(--hw) * 1.6)}
-.pegs{display:flex;flex-direction:column;padding-top:calc(var(--hw) * .2)}
-.peg{height:calc(var(--hw) * .3);display:flex;align-items:center;gap:.25rem}
+.pegs{display:flex;flex-direction:column;padding-top:calc(var(--hw) * var(--ptf, .2))}
+.peg{height:calc(var(--hw) * var(--phf, .3));display:flex;align-items:center;gap:.25rem}
 .pegs.left .peg{justify-content:flex-end}
 .pegs.right .peg{justify-content:flex-start}
 .pm{width:1.9rem;height:1.9rem;border:1px solid var(--line);border-radius:6px;background:var(--panel);font-size:1.1rem;line-height:1;padding:0}
@@ -216,5 +223,5 @@ button{cursor:pointer}
 .recs p{margin:0}
 .hist{list-style:none;padding:0;margin:.6rem 0;font-family:"JetBrains Mono",monospace;font-size:.9rem;color:var(--muted)}
 
-@media (prefers-reduced-motion:reduce){.needle,.readout,.pn,.gstr{transition:none}}
+@media (prefers-reduced-motion:reduce){.needle,.readout,.pn,.gstr,.modes button{transition:none}}
 @media (prefers-reduced-motion:no-preference){.countin{transition:opacity .12s}}
