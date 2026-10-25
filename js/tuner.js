@@ -92,7 +92,7 @@
   const el = {
     root: $("tRoot"), modes: $("tModes"), readout: $("tReadout"), sub: $("tSub"), note: $("tNote"), oct: $("tOct"),
     hz: $("tHz"), cents: $("tCents"), meter: $("tMeter"), zone: $("tZone"), needle: $("tNeedle"),
-    labL: $("tLabL"), labR: $("tLabR"), advice: $("tAdvice"), panel: $("tGuitar"),
+    labL: $("tLabL"), labR: $("tLabR"), panel: $("tGuitar"),
     preset: $("tPreset"), auto: $("tAuto"), pegsL: $("pegsL"), pegsR: $("pegsR"), head: $("tHead"),
     canvas: $("tTrace"), cover: $("tCover"), start: $("tStart"), status: $("tStatus"), stop: $("tStop"),
     a4: $("a4"), a4d: $("a4Down"), a4u: $("a4Up"), a4r: $("a4Reset")
@@ -437,18 +437,12 @@
     el.readout.classList.toggle("in", inTune);
     el.meter.classList.toggle("in", inTune);
     el.needle.style.left = 50 + (Math.max(-c.range, Math.min(c.range, cents)) / c.range) * 50 + "%";
-    el.advice.classList.toggle("in", inTune);
-    const far = Math.abs(cents) > c.range;
-    el.advice.textContent = inTune ? "In tune"
-        : cents < 0 ? (far ? "Well below – tighten the string" : "Flat – tighten the string a little")
-            : (far ? "Well above – loosen the string" : "Sharp – loosen the string a little");
     if (instr()) highlight(stringIdx, inTune);
   }
 
   function idle() {
     el.readout.classList.add("idle");
     el.meter.classList.add("idle");
-    el.advice.textContent = "";
     if (instr()) highlight(-1, false);
   }
 
@@ -641,5 +635,5 @@
 
   applyMode();
 
-  window.tuner = { start, stop, resize, isRunning: () => running };
+  window.tuner = { start, stop, resize, isRunning: () => running, icons: ICONS };
 })();

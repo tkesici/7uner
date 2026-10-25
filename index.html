@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>7uner – chromatic tuner and guitar level test</title>
+  <title>7uner</title>
   <meta name="description" content="A free chromatic tuner and guitar level test that runs in your browser. Nothing to install, and audio never leaves your device.">
   <meta name="theme-color" content="#151A21" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#E6E9ED" media="(prefers-color-scheme: light)">
@@ -19,7 +19,7 @@
     <a class="brand" href="#tuner">7uner</a>
     <nav class="sitenav" aria-label="Sections">
       <a href="#tuner" data-page="tuner">Tuner</a>
-      <a href="#level-test" data-page="level-test">Level test</a>
+      <a href="#learn" data-page="learn">Learn</a>
     </nav>
   </div>
 </header>
@@ -40,7 +40,6 @@
       </div>
       <div class="scale-labels"><span id="tLabL">−50</span><span>0</span><span id="tLabR">+50</span></div>
     </div>
-    <p class="advice" id="tAdvice" aria-live="polite"></p>
 
     <div class="guitar" id="tGuitar" hidden>
       <div class="gtop">
@@ -78,6 +77,7 @@
 
 <section class="page" id="page-test" hidden>
   <div class="wrap test-top">
+    <div class="modes learn-modes" id="lModes" role="radiogroup" aria-label="Instrument"></div>
     <h1>Guitar level test</h1>
     <p class="lede">Tune your guitar on the Tuner tab first. Open a tab, play along with the metronome after the four-beat count-in, then rate yourself honestly. The highest tempo you can play cleanly and comfortably sets your level.</p>
     <nav class="tabs" role="tablist">
