@@ -39,6 +39,8 @@ python3 -m http.server 8000
 
 ## Notes
 
-- The tuner detects roughly 38 Hz to 1500 Hz, so low tunings such as drop A are covered.
-- The A4 reference can be set between 415 and 466 Hz and is saved in the browser.
+- The tuner has two modes. **Chromatic** works with any instrument and shows the nearest note. **Guitar** follows six target strings, starting from standard tuning; each string can be moved up or down by a semitone, and common presets (drop D, E♭ standard, drop C, drop A and others) are one click away.
+- Guitar mode is stricter than chromatic mode: the in-tune zone is ±2 cents instead of ±5, the scale shows ±25 cents, readings use a longer analysis window, and the first moments of each pluck (which ring sharp) are ignored.
+- Chromatic mode detects roughly 27 Hz to 4200 Hz; guitar mode 38 Hz to 1400 Hz.
+- The A4 reference can be set between 415 and 466 Hz (440 by default). Mode, string tunings and A4 are saved in the browser.
 - Level test results are stored in `localStorage` and don't carry over to other devices.

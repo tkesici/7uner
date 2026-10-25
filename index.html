@@ -25,23 +25,41 @@
 </header>
 
 <section class="page" id="page-tuner">
-  <div class="tuner">
+  <div class="tuner" id="tRoot">
+    <div class="modes" role="radiogroup" aria-label="Tuner mode">
+      <button role="radio" data-mode="chromatic" aria-checked="true">Chromatic</button>
+      <button role="radio" data-mode="guitar" aria-checked="false">Guitar</button>
+    </div>
     <div class="readout idle" id="tReadout">
+      <div class="tsub" id="tSub"></div>
       <div class="note"><span id="tNote">A</span><sub id="tOct">4</sub></div>
       <div class="hz"><span id="tHz"><b>–</b> Hz</span>&nbsp;&nbsp;<span id="tCents"></span></div>
     </div>
     <div class="meter-wrap idle" id="tMeter">
       <div class="scale">
-        <div class="zone"></div>
+        <div class="zone" id="tZone"></div>
         <div class="ticks"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
         <div class="needle" id="tNeedle"></div>
       </div>
-      <div class="scale-labels"><span>−50</span><span>0</span><span>+50</span></div>
+      <div class="scale-labels"><span id="tLabL">−50</span><span>0</span><span id="tLabR">+50</span></div>
     </div>
     <p class="advice" id="tAdvice" aria-live="polite"></p>
-    <ol class="strings" id="tStrings" aria-label="Standard tuning strings">
-      <li>E</li><li>A</li><li>D</li><li>G</li><li>B</li><li>E</li>
-    </ol>
+
+    <div class="guitar" id="tGuitar" hidden>
+      <div class="gtop">
+        <label class="gpreset">Tuning
+          <select id="tPreset" aria-label="Tuning preset"></select>
+        </label>
+        <button class="btn" id="tAuto" aria-pressed="true">Auto-detect string</button>
+      </div>
+      <div class="gbody">
+        <div class="pegs left" id="pegsL"></div>
+        <div id="tHead"></div>
+        <div class="pegs right" id="pegsR"></div>
+      </div>
+      <p class="hint">Use − and + to retune any string by a semitone. Tap a note to lock the tuner to that string; this helps with big changes like drop A, where an untuned string can sound like its neighbour.</p>
+    </div>
+
     <div class="trace-wrap">
       <canvas id="tTrace" aria-hidden="true"></canvas>
       <div class="cover" id="tCover">
@@ -55,6 +73,7 @@
         <input id="a4" type="number" min="415" max="466" inputmode="numeric" aria-label="A4 reference frequency">
         <button id="a4Up" aria-label="Raise reference pitch">+</button> Hz
       </span>
+      <button class="linkbtn" id="a4Reset">Reset to 440</button>
       <button class="linkbtn" id="tStop" hidden>Turn off microphone</button>
     </div>
   </div>

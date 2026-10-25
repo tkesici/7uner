@@ -51,6 +51,7 @@ button{cursor:pointer}
 .readout.in .note{color:var(--ok)}
 .hz{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:1.05rem;color:var(--muted);margin-top:.4rem}
 .hz b{color:var(--ink);font-weight:700}
+.nw{white-space:nowrap}
 
 .meter-wrap{margin:1.6rem auto 0;position:relative}
 .scale{position:relative;height:2.6rem;border-bottom:1px solid var(--line)}
@@ -69,12 +70,8 @@ button{cursor:pointer}
 .advice{min-height:1.6rem;font-weight:600;margin:.8rem 0 0}
 .advice.in{color:var(--ok)}
 
-.strings{list-style:none;padding:0;margin:1rem 0 0;display:flex;justify-content:center;gap:.45rem}
-.strings li{width:2.4rem;height:2.4rem;border:1px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.15rem;color:var(--muted);transition:background-color .15s,color .15s}
-.strings li.hit{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
-.strings li.hit.in{background:var(--ok);border-color:var(--ok);color:#fff}
-
 .trace-wrap{position:relative;margin-top:1.2rem;height:min(44vh,440px);border-top:1px dashed var(--line)}
+.tuner.mode-guitar .trace-wrap{height:min(26vh,260px)}
 .trace-wrap canvas{display:block;width:100%;height:100%}
 .cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;background:color-mix(in srgb,var(--bg) 70%,transparent);padding:1rem}
 .cover p{max-width:36ch;color:var(--muted);font-size:.92rem}
@@ -83,6 +80,46 @@ button{cursor:pointer}
 .a4{display:flex;align-items:center;gap:.35rem}
 .a4 input{width:3.6rem;text-align:center;font-family:"JetBrains Mono",monospace;border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:.25rem}
 .a4 button{width:1.9rem;height:1.9rem;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+
+/* tuner: mode switch */
+.modes{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;margin-bottom:1.3rem;background:var(--panel)}
+.modes button{border:0;background:none;padding:.4rem 1.2rem;border-radius:999px;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.1rem;color:var(--muted)}
+.modes button[aria-checked="true"]{background:var(--ink);color:var(--bg)}
+.tsub{min-height:1.4rem;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.1rem;color:var(--muted)}
+
+/* tuner: guitar */
+.guitar{margin-top:1.1rem}
+.gtop{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.6rem 1rem;margin-bottom:1rem}
+.gpreset{display:flex;align-items:center;gap:.5rem;color:var(--muted)}
+.gpreset select{padding:.45rem .5rem;border:1px solid var(--line);border-radius:7px;background:var(--panel);font-weight:600;color:var(--ink)}
+#tAuto[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.gbody{--hw:170px;display:grid;grid-template-columns:1fr var(--hw) 1fr;align-items:start;gap:.3rem}
+.headstock{display:block;width:var(--hw);height:calc(var(--hw) * 1.6)}
+.pegs{display:flex;flex-direction:column;padding-top:calc(var(--hw) * .2)}
+.peg{height:calc(var(--hw) * .3);display:flex;align-items:center;gap:.25rem}
+.pegs.left .peg{justify-content:flex-end}
+.pegs.right .peg{justify-content:flex-start}
+.pm{width:1.9rem;height:1.9rem;border:1px solid var(--line);border-radius:6px;background:var(--panel);font-size:1.1rem;line-height:1;padding:0}
+.pm:hover{border-color:var(--ink)}
+.pm:disabled{opacity:.35;cursor:default}
+.pn{min-width:3.7rem;height:2.6rem;border:1px solid var(--line);border-radius:8px;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;padding:0 .35rem;transition:background-color .15s,border-color .15s}
+.pnote{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.25rem}
+.pnote sub{font-size:.62em;color:var(--muted);vertical-align:baseline;margin-left:.05em}
+.poff{font-family:"JetBrains Mono",monospace;font-size:.62rem;color:var(--blue);min-height:.7rem}
+.peg.active .pn{border-color:var(--amber);background:var(--amber-soft)}
+.peg.in .pn{border-color:var(--ok);background:var(--ok-soft)}
+.peg.tuned .pnote::after{content:"✓";color:var(--ok);font-size:.75em;margin-left:.2em}
+.pn[aria-pressed="true"]{box-shadow:0 0 0 2px var(--blue)}
+.gstr{fill:none;stroke:#B9BEC6;stroke-linecap:round;transition:stroke .15s}
+.gstr.tuned{stroke:#8FCBA6}
+.gstr.active{stroke:var(--amber);filter:drop-shadow(0 0 3px var(--amber))}
+.gstr.in{stroke:var(--ok);filter:drop-shadow(0 0 4px var(--ok))}
+@media (max-width:480px){
+  .gbody{--hw:118px}
+  .pm{width:1.6rem;height:1.6rem;font-size:1rem}
+  .pn{min-width:3rem;height:2.2rem}
+  .pnote{font-size:1.05rem}
+}
 
 /* ---------- shared controls ---------- */
 .go{background:var(--amber);color:var(--amber-ink);border:0;border-radius:8px;padding:.75rem 1.6rem;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.3rem;min-width:8rem}
@@ -179,5 +216,5 @@ button{cursor:pointer}
 .recs p{margin:0}
 .hist{list-style:none;padding:0;margin:.6rem 0;font-family:"JetBrains Mono",monospace;font-size:.9rem;color:var(--muted)}
 
-@media (prefers-reduced-motion:reduce){.needle,.readout,.strings li{transition:none}}
+@media (prefers-reduced-motion:reduce){.needle,.readout,.pn,.gstr{transition:none}}
 @media (prefers-reduced-motion:no-preference){.countin{transition:opacity .12s}}
