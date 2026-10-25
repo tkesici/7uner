@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>7uner – chromatic tuner and guitar level test</title>
+  <title>7uner</title>
   <meta name="description" content="A free chromatic tuner and guitar level test that runs in your browser. Nothing to install, and audio never leaves your device.">
   <meta name="theme-color" content="#151A21" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#E6E9ED" media="(prefers-color-scheme: light)">
@@ -77,129 +77,234 @@
 
 <section class="page" id="page-test" hidden>
   <div class="wrap test-top">
-    <div class="modes learn-modes" id="lModes" role="radiogroup" aria-label="Instrument"></div>
-    <h1>Guitar level test</h1>
-    <p class="lede">Tune your guitar on the Tuner tab first. Open a tab, play along with the metronome after the four-beat count-in, then rate yourself honestly. The highest tempo you can play cleanly and comfortably sets your level.</p>
-    <nav class="tabs" role="tablist">
-      <button role="tab" data-view="speed" aria-selected="true">Technique and speed</button>
-      <button role="tab" data-view="ear" aria-selected="false">Ear</button>
-      <button role="tab" data-view="improv" aria-selected="false">Improvisation</button>
-      <button role="tab" data-view="result" aria-selected="false">Results</button>
-    </nav>
+    <div class="learn-head">
+      <div class="modes learn-modes" id="lModes" role="radiogroup" aria-label="Instrument"></div>
+      <nav class="learnnav" id="learnNav" role="tablist" aria-label="Learn sections">
+        <button role="tab" data-sec="test" aria-selected="true">Level test</button>
+        <button role="tab" data-sec="songs" aria-selected="false">Song studies</button>
+      </nav>
+    </div>
   </div>
 
-  <main class="wrap test-main">
-    <section class="view" id="v-speed">
+  <div id="sec-test">
+    <div class="wrap">
+      <h1>Guitar level test</h1>
+      <p class="lede">Tune your guitar on the Tuner tab first. Open a tab, play along with the metronome after the four-beat count-in, then rate yourself honestly. The highest tempo you can play cleanly and comfortably sets your level.</p>
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-view="speed" aria-selected="true">Technique and speed</button>
+        <button role="tab" data-view="ear" aria-selected="false">Ear</button>
+        <button role="tab" data-view="improv" aria-selected="false">Improvisation</button>
+        <button role="tab" data-view="result" aria-selected="false">Results</button>
+      </nav>
+    </div>
+
+    <main class="wrap test-main">
+      <section class="view" id="v-speed">
+        <div class="speed">
+          <ol class="exlist" id="exlist"></ol>
+          <div class="player">
+            <div class="phead"><h2 id="exTitle"></h2><p id="exDesc"></p></div>
+            <div class="controls">
+              <div class="bpm">
+                <button id="bpmDown" aria-label="Lower tempo">−</button>
+                <label><input id="bpm" type="number" min="30" max="300" inputmode="numeric" aria-label="Tempo"><span>BPM</span></label>
+                <button id="bpmUp" aria-label="Raise tempo">+</button>
+              </div>
+              <label class="sel">Repeats
+                <select id="loops"><option value="1">1</option><option value="2" selected>2</option><option value="4">4</option><option value="999">Continuous</option></select>
+              </label>
+              <label class="chk"><input type="checkbox" id="playNotes" checked> Play the notes too</label>
+              <label class="chk"><input type="checkbox" id="clickOn" checked> Metronome</label>
+              <button id="go" class="go">Start</button>
+            </div>
+            <p class="hint">Tip: the space bar starts and stops playback. To push yourself, turn off “Play the notes too” and play against the metronome alone.</p>
+            <div class="stage">
+              <div class="countin" id="countin" aria-live="polite"></div>
+              <div class="tabwrap" id="tabwrap"></div>
+            </div>
+            <div class="rate" id="rate" hidden>
+              <p id="rateQ">How did that tempo feel?</p>
+              <div class="rbtns">
+                <button class="btn good" data-r="ok">Clean and comfortable</button>
+                <button class="btn mid" data-r="hard">Struggled, made mistakes</button>
+                <button class="btn badb" data-r="fail">Couldn’t keep up</button>
+              </div>
+            </div>
+            <p class="msg" id="msg" aria-live="polite"></p>
+            <div class="row">
+              <button class="btn" id="nextEx">Next test</button>
+              <button class="linkbtn" id="resetEx">Reset this test</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="v-ear" hidden>
+        <div class="two">
+          <div class="block">
+            <h2>Interval recognition</h2>
+            <p>Two notes play one after the other. Pick the distance between them. 10 questions; replay as often as you like.</p>
+            <div class="row">
+              <button class="btn primary" id="qstart">Start the test</button>
+              <button class="btn" id="qplay" disabled>Play again</button>
+            </div>
+            <div class="qhead"><span id="qnum">Question –</span><span id="qscore"></span></div>
+            <div class="opts" id="qopts"></div>
+            <p class="msg" id="qfb"></p>
+            <button class="btn" id="qnext" hidden>Next question</button>
+          </div>
+          <div class="block">
+            <h2>Play what you hear</h2>
+            <p>First listen to the reference A (6th string, 5th fret). Then listen to the short phrase and find it on your guitar. When you think you have it, reveal the tab to check. Everything is in A minor pentatonic.</p>
+            <div class="qhead"><span id="mnum"></span><span id="mscore"></span></div>
+            <div class="row">
+              <button class="btn" id="mref">Reference A</button>
+              <button class="btn primary" id="mplay">Play the phrase</button>
+              <button class="btn" id="mshow">Show the tab</button>
+            </div>
+            <div class="mtab tabwrap" id="mtab"></div>
+            <div class="rbtns" id="mrate" hidden>
+              <button class="btn good" data-m="2">Got it right</button>
+              <button class="btn mid" data-m="1">Partly</button>
+              <button class="btn badb" data-m="0">Couldn’t find it</button>
+            </div>
+            <p class="msg" id="mfb"></p>
+            <button class="linkbtn" id="mreset">Reset this section</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="v-improv" hidden>
+        <div class="two">
+          <div class="block">
+            <h2>One-minute improvisation</h2>
+            <p>Start the A drone and play A minor pentatonic for a full minute without stopping. Recording yourself on your phone helps a lot: on playback you’ll hear whether you fall into repetition and whether your phrases breathe.</p>
+            <div class="row">
+              <button class="btn primary" id="drone">Start the drone</button>
+              <span class="timer" id="dtimer">1:00</span>
+            </div>
+          </div>
+          <div class="block">
+            <h2>What you can really do</h2>
+            <p>Only tick what you could do right now if you picked up the guitar today.</p>
+            <ul class="checks" id="checks"></ul>
+            <button class="btn primary" id="saveImprov">Save</button>
+            <p class="msg" id="ifb"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="v-result" hidden>
+        <div class="overall"><span class="big" id="ovBig">–</span><span class="sub" id="ovSub"></span></div>
+        <div class="cats" id="cats"></div>
+        <h2 style="margin-bottom:.8rem">Where to start</h2>
+        <div class="recs" id="recs"></div>
+        <div class="row" style="margin-top:1.6rem">
+          <button class="btn primary" id="saveHist">Add today’s result to history</button>
+          <button class="linkbtn" id="resetAll">Reset all tests</button>
+        </div>
+        <ul class="hist" id="hist"></ul>
+      </section>
+    </main>
+  </div>
+
+  <div id="sec-songs" hidden>
+    <div class="wrap">
+      <h1>Song studies</h1>
+      <p class="lede">Practice pieces built around the techniques of well-known solos. Slow them down, loop the bars you’re stuck on, and work them back up to tempo.</p>
+    </div>
+    <main class="wrap test-main">
       <div class="speed">
-        <ol class="exlist" id="exlist"></ol>
-        <div class="player">
-          <div class="phead"><h2 id="exTitle"></h2><p id="exDesc"></p></div>
-          <div class="controls">
-            <div class="bpm">
-              <button id="bpmDown" aria-label="Lower tempo">−</button>
-              <label><input id="bpm" type="number" min="30" max="300" inputmode="numeric" aria-label="Tempo"><span>BPM</span></label>
-              <button id="bpmUp" aria-label="Raise tempo">+</button>
-            </div>
-            <label class="sel">Repeats
-              <select id="loops"><option value="1">1</option><option value="2" selected>2</option><option value="4">4</option><option value="999">Continuous</option></select>
+        <div class="songside">
+          <div class="songlist" id="songList"></div>
+          <div class="mytabs">
+            <h3>Your tabs</h3>
+            <p>Guitar Pro (.gp, .gpx, .gp5, .gp4, .gp3) or MusicXML. Files stay in this browser.</p>
+            <label class="dropzone" id="tabDrop">
+              <input type="file" id="tabFile" accept=".gp,.gpx,.gp3,.gp4,.gp5,.xml,.musicxml,.mxl" multiple hidden>
+              <span class="dz-main">Open a file</span>
+              <span class="dz-sub">or drop it here</span>
             </label>
-            <label class="chk"><input type="checkbox" id="playNotes" checked> Play the notes too</label>
-            <label class="chk"><input type="checkbox" id="clickOn" checked> Metronome</label>
-            <button id="go" class="go">Start</button>
+            <ol class="exlist tablist" id="tabList"></ol>
           </div>
-          <p class="hint">Tip: the space bar starts and stops playback. To push yourself, turn off “Play the notes too” and play against the metronome alone.</p>
+        </div>
+        <div class="player" id="builtinPlayer">
+          <div class="phead">
+            <h2 id="sTitle"></h2>
+            <p id="sMeta"></p>
+          </div>
+          <div class="controls">
+            <div class="speedctl" role="group" aria-label="Playback speed">
+              <div class="speedtop">
+                <span class="speedval"><b id="sPct">60%</b> <span id="sBpm"></span></span>
+                <span class="speedpre">
+                  <button class="btn" data-speed="50">50%</button>
+                  <button class="btn" data-speed="75">75%</button>
+                  <button class="btn" data-speed="100">100%</button>
+                </span>
+              </div>
+              <input type="range" id="sSpeed" min="25" max="125" step="5" value="60" aria-label="Playback speed in percent">
+            </div>
+            <button id="sGo" class="go">Play</button>
+          </div>
+          <div class="controls subctl">
+            <label class="sel">Bars <select id="sFrom" aria-label="First bar"></select></label>
+            <label class="sel">to <select id="sTo" aria-label="Last bar"></select></label>
+            <label class="chk"><input type="checkbox" id="sLoop" checked> Loop</label>
+            <label class="chk"><input type="checkbox" id="sNotesOn" checked> Play the notes</label>
+            <label class="chk"><input type="checkbox" id="sClick" checked> Metronome</label>
+          </div>
+          <p class="hint">Click a bar number to loop that bar; Shift-click to extend the loop. The space bar starts and stops playback.</p>
           <div class="stage">
-            <div class="countin" id="countin" aria-live="polite"></div>
-            <div class="tabwrap" id="tabwrap"></div>
+            <div class="countin" id="sCount" aria-live="polite"></div>
+            <div class="tabwrap songtab" id="sTab"></div>
           </div>
-          <div class="rate" id="rate" hidden>
-            <p id="rateQ">How did that tempo feel?</p>
-            <div class="rbtns">
-              <button class="btn good" data-r="ok">Clean and comfortable</button>
-              <button class="btn mid" data-r="hard">Struggled, made mistakes</button>
-              <button class="btn badb" data-r="fail">Couldn’t keep up</button>
+          <p class="legend">h hammer-on, p pull-off, T tap, / slide, full and ½ bends, rel release (pre-bend, then let down), ~ vibrato, PH pinch harmonic, PM palm mute</p>
+          <div class="study" id="sStudy"></div>
+        </div>
+        <div class="player" id="customPlayer" hidden>
+          <div class="phead">
+            <h2 id="cTitle"></h2>
+            <p id="cMeta"></p>
+          </div>
+          <div class="controls">
+            <div class="speedctl" role="group" aria-label="Playback speed">
+              <div class="speedtop">
+                <span class="speedval"><b id="cPct">100%</b> <span id="cBpm"></span></span>
+                <span class="speedpre">
+                  <button class="btn" data-cspeed="50">50%</button>
+                  <button class="btn" data-cspeed="75">75%</button>
+                  <button class="btn" data-cspeed="100">100%</button>
+                </span>
+              </div>
+              <input type="range" id="cSpeed" min="25" max="125" step="5" value="100" aria-label="Playback speed in percent">
+            </div>
+            <div class="playstop">
+              <button id="cGo" class="go" disabled>Play</button>
+              <button id="cStop" class="btn" disabled>Back to start</button>
             </div>
           </div>
-          <p class="msg" id="msg" aria-live="polite"></p>
-          <div class="row">
-            <button class="btn" id="nextEx">Next test</button>
-            <button class="linkbtn" id="resetEx">Reset this test</button>
+          <div class="controls subctl">
+            <label class="sel">Track <select id="cTrack" aria-label="Track to show"></select></label>
+            <label class="chk"><input type="checkbox" id="cSolo"> Only this track</label>
+            <label class="chk"><input type="checkbox" id="cLoop"> Loop</label>
+            <label class="chk"><input type="checkbox" id="cClick"> Metronome</label>
+            <label class="chk"><input type="checkbox" id="cCount"> Count-in</label>
+            <label class="chk"><input type="checkbox" id="cScore"> Standard notation</label>
           </div>
+          <p class="hint">Click a note to start from there. Drag across bars to select a section; with Loop on, playback repeats it. The space bar plays and pauses. <span class="ctime" id="cTime"></span></p>
+          <p class="msg" id="cStatus" aria-live="polite"></p>
+          <div class="atwrap" id="cWrap"><div id="cScoreEl"></div></div>
         </div>
       </div>
-    </section>
-
-    <section class="view" id="v-ear" hidden>
-      <div class="two">
-        <div class="block">
-          <h2>Interval recognition</h2>
-          <p>Two notes play one after the other. Pick the distance between them. 10 questions; replay as often as you like.</p>
-          <div class="row">
-            <button class="btn primary" id="qstart">Start the test</button>
-            <button class="btn" id="qplay" disabled>Play again</button>
-          </div>
-          <div class="qhead"><span id="qnum">Question –</span><span id="qscore"></span></div>
-          <div class="opts" id="qopts"></div>
-          <p class="msg" id="qfb"></p>
-          <button class="btn" id="qnext" hidden>Next question</button>
-        </div>
-        <div class="block">
-          <h2>Play what you hear</h2>
-          <p>First listen to the reference A (6th string, 5th fret). Then listen to the short phrase and find it on your guitar. When you think you have it, reveal the tab to check. Everything is in A minor pentatonic.</p>
-          <div class="qhead"><span id="mnum"></span><span id="mscore"></span></div>
-          <div class="row">
-            <button class="btn" id="mref">Reference A</button>
-            <button class="btn primary" id="mplay">Play the phrase</button>
-            <button class="btn" id="mshow">Show the tab</button>
-          </div>
-          <div class="mtab tabwrap" id="mtab"></div>
-          <div class="rbtns" id="mrate" hidden>
-            <button class="btn good" data-m="2">Got it right</button>
-            <button class="btn mid" data-m="1">Partly</button>
-            <button class="btn badb" data-m="0">Couldn’t find it</button>
-          </div>
-          <p class="msg" id="mfb"></p>
-          <button class="linkbtn" id="mreset">Reset this section</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="view" id="v-improv" hidden>
-      <div class="two">
-        <div class="block">
-          <h2>One-minute improvisation</h2>
-          <p>Start the A drone and play A minor pentatonic for a full minute without stopping. Recording yourself on your phone helps a lot: on playback you’ll hear whether you fall into repetition and whether your phrases breathe.</p>
-          <div class="row">
-            <button class="btn primary" id="drone">Start the drone</button>
-            <span class="timer" id="dtimer">1:00</span>
-          </div>
-        </div>
-        <div class="block">
-          <h2>What you can really do</h2>
-          <p>Only tick what you could do right now if you picked up the guitar today.</p>
-          <ul class="checks" id="checks"></ul>
-          <button class="btn primary" id="saveImprov">Save</button>
-          <p class="msg" id="ifb"></p>
-        </div>
-      </div>
-    </section>
-
-    <section class="view" id="v-result" hidden>
-      <div class="overall"><span class="big" id="ovBig">–</span><span class="sub" id="ovSub"></span></div>
-      <div class="cats" id="cats"></div>
-      <h2 style="margin-bottom:.8rem">Where to start</h2>
-      <div class="recs" id="recs"></div>
-      <div class="row" style="margin-top:1.6rem">
-        <button class="btn primary" id="saveHist">Add today’s result to history</button>
-        <button class="linkbtn" id="resetAll">Reset all tests</button>
-      </div>
-      <ul class="hist" id="hist"></ul>
-    </section>
-  </main>
+    </main>
+  </div>
 </section>
 
 <script src="js/tuner.js"></script>
 <script src="js/level-test.js"></script>
+<script src="js/songs.js"></script>
+<script src="js/custom-tabs.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

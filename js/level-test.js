@@ -283,7 +283,7 @@
 
     goBtn.onclick = () => { playing ? finish(false) : start(); };
     document.addEventListener("keydown", (e) => {
-        if (e.code !== "Space" || $("page-test").hidden || $("v-speed").hidden) return;
+        if (e.code !== "Space" || !$("v-speed").offsetParent) return;
         if (["INPUT", "SELECT", "BUTTON", "TEXTAREA"].includes(e.target.tagName)) return;
         e.preventDefault();
         playing ? finish(false) : start();
