@@ -52,7 +52,7 @@
     if (p !== "learn") pauseLearn(null);
     if (p === "tuner" && window.tuner) window.tuner.resize();
     if (p === "learn") setSection(section);
-    document.title = p === "learn" ? "Learn – 7uner" : "7uner – chromatic tuner";
+    document.title = p === "learn" ? "Learn – 7uner" : "7uner";
   }
 
   window.addEventListener("hashchange", go);
