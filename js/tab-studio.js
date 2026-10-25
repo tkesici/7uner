@@ -27,7 +27,7 @@
         edit: $("cEdit"), editPill: $("cEditPill"), dirty: $("cDirty"), save: $("cSave"), download: $("cDownload"),
         go: $("cGo"), stop: $("cStop"), pct: $("cPct"), bpm: $("cBpm"), speed: $("cSpeed"),
         track: $("cTrack"), click: $("cClick"), count: $("cCount"), notation: $("cScore"),
-        loop: $("cLoop"), loopPill: $("cLoopPill"), from: $("cFrom"), to: $("cTo"), clear: $("cClear"),
+        loopInfo: $("cLoopInfo"), loopPill: $("cLoopPill"),
         eBar: $("eBar"), ePos: $("ePos"), eFret: $("eFret"),
         wrap: $("cWrap"), score: $("cScoreEl")
     };
@@ -39,6 +39,8 @@
     const mmss = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
     const escapeHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     const AT = () => window.alphaTab;
+    const isOn = (b) => b.getAttribute("aria-pressed") === "true";
+    const setOn = (b, on) => b.setAttribute("aria-pressed", on ? "true" : "false");
 
     /* ---------- preferences ---------- */
     const PKEY = "7uner.tabstudio.v1";
@@ -162,7 +164,7 @@
         el.score.innerHTML = "";
         api = new (AT().AlphaTabApi)(el.score, {
             core: { scriptFile: AT_BASE + "alphaTab.min.js", fontDirectory: AT_BASE + "font/", includeNoteBounds: true },
-            display: { staveProfile: el.notation.checked ? "ScoreTab" : "Tab", layoutMode: "Page", resources: colors() },
+            display: { staveProfile: isOn(el.notation) ? "ScoreTab" : "Tab", layoutMode: "Page", resources: colors() },
             player: {
                 // the script-processor output needs no extra module download, so it also
                 // works where loading an audio worklet from the CDN is blocked
@@ -191,6 +193,8 @@
         });
         api.playerPositionChanged.on((e) => { el.time.textContent = mmss(e.currentTime) + " / " + mmss(e.endTime); });
         api.playbackRangeHighlightChanged.on(onRangeHighlight);
+        api.playbackRangeChanged.on((e) => setLoopState(!!(e && e.playbackRange)));
+        api.renderStarted.on(() => { rendering = true; });
         api.noteMouseDown.on(onNoteDown);
         api.beatMouseDown.on(onBeatDown);
         api.error.on(() => { setStatus("Couldn’t open this file. Supported formats: Guitar Pro 3–8 (.gp3, .gp4, .gp5, .gpx, .gp) and MusicXML.", true); });
@@ -230,9 +234,7 @@
         el.track.disabled = guitarTracks.length < 2;
         trackIdx = 0;
 
-        const opts = score.masterBars.map((_, i) => '<option value="' + (i + 1) + '">' + (i + 1) + "</option>").join("");
-        el.from.innerHTML = opts; el.to.innerHTML = opts;
-        loopBars = null; syncLoopSelects();
+        loopBars = null; setLoopState(false); drawLoopMarks(null);
 
         if (guitarTracks.length && score.tracks[0] !== guitarTracks[0]) api.renderTracks([guitarTracks[0]]);
         applySpeed();
@@ -257,11 +259,11 @@
         prefs.speed = pct; savePrefs();
     }
     function applyPlayerOptions() {
+        prefs.click = isOn(el.click); prefs.count = isOn(el.count); savePrefs();
         if (!api) return;
-        api.isLooping = el.loop.getAttribute("aria-pressed") === "true";
-        api.metronomeVolume = el.click.checked ? 1 : 0;
-        api.countInVolume = el.count.checked ? 1 : 0;
-        prefs.click = el.click.checked; prefs.count = el.count.checked; savePrefs();
+        api.isLooping = loopOn;
+        api.metronomeVolume = prefs.click ? 1 : 0;
+        api.countInVolume = prefs.count ? 1 : 0;
     }
     function level(key) { return prefs.muted[key] ? 0 : prefs[key] / 100; }
     function applyVolumes() {
@@ -275,19 +277,17 @@
         if (rest.length) api.changeTrackVolume(rest, level("backing"));
     }
 
-    /* ---------- loop ---------- */
-    let loopBars = null; // { a, b } 1-based bar numbers, or null for the whole song
+    /* ---------- loop ----------
+       Dragging across bars sets a playback range, which alphaTab loops; a click
+       in the tab clears it. The Loop chip only reports that state. */
+    let loopBars = null, loopOn = false, rendering = false;
 
-    function setLoopOn(on) {
-        el.loop.setAttribute("aria-pressed", on ? "true" : "false");
+    function setLoopState(on) {
+        loopOn = on;
+        el.loopInfo.classList.toggle("on", on);
         el.loopPill.textContent = on ? "ON" : "OFF";
-        applyPlayerOptions();
-    }
-    function syncLoopSelects() {
-        if (!api || !api.score) return;
-        const n = api.score.masterBars.length;
-        el.from.value = loopBars ? loopBars.a : 1;
-        el.to.value = loopBars ? loopBars.b : n;
+        if (api) api.isLooping = on;
+        if (!on) { loopBars = null; drawLoopMarks(null); }
     }
     function beatsForBars(a, b) {
         const t = curTrack();
@@ -297,38 +297,11 @@
         const fb = first.voices[0].beats, lb = last.voices[0].beats;
         return { start: fb[0], end: lb[lb.length - 1] };
     }
-    function setLoopBars(a, b, apply) {
-        if (!api || !api.score) return;
-        const n = api.score.masterBars.length;
-        a = Math.max(1, Math.min(n, a)); b = Math.max(a, Math.min(n, b));
-        if (a === 1 && b === n) { clearLoop(); return; }
-        loopBars = { a, b };
-        const bt = beatsForBars(a, b);
-        if (bt && bt.start !== bt.end) {
-            api.highlightPlaybackRange(bt.start, bt.end);
-            if (apply !== false) api.applyPlaybackRangeFromHighlight();
-        } else if (bt) {
-            // a single-beat bar: set the range directly
-            const mb = api.score.masterBars[a - 1], range = new (AT().synth.PlaybackRange)();
-            range.startTick = mb.start; range.endTick = mb.start + mb.calculateDuration() - 50;
-            api.playbackRange = range;
-            drawLoopMarks(null);
-        }
-        syncLoopSelects();
-        if (apply !== false) setLoopOn(true);
-    }
-    function clearLoop() {
-        loopBars = null;
-        if (api) { api.playbackRange = null; api.clearPlaybackRangeHighlight(); }
-        drawLoopMarks(null);
-        syncLoopSelects();
-    }
     function onRangeHighlight(e) {
         if (e && e.startBeat && e.endBeat) {
             loopBars = { a: e.startBeat.voice.bar.index + 1, b: e.endBeat.voice.bar.index + 1 };
-            syncLoopSelects();
             drawLoopMarks(e.highlightBlocks);
-        } else {
+        } else if (!rendering) {
             drawLoopMarks(null);
         }
     }
@@ -376,7 +349,7 @@
         el.player.classList.toggle("editing", on);
         if (on) {
             if (api && playing) api.pause();
-            if (el.notation.checked) { el.notation.checked = false; applyNotation(); }
+            if (isOn(el.notation)) { setOn(el.notation, false); applyNotation(); }
             el.notation.disabled = true;
             if (!ed.beat) {
                 const t = curTrack();
@@ -422,8 +395,9 @@
     }
 
     function onRenderFinished() {
+        rendering = false;
         if (!ready && !el.status.classList.contains("err")) setStatus("Loading sounds…");
-        if (loopBars) {
+        if (loopBars && loopOn) {
             const bt = beatsForBars(loopBars.a, loopBars.b);
             if (bt && bt.start !== bt.end) api.highlightPlaybackRange(bt.start, bt.end);
         }
@@ -581,7 +555,7 @@
         const blob = new Blob([bytes], { type: "application/octet-stream" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = baseName(current ? current.name : "tab") + (ed.dirty || (current && current.edited) ? "-edited" : "") + ".gp";
+        a.download = baseName(current ? current.name : "tab").replace(/-edited$/, "") + (ed.dirty || (current && current.edited) ? "-edited" : "") + ".gp";
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     }
@@ -636,13 +610,13 @@
 
     function applyNotation() {
         if (!api) return;
-        api.settings.display.staveProfile = el.notation.checked ? AT().StaveProfile.ScoreTab : AT().StaveProfile.Tab;
+        api.settings.display.staveProfile = isOn(el.notation) ? AT().StaveProfile.ScoreTab : AT().StaveProfile.Tab;
         api.updateSettings();
         api.render();
     }
 
     /* ---------- wiring ---------- */
-    el.speed.value = prefs.speed; el.click.checked = prefs.click; el.count.checked = prefs.count;
+    el.speed.value = prefs.speed; setOn(el.click, prefs.click); setOn(el.count, prefs.count);
     el.pct.textContent = prefs.speed + "%";
     applyVolumes();
 
@@ -673,14 +647,9 @@
         ed.string = nStrings();
         applyVolumes(); updateEditBar();
     });
-    el.click.addEventListener("change", applyPlayerOptions);
-    el.count.addEventListener("change", applyPlayerOptions);
-    el.notation.addEventListener("change", applyNotation);
-
-    el.loop.addEventListener("click", () => setLoopOn(el.loop.getAttribute("aria-pressed") !== "true"));
-    el.from.addEventListener("change", () => setLoopBars(+el.from.value, Math.max(+el.from.value, +el.to.value)));
-    el.to.addEventListener("change", () => setLoopBars(Math.min(+el.from.value, +el.to.value), +el.to.value));
-    el.clear.addEventListener("click", clearLoop);
+    el.click.addEventListener("click", () => { setOn(el.click, !isOn(el.click)); applyPlayerOptions(); });
+    el.count.addEventListener("click", () => { setOn(el.count, !isOn(el.count)); applyPlayerOptions(); });
+    el.notation.addEventListener("click", () => { if (el.notation.disabled) return; setOn(el.notation, !isOn(el.notation)); applyNotation(); });
 
     Object.keys(vol).forEach((k) => vol[k].addEventListener("input", () => {
         prefs[k] = +vol[k].value;

@@ -95,7 +95,7 @@
     labL: $("tLabL"), labR: $("tLabR"), panel: $("tGuitar"),
     preset: $("tPreset"), auto: $("tAuto"), autoPill: $("tAutoPill"), pegsL: $("pegsL"), pegsR: $("pegsR"), head: $("tHead"),
     canvas: $("tTrace"), cover: $("tCover"), start: $("tStart"), status: $("tStatus"), stop: $("tStop"),
-    a4: $("a4"), a4d: $("a4Down"), a4u: $("a4Up"), a4r: $("a4Reset")
+    a4: $("a4"), a4d: $("a4Down"), a4u: $("a4Up"), presetWrap: $("tPresetWrap")
   };
 
   /* ---------- settings ---------- */
@@ -230,6 +230,7 @@
   const DEFS =
       '<defs>' +
       '<linearGradient id="hsBlack" x1="0" x2="1"><stop offset="0" stop-color="#17191D"/><stop offset=".5" stop-color="#2E3238"/><stop offset="1" stop-color="#17191D"/></linearGradient>' +
+      '<linearGradient id="hsGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F7E08A"/><stop offset=".55" stop-color="#D4AF37"/><stop offset="1" stop-color="#A97C1E"/></linearGradient>' +
       '<linearGradient id="hsWhite" x1="0" x2="1"><stop offset="0" stop-color="#E4E6EA"/><stop offset=".5" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4E6EA"/></linearGradient>' +
       '<linearGradient id="hsMahogany" x1="0" x2="1"><stop offset="0" stop-color="#5A2E16"/><stop offset=".5" stop-color="#8A4E28"/><stop offset="1" stop-color="#5A2E16"/></linearGradient>' +
       '<linearGradient id="hsVarnish" x1="0" x2="1"><stop offset="0" stop-color="#6E2A0C"/><stop offset=".5" stop-color="#B85A1F"/><stop offset="1" stop-color="#6E2A0C"/></linearGradient>' +
@@ -264,8 +265,8 @@
       posts: [[70, 190], [70, 130], [70, 70], [130, 70], [130, 130], [130, 190]],
       nut: [66, 79.6, 93.2, 106.8, 120.4, 134], gauge: [2.8, 2.3, 1.9, 1.5, 1.2, 1], post: 6.5,
       knob: { inner: 44, w: 26, h: 20, r: 8, shaft: 18, sh: 5, fill: "#D3D6DB", stroke: "#7D838C" },
-      shape: "M58 248 L48 46 Q46 16 74 12 L100 22 L126 12 Q154 16 152 46 L142 248 Z", wood: "hsWhite", light: true,
-      logo: logo(46, 19, "#111318"), neck: [60, 140]
+      shape: "M58 248 L48 46 Q46 16 74 12 L100 22 L126 12 Q154 16 152 46 L142 248 Z", wood: "hsBlack",
+      logo: logo(46, 19, "url(#hsGold)"), neck: [60, 140]
     }),
     bass: () => machineHead({
       posts: [[66, 175], [66, 100], [134, 100], [134, 175]],
@@ -446,6 +447,8 @@
       b.tabIndex = on ? 0 : -1;
     });
     el.panel.hidden = !instr();
+    el.presetWrap.hidden = !instr();
+    el.auto.hidden = !instr();
     el.root.classList.toggle("mode-instrument", !!instr());
     buildInstrument();
     el.labL.textContent = "−" + c.range;
@@ -672,7 +675,6 @@
   el.a4.addEventListener("change", () => setA4(el.a4.value));
   el.a4d.addEventListener("click", () => setA4(st.a4 - 1));
   el.a4u.addEventListener("click", () => setA4(st.a4 + 1));
-  el.a4r.addEventListener("click", () => setA4(440));
   window.addEventListener("resize", resize);
   document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); });
 
