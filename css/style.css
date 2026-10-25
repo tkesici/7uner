@@ -121,8 +121,10 @@ button{cursor:pointer}
 .pn[aria-pressed="true"]{box-shadow:0 0 0 2px var(--blue)}
 .gstr{fill:none;stroke:#B9BEC6;stroke-linecap:round;transition:stroke .15s}
 .gstr.tuned{stroke:#8FCBA6}
-.gstr.active{stroke:var(--amber);filter:drop-shadow(0 0 3px var(--amber))}
-.gstr.in{stroke:var(--ok);filter:drop-shadow(0 0 4px var(--ok))}
+.headstock.light .gstr{stroke:#7E848D}
+.headstock.light .gstr.tuned{stroke:#4FA672}
+.headstock .gstr.active{stroke:var(--amber);filter:drop-shadow(0 0 3px var(--amber))}
+.headstock .gstr.in{stroke:var(--ok);filter:drop-shadow(0 0 4px var(--ok))}
 @media (max-width:480px){
   .gbody{--hw:118px}
   .pm{width:1.6rem;height:1.6rem;font-size:1rem}

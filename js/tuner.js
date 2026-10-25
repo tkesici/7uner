@@ -230,13 +230,14 @@
   const DEFS =
       '<defs>' +
       '<linearGradient id="hsBlack" x1="0" x2="1"><stop offset="0" stop-color="#17191D"/><stop offset=".5" stop-color="#2E3238"/><stop offset="1" stop-color="#17191D"/></linearGradient>' +
+      '<linearGradient id="hsWhite" x1="0" x2="1"><stop offset="0" stop-color="#E4E6EA"/><stop offset=".5" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4E6EA"/></linearGradient>' +
       '<linearGradient id="hsMahogany" x1="0" x2="1"><stop offset="0" stop-color="#5A2E16"/><stop offset=".5" stop-color="#8A4E28"/><stop offset="1" stop-color="#5A2E16"/></linearGradient>' +
       '<linearGradient id="hsVarnish" x1="0" x2="1"><stop offset="0" stop-color="#6E2A0C"/><stop offset=".5" stop-color="#B85A1F"/><stop offset="1" stop-color="#6E2A0C"/></linearGradient>' +
       '<linearGradient id="hsRosewood" x1="0" x2="1"><stop offset="0" stop-color="#3A2315"/><stop offset=".5" stop-color="#5C3B24"/><stop offset="1" stop-color="#3A2315"/></linearGradient>' +
       '<linearGradient id="hsEbony" x1="0" x2="1"><stop offset="0" stop-color="#0E0E10"/><stop offset=".5" stop-color="#26262A"/><stop offset="1" stop-color="#0E0E10"/></linearGradient>' +
       '</defs>';
 
-  const logo = (y, size) => '<text x="100" y="' + y + '" text-anchor="middle" fill="#F2B33D" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="' + size + '">7uner</text>';
+  const logo = (y, size, color) => '<text x="100" y="' + y + '" text-anchor="middle" fill="' + (color || "#F2B33D") + '" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="' + size + '">7uner</text>';
   const strPath = (i, x, y, nx, w) => '<path class="gstr" data-i="' + i + '" stroke-width="' + w + '" d="M' + x + " " + y + " L" + nx + " 249 L" + nx + ' 320"/>';
 
   // machine-head style headstock (guitar, bass, ukulele)
@@ -250,7 +251,7 @@
       strs += strPath(i, x, y, o.nut[i], o.gauge[i]);
       posts += '<circle cx="' + x + '" cy="' + y + '" r="' + o.post + '" fill="#D3D6DB" stroke="#5E646C" stroke-width="1"/><circle cx="' + x + '" cy="' + y + '" r="' + o.post / 3 + '" fill="#5E646C"/>';
     });
-    return '<svg class="headstock" viewBox="0 0 200 320" aria-hidden="true">' + DEFS + knobs +
+    return '<svg class="headstock' + (o.light ? " light" : "") + '" viewBox="0 0 200 320" aria-hidden="true">' + DEFS + knobs +
         '<path d="' + o.shape + '" fill="url(#' + o.wood + ')" stroke="#0B0C0E" stroke-width="1.5"/>' + o.logo +
         '<rect x="' + o.neck[0] + '" y="252" width="' + (o.neck[1] - o.neck[0]) + '" height="70" fill="url(#hsRosewood)"/>' +
         '<rect x="' + o.neck[0] + '" y="294" width="' + (o.neck[1] - o.neck[0]) + '" height="3" fill="#C9CCD1"/>' +
@@ -263,8 +264,8 @@
       posts: [[70, 190], [70, 130], [70, 70], [130, 70], [130, 130], [130, 190]],
       nut: [66, 79.6, 93.2, 106.8, 120.4, 134], gauge: [2.8, 2.3, 1.9, 1.5, 1.2, 1], post: 6.5,
       knob: { inner: 44, w: 26, h: 20, r: 8, shaft: 18, sh: 5, fill: "#D3D6DB", stroke: "#7D838C" },
-      shape: "M58 248 L48 46 Q46 16 74 12 L100 22 L126 12 Q154 16 152 46 L142 248 Z", wood: "hsBlack",
-      logo: logo(46, 19), neck: [60, 140]
+      shape: "M58 248 L48 46 Q46 16 74 12 L100 22 L126 12 Q154 16 152 46 L142 248 Z", wood: "hsWhite", light: true,
+      logo: logo(46, 19, "#111318"), neck: [60, 140]
     }),
     bass: () => machineHead({
       posts: [[66, 175], [66, 100], [134, 100], [134, 175]],
@@ -330,7 +331,11 @@
           '<button class="pn" aria-pressed="false" aria-label="Lock to string ' + num + '"><span class="pnote"></span><span class="poff"></span></button>' +
           '<button class="pm" data-d="1" aria-label="Tune string ' + num + ' up a semitone">+</button>';
       d.querySelectorAll(".pm").forEach((b) => b.addEventListener("click", () => setOffset(i, offs()[i] + +b.dataset.d)));
-      d.querySelector(".pn").addEventListener("click", () => setLock(lock === i ? null : i));
+      d.querySelector(".pn").addEventListener("click", () => {
+        const next = lock === i ? null : i;
+        setLock(next);
+        if (next !== null) playRef(next);
+      });
       pegEls[i] = d;
       return d;
     };
@@ -368,6 +373,40 @@
     save(); renderPegs(); resetReading();
   }
   function setLock(i) { lock = i; resetReading(); renderPegs(); }
+
+  /* Reference tone: when a string is locked, play its target pitch once for
+     about a second. The tuner ignores the microphone while it sounds, so it
+     doesn't tune to its own reference. */
+  const REF_SEC = 1;
+  let outCtx = null, muteUntil = 0;
+  function playRef(i) {
+    try {
+      if (!outCtx) outCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (outCtx.state === "suspended") outCtx.resume();
+    } catch (e) { return; }
+    const t = outCtx.currentTime + 0.02, f = mtof(target(i)), bowed = st.mode === "violin";
+    const o = outCtx.createOscillator(), o2 = outCtx.createOscillator();
+    const lp = outCtx.createBiquadFilter(), g = outCtx.createGain();
+    o.type = "sawtooth"; o.frequency.value = f;
+    o2.type = "triangle"; o2.frequency.value = f;
+    lp.type = "lowpass"; lp.Q.value = 0.7;
+    g.gain.setValueAtTime(0.0001, t);
+    if (bowed) {
+      lp.frequency.setValueAtTime(Math.min(8000, f * 6), t);
+      g.gain.exponentialRampToValueAtTime(0.14, t + 0.08);
+      g.gain.setValueAtTime(0.14, t + REF_SEC - 0.18);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + REF_SEC);
+    } else {
+      lp.frequency.setValueAtTime(Math.min(9000, Math.max(1200, f * 10)), t);
+      lp.frequency.exponentialRampToValueAtTime(Math.max(300, f * 2), t + REF_SEC);
+      g.gain.exponentialRampToValueAtTime(0.22, t + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + REF_SEC);
+    }
+    o.connect(lp); o2.connect(lp); lp.connect(g).connect(outCtx.destination);
+    o.start(t); o2.start(t);
+    o.stop(t + REF_SEC + 0.05); o2.stop(t + REF_SEC + 0.05);
+    muteUntil = performance.now() + (REF_SEC + 0.2) * 1000;
+  }
 
   function highlight(idx, inTune) {
     for (let k = 0; k < pegEls.length; k++) {
@@ -505,6 +544,7 @@
     raf = requestAnimationFrame(loop);
     if (now - lastTick < TICK_MS) return;
     lastTick = now;
+    if (now < muteUntil) { prevRms = 0; skip = 0; return; }
     const c = cfg();
     analyser.getFloatTimeDomainData(buf);
     const r = detect(buf, ctx.sampleRate, c);
