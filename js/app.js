@@ -1,5 +1,5 @@
 /* 7uner – page switching (#tuner, #learn), the Learn instrument picker
-   and the Learn sections (level test, song studies) */
+   and the Learn sections (level test, tab studio) */
 (function () {
   "use strict";
   const pages = { "tuner": "page-tuner", "learn": "page-test" };
@@ -20,14 +20,13 @@
       "<span>" + m.label + "</span></button>").join("");
 
   /* Learn: sections */
-  const SECTIONS = ["test", "songs"];
+  const SECTIONS = ["test", "tabs"];
   let section = "test";
   try { const v = sessionStorage.getItem("7uner.learnSection"); if (SECTIONS.includes(v)) section = v; } catch (e) {}
 
   function pauseLearn(except) {
     if (except !== "test" && window.levelTest) window.levelTest.pause();
-    if (except !== "songs" && window.songStudies) window.songStudies.pause();
-    if (except !== "songs" && window.customTabs) window.customTabs.pause();
+    if (except !== "tabs" && window.tabStudio) window.tabStudio.pause();
   }
 
   function setSection(sec) {
@@ -36,7 +35,6 @@
     SECTIONS.forEach((k) => { document.getElementById("sec-" + k).hidden = k !== sec; });
     document.querySelectorAll("#learnNav button").forEach((b) => b.setAttribute("aria-selected", b.dataset.sec === sec ? "true" : "false"));
     pauseLearn(sec);
-    if (sec === "songs" && window.songStudies) window.songStudies.refresh();
   }
   document.querySelectorAll("#learnNav button").forEach((b) => b.addEventListener("click", () => setSection(b.dataset.sec)));
 

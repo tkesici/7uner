@@ -4,15 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3d690bae-c403-47d3-ab78-9a8710c1b7fb" name="Changes" comment="Enhance tuner UI with updated title and improved auto-detect button functionality">
-      <change afterPath="$PROJECT_DIR$/js/custom-tabs.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/js/songs.js" afterDir="false" />
+    <list default="true" id="3d690bae-c403-47d3-ab78-9a8710c1b7fb" name="Changes" comment="Update document title for tuner mode to improve clarity">
+      <change afterPath="$PROJECT_DIR$/js/tab-studio.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/css/style.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/js/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/app.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/js/level-test.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/level-test.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/js/custom-tabs.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/js/songs.js" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -139,7 +139,7 @@
       <workItem from="1771867030703" duration="622000" />
       <workItem from="1776266907355" duration="142000" />
       <workItem from="1792942215184" duration="2894000" />
-      <workItem from="1792946860463" duration="1377000" />
+      <workItem from="1792946860463" duration="3266000" />
     </task>
     <task id="LOCAL-00001" summary="Add ads.txt for Google AdSense configuration">
       <option name="closed" value="true" />
@@ -285,7 +285,23 @@
       <option name="project" value="LOCAL" />
       <updated>1792945104455</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="Enhance learn mode with new sections for level test and song studies, and update UI for improved navigation">
+      <option name="closed" value="true" />
+      <created>1792948461467</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1792948461467</updated>
+    </task>
+    <task id="LOCAL-00020" summary="Update document title for tuner mode to improve clarity">
+      <option name="closed" value="true" />
+      <created>1792948483354</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1792948483354</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -331,6 +347,8 @@
     <MESSAGE value="Implement learn mode with instrument picker and UI updates for enhanced user experience" />
     <MESSAGE value="Enhance tuner UI with new headstock styles and add reference tone playback feature" />
     <MESSAGE value="Enhance tuner UI with updated title and improved auto-detect button functionality" />
-    <option name="LAST_COMMIT_MESSAGE" value="Enhance tuner UI with updated title and improved auto-detect button functionality" />
+    <MESSAGE value="Enhance learn mode with new sections for level test and song studies, and update UI for improved navigation" />
+    <MESSAGE value="Update document title for tuner mode to improve clarity" />
+    <option name="LAST_COMMIT_MESSAGE" value="Update document title for tuner mode to improve clarity" />
   </component>
 </project>

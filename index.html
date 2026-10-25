@@ -81,7 +81,7 @@
       <div class="modes learn-modes" id="lModes" role="radiogroup" aria-label="Instrument"></div>
       <nav class="learnnav" id="learnNav" role="tablist" aria-label="Learn sections">
         <button role="tab" data-sec="test" aria-selected="true">Level test</button>
-        <button role="tab" data-sec="songs" aria-selected="false">Song studies</button>
+        <button role="tab" data-sec="tabs" aria-selected="false">Tab studio</button>
       </nav>
     </div>
   </div>
@@ -208,66 +208,51 @@
     </main>
   </div>
 
-  <div id="sec-songs" hidden>
+  <div id="sec-tabs" hidden>
     <div class="wrap">
-      <h1>Song studies</h1>
-      <p class="lede">Practice pieces built around the techniques of well-known solos. Slow them down, loop the bars you’re stuck on, and work them back up to tempo.</p>
+      <h1>Tab studio</h1>
+      <p class="lede">Open a Guitar Pro file to play it, slow it down and loop a passage, or switch on edit mode to change the tab and download it again.</p>
     </div>
     <main class="wrap test-main">
-      <div class="speed">
-        <div class="songside">
-          <div class="songlist" id="songList"></div>
-          <div class="mytabs">
-            <h3>Your tabs</h3>
-            <p>Guitar Pro (.gp, .gpx, .gp5, .gp4, .gp3) or MusicXML. Files stay in this browser.</p>
-            <label class="dropzone" id="tabDrop">
+      <div class="studio">
+        <aside class="tabside">
+          <div class="tabside-head">
+            <h3>Your files</h3>
+            <label class="btn addfile" id="tabAdd">
               <input type="file" id="tabFile" accept=".gp,.gpx,.gp3,.gp4,.gp5,.xml,.musicxml,.mxl" multiple hidden>
-              <span class="dz-main">Open a file</span>
-              <span class="dz-sub">or drop it here</span>
+              + Add file
             </label>
-            <ol class="exlist tablist" id="tabList"></ol>
           </div>
-        </div>
-        <div class="player" id="builtinPlayer">
-          <div class="phead">
-            <h2 id="sTitle"></h2>
-            <p id="sMeta"></p>
-          </div>
-          <div class="controls">
-            <div class="speedctl" role="group" aria-label="Playback speed">
-              <div class="speedtop">
-                <span class="speedval"><b id="sPct">60%</b> <span id="sBpm"></span></span>
-                <span class="speedpre">
-                  <button class="btn" data-speed="50">50%</button>
-                  <button class="btn" data-speed="75">75%</button>
-                  <button class="btn" data-speed="100">100%</button>
-                </span>
-              </div>
-              <input type="range" id="sSpeed" min="25" max="125" step="5" value="60" aria-label="Playback speed in percent">
+          <p class="hint">Guitar Pro 3–8 or MusicXML. Files stay in this browser.</p>
+          <ol class="exlist tablist" id="tabList"></ol>
+        </aside>
+
+        <label class="emptystate" id="tabEmpty">
+          <span class="es-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M10 6h20l8 8v28H10z"/><path d="M30 6v8h8"/><path d="M16 22h16M16 28h16M16 34h16"/><path d="M24 16v-2"/></svg></span>
+          <span class="es-main">Add a Guitar Pro file</span>
+          <span class="es-sub">Drop a .gp, .gpx, .gp5, .gp4, .gp3 or MusicXML file here, or click to choose one.</span>
+        </label>
+
+        <div class="player tabplayer" id="tabPlayer" hidden>
+          <div class="tp-head">
+            <div class="phead">
+              <h2 id="cTitle"></h2>
+              <p id="cMeta"></p>
             </div>
-            <button id="sGo" class="go">Play</button>
+            <div class="tp-actions">
+              <button class="autobtn" id="cEdit" aria-pressed="false"><span>Edit mode</span><span class="pill" id="cEditPill">OFF</span></button>
+              <span class="dirty" id="cDirty" hidden>Unsaved changes</span>
+              <button class="btn" id="cSave" disabled>Save copy</button>
+              <button class="btn" id="cDownload">Download .gp</button>
+            </div>
           </div>
-          <div class="controls subctl">
-            <label class="sel">Bars <select id="sFrom" aria-label="First bar"></select></label>
-            <label class="sel">to <select id="sTo" aria-label="Last bar"></select></label>
-            <label class="chk"><input type="checkbox" id="sLoop" checked> Loop</label>
-            <label class="chk"><input type="checkbox" id="sNotesOn" checked> Play the notes</label>
-            <label class="chk"><input type="checkbox" id="sClick" checked> Metronome</label>
-          </div>
-          <p class="hint">Click a bar number to loop that bar; Shift-click to extend the loop. The space bar starts and stops playback.</p>
-          <div class="stage">
-            <div class="countin" id="sCount" aria-live="polite"></div>
-            <div class="tabwrap songtab" id="sTab"></div>
-          </div>
-          <p class="legend">h hammer-on, p pull-off, T tap, / slide, full and ½ bends, rel release (pre-bend, then let down), ~ vibrato, PH pinch harmonic, PM palm mute</p>
-          <div class="study" id="sStudy"></div>
-        </div>
-        <div class="player" id="customPlayer" hidden>
-          <div class="phead">
-            <h2 id="cTitle"></h2>
-            <p id="cMeta"></p>
-          </div>
+          <div class="notice" id="cNotice" hidden></div>
+
           <div class="controls">
+            <div class="playstop">
+              <button id="cGo" class="go" disabled>Play</button>
+              <button id="cStop" class="btn" disabled>Back to start</button>
+            </div>
             <div class="speedctl" role="group" aria-label="Playback speed">
               <div class="speedtop">
                 <span class="speedval"><b id="cPct">100%</b> <span id="cBpm"></span></span>
@@ -279,20 +264,64 @@
               </div>
               <input type="range" id="cSpeed" min="25" max="125" step="5" value="100" aria-label="Playback speed in percent">
             </div>
-            <div class="playstop">
-              <button id="cGo" class="go" disabled>Play</button>
-              <button id="cStop" class="btn" disabled>Back to start</button>
+            <span class="ctime" id="cTime"></span>
+          </div>
+
+          <div class="tp-grid">
+            <div class="tp-box">
+              <h4>Track and display</h4>
+              <label class="sel">Guitar track <select id="cTrack" aria-label="Guitar track"></select></label>
+              <div class="checks-row">
+                <label class="chk"><input type="checkbox" id="cClick"> Metronome</label>
+                <label class="chk"><input type="checkbox" id="cCount"> Count-in</label>
+                <label class="chk"><input type="checkbox" id="cScore"> Standard notation</label>
+              </div>
+            </div>
+            <div class="tp-box">
+              <h4>Loop</h4>
+              <div class="looprow">
+                <button class="autobtn small" id="cLoop" aria-pressed="false"><span>Loop</span><span class="pill" id="cLoopPill">OFF</span></button>
+                <label class="sel">Bars <select id="cFrom" aria-label="First bar"></select></label>
+                <label class="sel">to <select id="cTo" aria-label="Last bar"></select></label>
+                <button class="linkbtn" id="cClear">Clear</button>
+              </div>
+              <p class="hint">Or drag across bars in the tab.</p>
+            </div>
+            <div class="tp-box vol">
+              <h4>Volume</h4>
+              <div class="mixes">
+                <div class="mix">
+                  <button class="mute" data-mix="master" aria-pressed="false" aria-label="Mute master"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="x" d="m16 9 6 6m0-6-6 6"/></svg></button>
+                  <label for="v_master">Master</label>
+                  <input type="range" id="v_master" min="0" max="100" value="100">
+                </div>
+                <div class="mix">
+                  <button class="mute" data-mix="guitar" aria-pressed="false" aria-label="Mute guitar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="x" d="m16 9 6 6m0-6-6 6"/></svg></button>
+                  <label for="v_guitar">Guitar</label>
+                  <input type="range" id="v_guitar" min="0" max="100" value="100">
+                </div>
+                <div class="mix">
+                  <button class="mute" data-mix="backing" aria-pressed="false" aria-label="Mute backing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="x" d="m16 9 6 6m0-6-6 6"/></svg></button>
+                  <label for="v_backing">Backing</label>
+                  <input type="range" id="v_backing" min="0" max="100" value="80">
+                </div>
+              </div>
             </div>
           </div>
-          <div class="controls subctl">
-            <label class="sel">Track <select id="cTrack" aria-label="Track to show"></select></label>
-            <label class="chk"><input type="checkbox" id="cSolo"> Only this track</label>
-            <label class="chk"><input type="checkbox" id="cLoop"> Loop</label>
-            <label class="chk"><input type="checkbox" id="cClick"> Metronome</label>
-            <label class="chk"><input type="checkbox" id="cCount"> Count-in</label>
-            <label class="chk"><input type="checkbox" id="cScore"> Standard notation</label>
+
+          <div class="editbar" id="eBar" hidden>
+            <div class="epos" id="ePos"></div>
+            <div class="egroups">
+              <div class="eg"><span class="elabel">Fret</span><button class="eb" data-act="fret-">−</button><input id="eFret" type="number" min="0" max="29" inputmode="numeric" aria-label="Fret"><button class="eb" data-act="fret+">+</button></div>
+              <div class="eg"><span class="elabel">String</span><button class="eb" data-act="str+" aria-label="Higher string">▲</button><button class="eb" data-act="str-" aria-label="Lower string">▼</button></div>
+              <div class="eg"><span class="elabel">Length</span><button class="eb" data-dur="1">1</button><button class="eb" data-dur="2">½</button><button class="eb" data-dur="4">¼</button><button class="eb" data-dur="8">⅛</button><button class="eb" data-dur="16">1/16</button><button class="eb" data-dur="32">1/32</button><button class="eb" data-act="dot" aria-label="Dotted">•</button></div>
+              <div class="eg"><span class="elabel">Technique</span><button class="eb" data-tech="hp">H/P</button><button class="eb" data-tech="pm">PM</button><button class="eb" data-tech="vib">Vib</button><button class="eb" data-tech="dead">X</button><button class="eb" data-tech="ghost">( )</button><button class="eb" data-tech="ring">Let ring</button></div>
+              <div class="eg"><button class="eb wide" data-act="addbeat">Insert beat</button><button class="eb wide" data-act="delnote">Delete note</button><button class="eb wide" data-act="delbeat">Delete beat</button></div>
+              <div class="eg"><button class="eb wide" data-act="undo">Undo</button><button class="eb wide" data-act="redo">Redo</button></div>
+            </div>
+            <p class="hint">Click a string position in the tab to place the cursor. Keys: 0–9 type a fret, ↑ ↓ change string, ← → move between beats, Delete removes the note, Shift+Delete removes the beat, Insert adds a beat, Ctrl+Z undo, Ctrl+Y redo.</p>
           </div>
-          <p class="hint">Click a note to start from there. Drag across bars to select a section; with Loop on, playback repeats it. The space bar plays and pauses. <span class="ctime" id="cTime"></span></p>
+
           <p class="msg" id="cStatus" aria-live="polite"></p>
           <div class="atwrap" id="cWrap"><div id="cScoreEl"></div></div>
         </div>
@@ -303,8 +332,7 @@
 
 <script src="js/tuner.js"></script>
 <script src="js/level-test.js"></script>
-<script src="js/songs.js"></script>
-<script src="js/custom-tabs.js"></script>
+<script src="js/tab-studio.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

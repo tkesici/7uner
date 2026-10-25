@@ -9,8 +9,7 @@ index.html          Page skeleton (Tuner and Learn pages)
 css/style.css       All styles (light and dark themes)
 js/tuner.js         Tuner: microphone input, pitch detection (McLeod / NSDF), pitch trace
 js/level-test.js    Learn > Level test: tab player, metronome, ear and improvisation tests
-js/songs.js         Learn > Song studies: technique studies with speed control and bar looping
-js/custom-tabs.js   Learn > Song studies > Your tabs: opens Guitar Pro / MusicXML files with alphaTab
+js/tab-studio.js    Learn > Tab studio: opens, plays, loops and edits Guitar Pro / MusicXML files (alphaTab)
 js/app.js           Switching between #tuner and #learn, and between the Learn sections
 favicon.svg
 .nojekyll           Turns off Jekyll processing on GitHub Pages
@@ -45,6 +44,6 @@ python3 -m http.server 8000
 - Guitar mode is stricter than chromatic mode: the in-tune zone is ±2 cents instead of ±5, the scale shows ±25 cents, readings use a longer analysis window, and the first moments of each pluck (which ring sharp) are ignored.
 - Chromatic mode detects roughly 27 Hz to 4200 Hz; guitar mode 38 Hz to 1400 Hz.
 - The A4 reference can be set between 415 and 466 Hz (440 by default). Mode, string tunings and A4 are saved in the browser.
-- Level test results and song-study speeds are stored in `localStorage` and don't carry over to other devices.
-- Song studies are original practice pieces written around the techniques of each solo, not transcriptions of the recordings.
-- "Your tabs" uses [alphaTab](https://alphatab.net) (MPL-2.0), loaded from jsDelivr at a pinned version only when the first file is opened. Opened files are kept in the browser's IndexedDB and are never uploaded.
+- Level test results and Tab studio settings are stored in `localStorage` and don't carry over to other devices.
+- Tab studio uses [alphaTab](https://alphatab.net) (MPL-2.0), loaded from jsDelivr at a pinned version only when the first file is opened. Opened files are kept in the browser's IndexedDB and are never uploaded.
+- Tab studio shows and edits guitar tracks only; drums, bass and other instruments play as backing. Edited files are saved as a separate copy and downloaded as Guitar Pro 7 (.gp).
