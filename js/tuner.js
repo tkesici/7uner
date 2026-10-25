@@ -93,7 +93,7 @@
     root: $("tRoot"), modes: $("tModes"), readout: $("tReadout"), sub: $("tSub"), note: $("tNote"), oct: $("tOct"),
     hz: $("tHz"), cents: $("tCents"), meter: $("tMeter"), zone: $("tZone"), needle: $("tNeedle"),
     labL: $("tLabL"), labR: $("tLabR"), panel: $("tGuitar"),
-    preset: $("tPreset"), auto: $("tAuto"), pegsL: $("pegsL"), pegsR: $("pegsR"), head: $("tHead"),
+    preset: $("tPreset"), auto: $("tAuto"), autoPill: $("tAutoPill"), pegsL: $("pegsL"), pegsR: $("pegsR"), head: $("tHead"),
     canvas: $("tTrace"), cover: $("tCover"), start: $("tStart"), status: $("tStatus"), stop: $("tStop"),
     a4: $("a4"), a4d: $("a4Down"), a4u: $("a4Up"), a4r: $("a4Reset")
   };
@@ -331,10 +331,11 @@
           '<button class="pn" aria-pressed="false" aria-label="Lock to string ' + num + '"><span class="pnote"></span><span class="poff"></span></button>' +
           '<button class="pm" data-d="1" aria-label="Tune string ' + num + ' up a semitone">+</button>';
       d.querySelectorAll(".pm").forEach((b) => b.addEventListener("click", () => setOffset(i, offs()[i] + +b.dataset.d)));
+      // tapping a note always selects that string and plays it; only the
+      // Auto-detect button returns to automatic string detection
       d.querySelector(".pn").addEventListener("click", () => {
-        const next = lock === i ? null : i;
-        setLock(next);
-        if (next !== null) playRef(next);
+        if (lock !== i) setLock(i);
+        playRef(i);
       });
       pegEls[i] = d;
       return d;
@@ -361,10 +362,12 @@
       down.disabled = o[i] <= I.offMin; up.disabled = o[i] >= I.offMax;
       d.classList.toggle("tuned", tuned[i]);
       strEls[i].classList.toggle("tuned", tuned[i]);
+      strEls[i].classList.toggle("locked", lock === i);
     }
     const k = I.presets.findIndex((p) => p[1].every((v, j) => v === o[j]));
     el.preset.value = k >= 0 ? String(k) : "custom";
     el.auto.setAttribute("aria-pressed", lock === null ? "true" : "false");
+    el.autoPill.textContent = lock === null ? "ON" : "OFF";
   }
 
   function setOffset(i, v) {
