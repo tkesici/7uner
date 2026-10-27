@@ -55,5 +55,59 @@
         });
     }
 
-    window.at7 = { VERSION, BASE, load, baseSettings, followTheme };
+    /* alphaTab starts the beat cursor's animation towards the next note as
+       soon as play is pressed, even when a count-in comes first, so during the
+       count-in the cursor drifts into the first bar and stops there; when the
+       music starts it isn't redrawn, because it already "is" on that note.
+       This keeps the cursor on its starting place through the count-in, then
+       replays alphaTab's animation from there as the music starts. */
+    function holdCursorDuringCountIn(api, scoreEl) {
+        let playing = false, counting = false, idle = "", wanted = {}, cursor = null;
+        const obs = new MutationObserver(() => {
+            const s = cursor.style;
+            if (!counting) { if (!playing) idle = s.transform; return; }
+            let touched = false;
+            if (s.getPropertyPriority("transform") !== "important") { wanted.transform = s.transform; touched = true; }
+            if (s.getPropertyPriority("transition") !== "important") { wanted.transition = s.transition; touched = true; }
+            if (touched) hold();
+        });
+        function hold() {
+            cursor.style.setProperty("transition", "none", "important");
+            cursor.style.setProperty("transform", idle, "important");
+        }
+        // replay: the music has started, so run alphaTab's animation; otherwise
+        // (stopped during the count-in) just leave the cursor where it was
+        function release(replay) {
+            counting = false;
+            if (!cursor) return;
+            const s = cursor.style;
+            s.removeProperty("transition"); s.removeProperty("transform");
+            s.transition = "none"; s.transform = idle;
+            if (replay && wanted.transform) {
+                void cursor.offsetWidth; // start the animation from the starting place
+                s.transition = wanted.transition || "";
+                s.transform = wanted.transform;
+            }
+            wanted = {};
+        }
+        api.renderFinished.on(() => {
+            const c = scoreEl.querySelector(".at-cursor-beat");
+            if (!c || c === cursor) return;
+            obs.disconnect();
+            cursor = c;
+            idle = c.style.transform;
+            obs.observe(c, { attributes: true, attributeFilter: ["style"] });
+        });
+        api.playerStateChanged.on((e) => {
+            const now = e.state === 1;
+            if (now && !playing) {
+                counting = !!cursor && api.countInVolume > 0;
+                if (counting) hold();
+            } else if (now && counting) release(true); // the count-in is over
+            else if (!now && counting) release(false);
+            playing = now;
+        });
+    }
+
+    window.at7 = { VERSION, BASE, load, baseSettings, followTheme, holdCursorDuringCountIn };
 })();

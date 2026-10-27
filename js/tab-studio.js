@@ -143,6 +143,7 @@
         const settings = window.at7.baseSettings(el.wrap);
         settings.display.staveProfile = isOn(el.notation) ? "ScoreTab" : "Tab";
         api = new (AT().AlphaTabApi)(el.score, settings);
+        window.at7.holdCursorDuringCountIn(api, el.score);
         ready = false; playing = false;
 
         api.scoreLoaded.on(onScoreLoaded);

@@ -109,6 +109,7 @@
             // the page already shows the name and tempo
             settings.notation = { elements: { scoreTitle: false, scoreArtist: false, guitarTuning: false, trackNames: false, effectTempo: false } };
             api = new (AT().AlphaTabApi)(el.score, settings);
+            window.at7.holdCursorDuringCountIn(api, el.score);
             api.isLooping = true;
             api.soundFontLoad.on((e) => { if (e.total && !ready) setMsg("Loading sounds… " + Math.round((e.loaded / e.total) * 100) + "%"); });
             api.playerReady.on(() => {
