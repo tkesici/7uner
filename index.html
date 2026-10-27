@@ -3,18 +3,34 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>7uner</title>
+  <title>7uner – online tuner, guitar practice and tab player</title>
   <meta name="description" content="A free chromatic and instrument tuner, guitar practice exercises and a Guitar Pro tab player that run in your browser. Nothing to install, and audio never leaves your device.">
   <meta name="theme-color" content="#151A21" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#E6E9ED" media="(prefers-color-scheme: light)">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="canonical" href="https://7uner.com/">
+  <!-- link previews (Open Graph, X/Twitter); the image is drawn by tools/make-icons.js -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="7uner">
+  <meta property="og:title" content="7uner – online tuner, guitar practice and tab player">
+  <meta property="og:description" content="A free strobe tuner for guitar, bass, ukulele and violin, guitar practice exercises with a metronome, and a Guitar Pro tab player. Runs in your browser, works offline.">
+  <meta property="og:url" content="https://7uner.com/">
+  <meta property="og:image" content="https://7uner.com/icons/social.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The 7uner logo and a tuner gauge reading in tune">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="apple-mobile-web-app-title" content="7uner">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=7d8680c3">
+  <link rel="stylesheet" href="css/style.css?v=3131ded3">
 </head>
 <body>
+<noscript><p class="noscript">7uner needs JavaScript: the tuner, the exercises and the tab player all run in your browser. Please turn JavaScript on, or open the page in another browser.</p></noscript>
 <header class="site">
   <div class="wrap">
     <a class="brand" href="#tuner">7uner</a>
@@ -28,6 +44,7 @@
 
 <section class="page" id="page-tuner">
   <div class="tuner" id="tRoot">
+    <h1 class="vh">Tuner</h1>
     <div class="modes" id="tModes" role="radiogroup" aria-label="Instrument"></div>
     <div class="readout idle" id="tReadout">
       <div class="tsub" id="tSub"></div>
@@ -262,6 +279,6 @@
 <script src="js/exercises.js?v=5d9b570f"></script>
 <script src="js/practice.js?v=f8b4a7bf"></script>
 <script src="js/tab-studio.js?v=68955429"></script>
-<script src="js/app.js?v=18d89ff3"></script>
+<script src="js/app.js?v=e4500f12"></script>
 </body>
 </html>

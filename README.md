@@ -22,6 +22,7 @@ tests/                Node tests (pitch detection); not needed to run the site
 sw.js                 Service worker: caches the app and the exercise files for offline use
 manifest.webmanifest  Lets the app be installed to the home screen
 favicon.svg
+icons/                App icons (192, 512, maskable, apple-touch-icon) and the link-preview image, drawn by tools/make-icons.js
 .nojekyll           Turns off Jekyll processing on GitHub Pages
 ```
 
@@ -43,6 +44,14 @@ cd tools && npm install && npm run practice
 ```
 
 The script reads every file back after writing it and stops if any note differs. A new exercise needs an entry in `js/exercises.js` and, for techniques, its notes in the script; the service worker picks up the new file automatically.
+
+## Icons
+
+The PNG app icons and the link-preview image (`icons/social.png`, 1200×630, used by the Open Graph and X/Twitter tags) are drawn from the logo's shapes by a small Node script with no dependencies. After changing the logo, run:
+
+```bash
+node tools/make-icons.js
+```
 
 ## Tests
 

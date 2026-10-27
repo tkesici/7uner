@@ -3,7 +3,7 @@
 (function () {
   "use strict";
   const pages = { "tuner": "page-tuner", "practice": "page-test", "tab-studio": "page-studio" };
-  const titles = { "tuner": "7uner", "practice": "Practice – 7uner", "tab-studio": "Tab Studio – 7uner" };
+  const titles = { "tuner": "7uner – online tuner, guitar practice and tab player", "practice": "Practice – 7uner", "tab-studio": "Tab Studio – 7uner" };
   const aliases = { "learn": "practice" }; // older links
 
   /* Practice: instrument picker. Only the guitar has content for now. */
