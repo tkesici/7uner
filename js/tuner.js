@@ -1,5 +1,7 @@
 /* 7uner – chromatic and instrument tuner (guitar, bass, ukulele, violin)
-   Pitch detection (McLeod Pitch Method) lives in pitch.js.
+   Pitch detection (McLeod Pitch Method) lives in pitch.js; the display is a
+   strobe: a gauge, plus a tuning fork (chromatic) or turning rings on the
+   headstock post of the string being tuned (instrument modes).
    All audio processing happens in the browser; nothing is sent to a server. */
 (function () {
   "use strict";
@@ -84,16 +86,16 @@
   const TICK_MS = 20;        // ~50 readings per second
   const SILENCE_TICKS = 12;  // ~240 ms without a pitch before going idle
   const HOLD_MS = 600;       // how long a string must stay in tune to get a tick
-  const HIST_STEP = 2;       // pixels per reading in the trace
+  const STROBE = 3;          // strobe speed: degrees per second for each cent off
 
   const $ = (id) => document.getElementById(id);
   const el = {
     root: $("tRoot"), modes: $("tModes"), readout: $("tReadout"), sub: $("tSub"), note: $("tNote"), oct: $("tOct"),
-    hz: $("tHz"), cents: $("tCents"), meter: $("tMeter"), zone: $("tZone"), needle: $("tNeedle"),
-    labL: $("tLabL"), labR: $("tLabR"), panel: $("tGuitar"),
+    hz: $("tHz"), cents: $("tCents"), panel: $("tGuitar"), allIn: $("tAllIn"),
     preset: $("tPreset"), auto: $("tAuto"), autoPill: $("tAutoPill"), pegsL: $("pegsL"), pegsR: $("pegsR"), head: $("tHead"),
-    canvas: $("tTrace"), cover: $("tCover"), start: $("tStart"), status: $("tStatus"), stop: $("tStop"),
-    a4: $("a4"), a4d: $("a4Down"), a4u: $("a4Up"), presetWrap: $("tPresetWrap")
+    canvas: $("tStrobe"), cover: $("tCover"), start: $("tStart"), status: $("tStatus"), stop: $("tStop"),
+    a4: $("a4"), a4d: $("a4Down"), a4u: $("a4Up"), presetWrap: $("tPresetWrap"),
+    gear: $("tGear"), help: $("tHelp"), setPop: $("tSettings"), helpPop: $("tHelpPop")
   };
 
   /* ---------- settings ---------- */
@@ -152,7 +154,7 @@
       knobs += '<rect x="' + sx + '" y="' + (y - k.sh / 2) + '" width="' + k.shaft + '" height="' + k.sh + '" fill="#8E939B"/>' +
           '<rect x="' + kx + '" y="' + (y - k.h / 2) + '" width="' + k.w + '" height="' + k.h + '" rx="' + k.r + '" fill="' + k.fill + '" stroke="' + k.stroke + '" stroke-width="1"/>';
       strs += strPath(i, x, y, o.nut[i], o.gauge[i]);
-      posts += '<circle cx="' + x + '" cy="' + y + '" r="' + o.post + '" fill="#D3D6DB" stroke="#5E646C" stroke-width="1"/><circle cx="' + x + '" cy="' + y + '" r="' + o.post / 3 + '" fill="#5E646C"/>';
+      posts += '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + o.post + '" fill="#D3D6DB" stroke="#5E646C" stroke-width="1"/><circle cx="' + x + '" cy="' + y + '" r="' + o.post / 3 + '" fill="#5E646C"/>';
     });
     return '<svg class="headstock' + (o.light ? " light" : "") + '" viewBox="0 0 200 320" aria-hidden="true">' + DEFS + knobs +
         '<path d="' + o.shape + '" fill="url(#' + o.wood + ')" stroke="#0B0C0E" stroke-width="1.5"/>' + o.logo +
@@ -189,7 +191,8 @@
       const ends = [[90, 130], [95, 190], [105, 190], [110, 130]], nut = [88, 96, 104, 112], gauge = [1.7, 1.4, 1.2, 1];
       let strs = "", pegs = "";
       ends.forEach(([x, y], i) => {
-        strs += '<path class="gstr" data-i="' + i + '" stroke-width="' + gauge[i] + '" d="M' + x + " " + y + " L" + nut[i] + " 249 L" + nut[i] + ' 320"/>';
+        strs += '<path class="gstr" data-i="' + i + '" stroke-width="' + gauge[i] + '" d="M' + x + " " + y + " L" + nut[i] + " 249 L" + nut[i] + ' 320"/>' +
+            '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="4" fill="none"/>'; // where the string meets its peg
       });
       [130, 190].forEach((y) => {
         pegs += '<rect x="58" y="' + (y - 3) + '" width="84" height="6" rx="3" fill="#1B1411"/>' +
@@ -210,14 +213,24 @@
   };
 
   /* ---------- instrument panel ---------- */
-  let strEls = [], pegEls = [], lock = null, tuned = [];
+  let strEls = [], pegEls = [], postEls = [], pstrobe = null, lock = null, tuned = [];
+  const SVGNS = "http://www.w3.org/2000/svg";
 
   function buildInstrument() {
     const I = instr();
     if (!I) return;
     el.head.innerHTML = HEADS[st.mode]();
-    strEls = [];
+    strEls = []; postEls = [];
     el.head.querySelectorAll(".gstr").forEach((p) => { strEls[+p.dataset.i] = p; });
+    el.head.querySelectorAll(".gpost").forEach((p) => { postEls[+p.dataset.i] = p; });
+
+    // strobe rings that sit on the post of the string being tuned (see drawStage)
+    const r = +postEls[0].getAttribute("r") || 6;
+    const ring = (rad, n) => { const d = (Math.PI * rad) / n; return '<circle r="' + rad + '" stroke-dasharray="' + d.toFixed(2) + " " + d.toFixed(2) + '"/>'; };
+    pstrobe = document.createElementNS(SVGNS, "g");
+    pstrobe.setAttribute("class", "pstrobe");
+    pstrobe.innerHTML = ring(r * 2, 10) + ring(r * 2.9, 16);
+    el.head.querySelector("svg").appendChild(pstrobe);
 
     const n = I.base.length, [y0, gap] = I.rows;
     const body = el.head.parentElement;
@@ -229,11 +242,13 @@
     const make = (i) => {
       const d = document.createElement("div"), num = n - i;
       d.className = "peg";
+      // ▲ ▼ only show beside the string that's selected
       d.innerHTML =
-          '<button class="pm" data-d="-1" aria-label="Tune string ' + num + ' down a semitone">−</button>' +
-          '<button class="pn" aria-pressed="false" aria-label="Lock to string ' + num + '"><span class="pnote"></span><span class="poff"></span></button>' +
-          '<button class="pm" data-d="1" aria-label="Tune string ' + num + ' up a semitone">+</button>';
-      d.querySelectorAll(".pm").forEach((b) => b.addEventListener("click", () => setOffset(i, offs()[i] + +b.dataset.d)));
+          '<div class="parr" hidden>' +
+          '<button data-d="1" aria-label="Tune string ' + num + ' up a semitone">▲</button>' +
+          '<button data-d="-1" aria-label="Tune string ' + num + ' down a semitone">▼</button></div>' +
+          '<button class="pn" aria-pressed="false" aria-label="Lock to string ' + num + '"><span class="pnote"></span><span class="poff"></span></button>';
+      d.querySelectorAll(".parr button").forEach((b) => b.addEventListener("click", () => { setOffset(i, offs()[i] + +b.dataset.d); playRef(i); }));
       // tapping a note always selects that string and plays it; only the
       // Auto-detect button returns to automatic string detection
       d.querySelector(".pn").addEventListener("click", () => {
@@ -261,8 +276,9 @@
       d.querySelector(".pnote").innerHTML = noteName(m) + "<sub>" + octave(m) + "</sub>";
       d.querySelector(".poff").textContent = o[i] === 0 ? "" : (o[i] > 0 ? "+" : "−") + Math.abs(o[i]);
       d.querySelector(".pn").setAttribute("aria-pressed", lock === i ? "true" : "false");
-      const [down, up] = d.querySelectorAll(".pm");
-      down.disabled = o[i] <= I.offMin; up.disabled = o[i] >= I.offMax;
+      d.querySelector(".parr").hidden = lock !== i;
+      const [up, down] = d.querySelectorAll(".parr button");
+      up.disabled = o[i] >= I.offMax; down.disabled = o[i] <= I.offMin;
       d.classList.toggle("tuned", tuned[i]);
       strEls[i].classList.toggle("tuned", tuned[i]);
       strEls[i].classList.toggle("locked", lock === i);
@@ -271,6 +287,9 @@
     el.preset.value = k >= 0 ? String(k) : "custom";
     el.auto.setAttribute("aria-pressed", lock === null ? "true" : "false");
     el.autoPill.textContent = lock === null ? "ON" : "OFF";
+    const all = tuned.length > 0 && tuned.every(Boolean);
+    el.allIn.hidden = !all;
+    el.panel.classList.toggle("allin-on", all);
   }
 
   function setOffset(i, v) {
@@ -314,6 +333,7 @@
     muteUntil = performance.now() + (REF_SEC + 0.2) * 1000;
   }
 
+  // the string being played vibrates (CSS) and glows amber, or green when in tune
   function highlight(idx, inTune) {
     for (let k = 0; k < pegEls.length; k++) {
       const on = k === idx;
@@ -342,7 +362,6 @@
   }
 
   function applyMode() {
-    const c = cfg();
     el.modes.querySelectorAll("button").forEach((b) => {
       const on = b.dataset.mode === st.mode;
       b.setAttribute("aria-checked", on ? "true" : "false");
@@ -351,25 +370,23 @@
     el.panel.hidden = !instr();
     el.presetWrap.hidden = !instr();
     el.auto.hidden = !instr();
+    el.help.hidden = !instr();
+    if (!instr()) closePops();
     el.root.classList.toggle("mode-instrument", !!instr());
     buildInstrument();
-    el.labL.textContent = "−" + c.range;
-    el.labR.textContent = "+" + c.range;
-    const z = (c.inTune / c.range) * 50;
-    el.zone.style.left = 50 - z + "%";
-    el.zone.style.width = 2 * z + "%";
-    el.sub.textContent = "";
-    resetReading();
-    hist.length = 0;
+    resetReading(); // also clears the last reading, so nothing from the previous mode stays on screen
     resize();
   }
   function setMode(m) { if (m === st.mode || !MODES.includes(m)) return; st.mode = m; save(); applyMode(); }
 
-  /* ---------- display ---------- */
+  /* ---------- readout ---------- */
   function fmtCents(c, dec) {
     const v = Math.abs(c) < Math.pow(10, -dec) / 2 ? 0 : c;
     return (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toFixed(dec) + " cents";
   }
+
+  // what the strobe stage draws; the readout and the stage are updated from it
+  const view = { active: false, cents: 0, shown: 0, inTune: false, idx: null, phase: 0, waves: [], lastWave: 0, t: 0 };
 
   function show(freq, targetMidi, cents, stringIdx) {
     const c = cfg(), inTune = Math.abs(cents) <= c.inTune;
@@ -380,61 +397,162 @@
     el.cents.textContent = fmtCents(cents, c.decimals);
     el.sub.textContent = stringIdx != null ? "String " + (instr().base.length - stringIdx) + (lock !== null ? " (locked)" : "") : "";
     el.readout.classList.remove("idle");
-    el.meter.classList.remove("idle");
     el.readout.classList.toggle("in", inTune);
-    el.meter.classList.toggle("in", inTune);
-    el.needle.style.left = 50 + (Math.max(-c.range, Math.min(c.range, cents)) / c.range) * 50 + "%";
+    if (!view.active) view.shown = cents;
+    Object.assign(view, { active: true, cents, inTune, idx: stringIdx });
     if (instr()) highlight(stringIdx, inTune);
   }
 
+  // nothing is being played: show a dash rather than a note that isn't there
   function idle() {
     el.readout.classList.add("idle");
-    el.meter.classList.add("idle");
+    el.readout.classList.remove("in");
+    el.note.textContent = "–";
+    el.oct.textContent = "";
+    el.hz.innerHTML = "";
+    el.cents.textContent = "";
+    el.sub.textContent = instr() && lock !== null ? "String " + (instr().base.length - lock) + " (locked)" : "";
+    view.active = false; view.idx = null;
     if (instr()) highlight(-1, false);
   }
 
-  /* ---------- trace ---------- */
+  /* ---------- strobe stage ----------
+     A gauge (a ±range arc with the in-tune zone and a dot for the reading).
+     Chromatic mode adds a tuning fork whose sound waves fan out under the
+     arc; their dashes drift left when flat and right when sharp, faster the
+     further off the note is, and stand still when it's in tune, the way a
+     strobe tuner works. In instrument modes the same strobe turns on the
+     post of the string being tuned (on the headstock). */
+  const SPAN = (60 * Math.PI) / 180; // the gauge runs 60° either side of straight up
+  const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  let colors = null;
+  const readColors = () => { colors = { ok: cssVar("--ok"), okSoft: cssVar("--ok-soft"), amber: cssVar("--amber"), line: cssVar("--line"), muted: cssVar("--muted"), ink: cssVar("--ink") }; };
+
   function resize() {
     const r = el.canvas.getBoundingClientRect();
     if (!r.width) return;
     const dpr = window.devicePixelRatio || 1;
     el.canvas.width = Math.round(r.width * dpr);
     el.canvas.height = Math.round(r.height * dpr);
-    draw();
+    readColors();
+    drawStage(performance.now());
   }
-  const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
-  function draw() {
-    const cv = el.canvas, g = cv.getContext("2d"), c = cfg();
-    const dpr = window.devicePixelRatio || 1, W = cv.width, H = cv.height;
-    g.clearRect(0, 0, W, H);
-    if (!W) return;
-    const mid = W / 2, half = W / 2, zw = half * (c.inTune / c.range);
-    g.fillStyle = cssVar("--ok-soft");
-    g.globalAlpha = 0.6;
-    g.fillRect(mid - zw, 0, zw * 2, H);
-    g.globalAlpha = 1;
-    g.fillStyle = cssVar("--line");
-    g.fillRect(mid - 0.5 * dpr, 0, dpr, H);
-
-    const ok = cssVar("--ok"), amber = cssVar("--amber");
-    g.lineWidth = 2.5 * dpr; g.lineJoin = "round"; g.lineCap = "round";
-    const step = HIST_STEP * dpr;
-    const xOf = (v) => mid + (Math.max(-c.range, Math.min(c.range, v)) / c.range) * half;
-    for (let i = 1; i < hist.length; i++) {
-      const a = hist[i - 1], b = hist[i];
-      const y0 = (i - 1) * step;
-      if (y0 > H) break;
-      if (a == null || b == null) continue;
-      g.strokeStyle = Math.abs(a) <= c.inTune && Math.abs(b) <= c.inTune ? ok : amber;
-      g.beginPath(); g.moveTo(xOf(a), y0); g.lineTo(xOf(b), i * step); g.stroke();
+  function drawStage(now) {
+    const cv = el.canvas, g = cv.getContext("2d"), W = cv.width, H = cv.height;
+    if (!W || !H) return;
+    if (!colors) readColors();
+    const dpr = window.devicePixelRatio || 1, c = cfg(), chrom = !instr(), K = colors;
+    const dt = Math.min(0.1, Math.max(0, (now - (view.t || now)) / 1000));
+    view.t = now;
+    if (view.active) {
+      view.shown += (view.cents - view.shown) * Math.min(1, dt * 14);
+      view.phase = (view.phase + dt * view.shown * STROBE) % 360;
     }
+    const col = !view.active ? K.muted : view.inTune ? K.ok : K.amber;
+
+    // geometry: in chromatic mode the arc is centred where the fork's sound
+    // comes from; otherwise its centre sits below the canvas so the gauge's
+    // ends reach the bottom edge and it fills the space
+    const R = chrom ? Math.min(W * 0.42, (H - 40 * dpr) / 1.85) : Math.min(W * 0.42, 2 * (H - 44 * dpr));
+    const cx = W / 2, cy = chrom ? R + 30 * dpr : H - 20 * dpr + R / 2;
+    const ang = (cents) => -Math.PI / 2 + Math.max(-1, Math.min(1, cents / c.range)) * SPAN;
+    const A0 = -Math.PI / 2 - SPAN, A1 = -Math.PI / 2 + SPAN;
+    g.clearRect(0, 0, W, H);
+    g.lineCap = "round";
+
+    // in-tune zone, scale, ticks and labels
+    g.lineWidth = 10 * dpr; g.strokeStyle = K.okSoft;
+    g.beginPath(); g.arc(cx, cy, R, ang(-c.inTune), ang(c.inTune)); g.stroke();
+    g.lineWidth = 1.5 * dpr; g.strokeStyle = K.line;
+    g.beginPath(); g.arc(cx, cy, R, A0, A1); g.stroke();
+    for (let k = -4; k <= 4; k++) {
+      const a = ang((k * c.range) / 4), len = (k === 0 ? 11 : k % 2 ? 4 : 7) * dpr;
+      g.strokeStyle = k === 0 ? K.muted : K.line;
+      g.beginPath(); g.moveTo(cx + Math.cos(a) * (R + 3 * dpr), cy + Math.sin(a) * (R + 3 * dpr));
+      g.lineTo(cx + Math.cos(a) * (R + 3 * dpr + len), cy + Math.sin(a) * (R + 3 * dpr + len)); g.stroke();
+    }
+    g.fillStyle = K.muted; g.font = 11 * dpr + "px 'JetBrains Mono', monospace"; g.textAlign = "center"; g.textBaseline = "middle";
+    [[-c.range, "−" + c.range], [0, "0"], [c.range, "+" + c.range]].forEach(([v, t]) => {
+      const a = ang(v), rr = R + 24 * dpr;
+      g.fillText(t, cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+    });
+
+    if (chrom) drawWaves(g, now, cx, cy, R, dpr, col, A0, A1);
+
+    // the reading
+    if (view.active) {
+      const a = ang(view.shown), x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R;
+      g.save();
+      if (view.inTune) { g.shadowColor = K.ok; g.shadowBlur = 14 * dpr; }
+      g.fillStyle = col; g.beginPath(); g.arc(x, y, 7 * dpr, 0, Math.PI * 2); g.fill();
+      g.restore();
+    }
+
+    if (chrom) drawFork(g, now, cx, cy + 4 * dpr, R, dpr);
+    else placePostStrobe();
   }
 
-  /* ---------- reading state ---------- */
+  function drawWaves(g, now, cx, cy, R, dpr, col, A0, A1) {
+    const a0 = A0 + 0.12, a1 = A1 - 0.12;
+    // sound fanning out from the fork while a note is heard
+    if (view.active && now - view.lastWave > 550) { view.waves.push(now); view.lastWave = now; }
+    view.waves = view.waves.filter((t) => now - t < 1600);
+    g.strokeStyle = col; g.lineWidth = 2 * dpr; g.setLineDash([]);
+    view.waves.forEach((t) => {
+      const p = (now - t) / 1600, r = R * (0.16 + 0.7 * p);
+      g.globalAlpha = 0.45 * Math.pow(1 - p, 1.5);
+      g.beginPath(); g.arc(cx, cy, r, a0, a1); g.stroke();
+    });
+    // the strobe bands: outer ones are more sensitive, like on a real strobe
+    g.lineWidth = 3 * dpr;
+    g.setLineDash([6 * dpr, 8 * dpr]);
+    for (let i = 0; i < 4; i++) {
+      const r = R * (0.3 + i * 0.15), m = 1 + i * 0.6;
+      g.globalAlpha = view.active ? 0.85 - i * 0.12 : 0.22;
+      g.lineDashOffset = -((view.phase * Math.PI) / 180) * m * r;
+      g.beginPath(); g.arc(cx, cy, r, a0, a1); g.stroke();
+    }
+    g.setLineDash([]); g.globalAlpha = 1;
+  }
+
+  function drawFork(g, now, cx, top, R, dpr) {
+    const gap = R * 0.085, w = R * 0.05, len = R * 0.42, stem = R * 0.3;
+    const vib = view.active ? Math.sin(now * 0.12) * w * 0.35 : 0; // the tines ring while a note sounds
+    const metal = g.createLinearGradient(cx - gap - w, 0, cx + gap + w, 0);
+    metal.addColorStop(0, "#8C939C"); metal.addColorStop(0.5, "#E3E7EC"); metal.addColorStop(1, "#8C939C");
+    g.save();
+    if (view.active && view.inTune) { g.shadowColor = colors.ok; g.shadowBlur = 12 * dpr; }
+    g.strokeStyle = metal; g.lineWidth = w; g.lineCap = "round"; g.lineJoin = "round";
+    const base = top + len, r = gap + w / 2;
+    g.beginPath();
+    g.moveTo(cx - r - vib, top); g.lineTo(cx - r, base);
+    g.arc(cx, base, r, Math.PI, 0, true);
+    g.lineTo(cx + r + vib, top);
+    g.stroke();
+    g.lineWidth = w * 1.1;
+    g.beginPath(); g.moveTo(cx, base + r); g.lineTo(cx, base + r + stem); g.stroke();
+    g.fillStyle = metal;
+    g.beginPath(); g.arc(cx, base + r + stem, w * 0.95, 0, Math.PI * 2); g.fill();
+    g.restore();
+  }
+
+  // instrument modes: the strobe rings turn on the post of the string being tuned
+  function placePostStrobe() {
+    if (!pstrobe) return;
+    const i = view.active ? view.idx : null, p = i != null ? postEls[i] : null;
+    pstrobe.classList.toggle("on", !!p);
+    if (!p) return;
+    pstrobe.classList.toggle("in", view.inTune);
+    pstrobe.setAttribute("transform", "translate(" + p.getAttribute("cx") + " " + p.getAttribute("cy") + ")");
+    const [inner, outer] = pstrobe.children;
+    inner.setAttribute("transform", "rotate(" + view.phase.toFixed(2) + ")");
+    outer.setAttribute("transform", "rotate(" + (view.phase * 1.6).toFixed(2) + ")");
+  }
+
+  /* ---------- listening ---------- */
   let ctx = null, stream = null, analyser = null, buf = null, raf = 0, lastTick = 0, running = false;
   let recent = [], smooth = null, lastKey = null, silent = 0, prevRms = 0, skip = 0, inTuneSince = null;
-  const hist = [];
 
   function resetReading() { recent = []; smooth = null; lastKey = null; inTuneSince = null; idle(); }
 
@@ -448,10 +566,14 @@
     return best;
   }
 
+  // the stage animates every frame; the pitch is read every TICK_MS
   function loop(now) {
     raf = requestAnimationFrame(loop);
-    if (now - lastTick < TICK_MS) return;
-    lastTick = now;
+    if (now - lastTick >= TICK_MS) { lastTick = now; listen(now); }
+    drawStage(now);
+  }
+
+  function listen(now) {
     if (now < muteUntil) { prevRms = 0; skip = 0; return; }
     const c = cfg();
     analyser.getFloatTimeDomainData(buf);
@@ -482,7 +604,6 @@
       }
 
       show(mtof(med), tgt, smooth, idx);
-      hist.unshift(smooth);
 
       if (instr()) {
         if (Math.abs(smooth) <= c.inTune) {
@@ -492,12 +613,8 @@
       }
     } else {
       silent++;
-      if (silent > SILENCE_TICKS) { if (lastKey !== null || smooth !== null) resetReading(); }
-      hist.unshift(null);
+      if (silent > SILENCE_TICKS) { if (lastKey !== null || smooth !== null || view.active) resetReading(); }
     }
-    const maxLen = Math.ceil(el.canvas.height / (HIST_STEP * (window.devicePixelRatio || 1))) + 2;
-    if (hist.length > maxLen) hist.length = maxLen;
-    draw();
   }
 
   /* ---------- microphone ---------- */
@@ -543,9 +660,9 @@
     if (stream) stream.getTracks().forEach((t) => t.stop());
     if (ctx) ctx.close();
     ctx = stream = analyser = null;
-    hist.length = 0;
     resetReading();
-    draw();
+    view.waves = [];
+    drawStage(performance.now());
     el.cover.hidden = false;
     el.stop.hidden = true;
     el.status.textContent = "Microphone is off.";
@@ -557,6 +674,15 @@
     el.a4.value = v;
     save();
     resetReading();
+  }
+
+  /* ---------- settings and help: small panels under the controls ---------- */
+  const POPS = [[el.gear, el.setPop], [el.help, el.helpPop]];
+  function closePops() { POPS.forEach(([b, p]) => { p.hidden = true; b.setAttribute("aria-expanded", "false"); }); }
+  function togglePop(btn, panel) {
+    const open = panel.hidden;
+    closePops();
+    if (open) { panel.hidden = false; btn.setAttribute("aria-expanded", "true"); }
   }
 
   /* ---------- wiring ---------- */
@@ -577,8 +703,13 @@
   el.a4.addEventListener("change", () => setA4(el.a4.value));
   el.a4d.addEventListener("click", () => setA4(st.a4 - 1));
   el.a4u.addEventListener("click", () => setA4(st.a4 + 1));
+  POPS.forEach(([b, p]) => b.addEventListener("click", () => togglePop(b, p)));
+  document.addEventListener("click", (e) => { if (!e.target.closest(".tpop, .tbtn")) closePops(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePops(); });
   window.addEventListener("resize", resize);
   document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); });
+  // follow the site's light/dark theme
+  if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readColors(); drawStage(performance.now()); });
 
   applyMode();
 

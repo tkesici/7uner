@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=36afc388">
+  <link rel="stylesheet" href="css/style.css?v=97c34f23">
 </head>
 <body>
 <header class="site">
@@ -31,28 +31,36 @@
     <div class="modes" id="tModes" role="radiogroup" aria-label="Instrument"></div>
     <div class="readout idle" id="tReadout">
       <div class="tsub" id="tSub"></div>
-      <div class="note"><span id="tNote">A</span><sub id="tOct">4</sub></div>
-      <div class="hz"><span id="tHz"><b>–</b> Hz</span>&nbsp;&nbsp;<span id="tCents"></span></div>
+      <div class="note"><span id="tNote">–</span><sub id="tOct"></sub></div>
+      <div class="hz"><span id="tHz"></span>&nbsp;&nbsp;<span id="tCents"></span></div>
     </div>
-    <div class="meter-wrap idle" id="tMeter">
-      <div class="scale">
-        <div class="zone" id="tZone"></div>
-        <div class="ticks"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-        <div class="needle" id="tNeedle"></div>
+
+    <!-- strobe stage (tuner.js): the gauge, and in chromatic mode the tuning fork and its sound waves -->
+    <div class="tstage" id="tStage">
+      <canvas id="tStrobe" aria-hidden="true"></canvas>
+      <div class="cover" id="tCover">
+        <button class="go" id="tStart">Turn on microphone</button>
+        <p class="hint" id="tStatus">The tuner needs microphone access. Audio is processed only in your browser and is never sent anywhere.</p>
       </div>
-      <div class="scale-labels"><span id="tLabL">−50</span><span>0</span><span id="tLabR">+50</span></div>
     </div>
 
     <div class="tset">
       <label class="gpreset" id="tPresetWrap" hidden>Tuning
         <select id="tPreset" aria-label="Tuning preset"></select>
       </label>
-      <span class="a4">A4
+      <button class="autobtn" id="tAuto" aria-pressed="true" hidden><span>Auto-detect string</span><span class="pill" id="tAutoPill">ON</span></button>
+      <button class="tbtn" id="tGear" aria-expanded="false" aria-controls="tSettings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg></button>
+      <button class="tbtn" id="tHelp" aria-expanded="false" aria-controls="tHelpPop" aria-label="How to use" title="How to use" hidden>?</button>
+    </div>
+    <div class="tpop" id="tSettings" hidden>
+      <span class="a4">Reference pitch A4
         <button id="a4Down" aria-label="Lower reference pitch">−</button>
         <input id="a4" type="number" min="415" max="466" inputmode="numeric" aria-label="A4 reference frequency">
         <button id="a4Up" aria-label="Raise reference pitch">+</button> Hz
       </span>
-      <button class="autobtn" id="tAuto" aria-pressed="true" hidden><span>Auto-detect string</span><span class="pill" id="tAutoPill">ON</span></button>
+    </div>
+    <div class="tpop" id="tHelpPop" hidden>
+      <p>Tap a note to lock the tuner to that string and hear it; the ▲ ▼ beside it retune the string by a semitone. Locking helps with big retunings, where a string you haven’t tuned yet can sound like its neighbour. Auto-detect goes back to following whichever string you play.</p>
     </div>
 
     <div class="guitar" id="tGuitar" hidden>
@@ -61,16 +69,9 @@
         <div id="tHead"></div>
         <div class="pegs right" id="pegsR"></div>
       </div>
-      <p class="hint">Use − and + to retune any string by a semitone. Tap a note to lock the tuner to that string; this helps with big retunings, where a string you haven’t tuned yet can sound like its neighbour.</p>
+      <p class="allin" id="tAllIn" hidden>✓ All strings in tune</p>
     </div>
 
-    <div class="trace-wrap">
-      <canvas id="tTrace" aria-hidden="true"></canvas>
-      <div class="cover" id="tCover">
-        <button class="go" id="tStart">Turn on microphone</button>
-        <p class="hint" id="tStatus">The tuner needs microphone access. Audio is processed only in your browser and is never sent anywhere.</p>
-      </div>
-    </div>
     <div class="tfoot">
       <button class="linkbtn" id="tStop" hidden>Turn off microphone</button>
     </div>
@@ -254,7 +255,7 @@
 </section>
 
 <script src="js/pitch.js?v=72831019"></script>
-<script src="js/tuner.js?v=a09ef1e6"></script>
+<script src="js/tuner.js?v=1269d2e2"></script>
 <script src="js/amp.js?v=eb9d514e"></script>
 <script src="js/metronome.js?v=a2ecc09e"></script>
 <script src="js/alphatab.js?v=ea58a266"></script>

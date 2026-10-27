@@ -134,33 +134,26 @@ button{cursor:pointer}
 .note{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:clamp(6.5rem,26vw,10.5rem);line-height:.88;color:var(--amber);font-variant-numeric:tabular-nums}
 .note sub{font-size:.36em;vertical-align:baseline;margin-left:.04em;color:var(--muted)}
 .readout.in .note{color:var(--ok)}
-.hz{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:1.05rem;color:var(--muted);margin-top:.4rem}
+.readout.idle .note{color:var(--muted)}
+.hz{min-height:1.6rem;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:1.05rem;color:var(--muted);margin-top:.4rem}
 .hz b{color:var(--ink);font-weight:700}
 .nw{white-space:nowrap}
 
-.meter-wrap{margin:1.6rem auto 0;position:relative}
-.scale{position:relative;height:2.6rem;border-bottom:1px solid var(--line)}
-.scale .zone{position:absolute;top:0;bottom:0;left:45%;width:10%;background:var(--ok-soft);border-radius:4px 4px 0 0}
-.scale .ticks{position:absolute;inset:auto 0 0 0;height:100%;display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none}
-.scale .ticks span{width:1px;height:35%;background:var(--line)}
-.scale .ticks span:nth-child(6){height:75%;background:var(--muted)}
-.scale .ticks span:first-child,.scale .ticks span:last-child{height:55%}
-.meter-wrap{--needle:var(--amber)}
-.meter-wrap.in{--needle:var(--ok)}
-.needle{position:absolute;top:0;bottom:-1px;left:50%;width:3px;margin-left:-1.5px;background:var(--needle);border-radius:2px;transition:left .09s linear}
-.needle::before{content:"";position:absolute;top:-.55rem;left:50%;transform:translateX(-50%);border-left:.45rem solid transparent;border-right:.45rem solid transparent;border-top:.55rem solid var(--needle)}
-.meter-wrap.idle .needle{opacity:.3}
-.scale-labels{display:flex;justify-content:space-between;font-family:"JetBrains Mono",monospace;font-size:.75rem;color:var(--muted);margin-top:.3rem}
-
-
-.trace-wrap{position:relative;margin-top:1.2rem;height:min(44vh,440px);border-top:1px dashed var(--line)}
-.tuner.mode-instrument .trace-wrap{height:min(26vh,260px)}
-.trace-wrap canvas{display:block;width:100%;height:100%}
-.cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;background:color-mix(in srgb,var(--bg) 70%,transparent);padding:1rem}
+/* strobe stage (tuner.js): a canvas, with the microphone button over it until it's on */
+.tstage{position:relative;margin:1rem auto .6rem;height:clamp(250px,40vh,340px)}
+.tuner.mode-instrument .tstage{height:130px}
+.tuner.mode-instrument .tstage .cover{min-height:150px}
+.tstage canvas{display:block;width:100%;height:100%}
+.cover{position:absolute;inset:0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;background:color-mix(in srgb,var(--bg) 70%,transparent);padding:1rem}
 .cover p{max-width:36ch;color:var(--muted);font-size:.92rem}
 
 .tset{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.7rem 1.2rem;margin:.4rem 0 .2rem}
-.tset .a4{color:var(--muted)}
+.tbtn{width:2.5rem;height:2.5rem;border:1px solid var(--line);border-radius:50%;background:var(--panel);display:inline-flex;align-items:center;justify-content:center;padding:0;font-weight:700;font-size:1.05rem;color:var(--muted)}
+.tbtn:hover,.tbtn[aria-expanded="true"]{color:var(--ink);border-color:var(--ink)}
+.tbtn svg{width:1.3rem;height:1.3rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.tpop{max-width:32rem;margin:.7rem auto 0;padding:.8rem 1rem;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--muted);font-size:.9rem;display:flex;justify-content:center}
+.tpop p{margin:0;line-height:1.5}
+.tpop .a4{flex-wrap:wrap;justify-content:center}
 .tfoot{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.6rem 1.4rem;margin-top:1rem;color:var(--muted);font-size:.92rem}
 .a4{display:flex;align-items:center;gap:.35rem}
 .a4 input{width:3.8rem;height:2.2rem;text-align:center;font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--ink);border:1px solid var(--line);border-radius:7px;background:var(--panel);padding:.25rem}
@@ -175,7 +168,6 @@ button{cursor:pointer}
 .modes button:disabled{opacity:.4;cursor:not-allowed}
 .modes button:disabled:hover{color:var(--muted)}
 .learn-modes{margin-bottom:1.4rem;width:fit-content}
-.meter-wrap{margin-bottom:.8rem}
 @media (max-width:520px){
   .modes{display:flex;width:100%;gap:.1rem;padding:.25rem}
   .modes button{min-width:0;flex:1;padding:.5rem .1rem .45rem;font-size:1rem;letter-spacing:-.01em}
@@ -196,14 +188,16 @@ button{cursor:pointer}
 .pill{min-width:2.6rem;padding:.22rem .5rem;border-radius:999px;font-family:"JetBrains Mono",monospace;font-size:.68rem;font-weight:700;letter-spacing:.05em;line-height:1.2;text-align:center;color:#fff;background:#C8382E}
 .autobtn[aria-pressed="true"] .pill{background:#1E8C4E}
 .gbody{--hw:260px;display:grid;grid-template-columns:1fr var(--hw) 1fr;align-items:start;gap:.3rem}
-.headstock{display:block;width:var(--hw);height:calc(var(--hw) * 1.6)}
+.headstock{display:block;width:var(--hw);height:calc(var(--hw) * 1.6);overflow:visible}
 .pegs{display:flex;flex-direction:column;padding-top:calc(var(--hw) * var(--ptf, .2))}
 .peg{height:calc(var(--hw) * var(--phf, .3));display:flex;align-items:center;gap:.25rem}
 .pegs.left .peg{justify-content:flex-end}
 .pegs.right .peg{justify-content:flex-start}
-.pm{width:2.1rem;height:2.1rem;border:1px solid var(--line);border-radius:7px;background:var(--panel);font-size:1.15rem;line-height:1;padding:0}
-.pm:hover{border-color:var(--ink)}
-.pm:disabled{opacity:.35;cursor:default}
+.parr{display:flex;flex-direction:column;gap:.2rem}
+.pegs.right .parr{order:2}
+.parr button{width:1.9rem;height:1.6rem;border:1px solid var(--amber);border-radius:6px;background:var(--panel);color:var(--amber);font-size:.68rem;line-height:1;padding:0}
+.parr button:hover{background:var(--amber-soft)}
+.parr button:disabled{opacity:.35;cursor:default}
 .pn{position:relative;min-width:5rem;height:3.5rem;border:1px solid var(--line);border-radius:9px;background:var(--panel);display:flex;align-items:center;justify-content:center;line-height:1;padding:0 .4rem;transition:background-color .15s,border-color .15s}
 .pnote{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:2.4rem}
 .pnote sub{font-size:.62em;color:var(--muted);vertical-align:baseline;margin-left:.05em}
@@ -222,10 +216,20 @@ button{cursor:pointer}
 .headstock .gstr.locked{stroke:var(--amber)}
 .headstock .gstr.active{stroke:var(--amber);filter:drop-shadow(0 0 3px var(--amber))}
 .headstock .gstr.in{stroke:var(--ok);filter:drop-shadow(0 0 4px var(--ok))}
+/* the string being played shimmers, as if it were ringing */
+@keyframes gvib{from{transform:translateX(-.45px)}to{transform:translateX(.45px)}}
+.headstock .gstr.active,.headstock .gstr.in{animation:gvib .045s linear infinite alternate}
+/* strobe rings on the tuning post: they turn while the string is off and stop when it's in tune */
+.pstrobe{opacity:0;transition:opacity .15s;pointer-events:none}
+.pstrobe.on{opacity:1}
+.pstrobe circle{fill:none;stroke:var(--amber);stroke-width:1.6}
+.pstrobe.in circle{stroke:var(--ok)}
+.allin{width:fit-content;margin:.9rem auto 0;padding:.35rem .95rem;border-radius:999px;background:var(--ok-soft);color:var(--ok);font-weight:700}
+.guitar.allin-on .headstock{filter:drop-shadow(0 0 12px color-mix(in srgb,var(--ok) 45%,transparent))}
 @media (max-width:480px){
   .gbody{--hw:138px;gap:.15rem}
   .peg{gap:.12rem}
-  .pm{width:1.45rem;height:1.45rem;font-size:.9rem}
+  .parr button{width:1.5rem;height:1.3rem}
   .pn{min-width:3.3rem;height:2.3rem;padding:0 .2rem}
   .pnote{font-size:1.75rem}
   .poff{font-size:.58rem;top:1px;right:3px}
@@ -422,4 +426,4 @@ button.chip:hover:not(:disabled){border-color:var(--amber);color:var(--ink)}
 .loopmark .lm-badge svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .loopmark.end .lm-badge svg{transform:scaleX(-1)}
 
-@media (prefers-reduced-motion:reduce){.needle,.readout,.pn,.gstr,.modes button,.autobtn,.emptystate{transition:none}}
+@media (prefers-reduced-motion:reduce){.readout,.pn,.gstr,.modes button,.autobtn,.emptystate,.pstrobe{transition:none}.headstock .gstr.active,.headstock .gstr.in{animation:none}}
