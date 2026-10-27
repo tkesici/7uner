@@ -15,12 +15,17 @@
      longer analysis windows and heavier smoothing.
      base: open-string MIDI notes, lowest-pitched string first.
      left/right: which strings sit on each side of the headstock, top to bottom.
-     rows: y of the first peg and the gap between pegs, in headstock units (200×320). */
+     rows: y of the first peg and the gap between pegs, in headstock units (200×320);
+     rowsR, when the right side's pegs sit differently from the left side's.
+     Extended-range guitars and basses (guitar7, bass5, ...) are variants of
+     their mode, picked with the string-count switch (COUNTS). */
+  const GUITAR_CFG = { inTune: 2, range: 25, minF: 38, maxF: 1400, windowSec: 0.17, clarity: 0.7, median: 7, onsetSkip: 5, decimals: 1 };
+  const BASS_CFG = { inTune: 2, range: 25, minF: 25, maxF: 600, windowSec: 0.22, clarity: 0.7, median: 7, onsetSkip: 6, decimals: 1 };
   const INSTR = {
     guitar: {
       label: "Guitar", base: [40, 45, 50, 55, 59, 64], offMin: -12, offMax: 5,
       left: [2, 1, 0], right: [3, 4, 5], rows: [70, 60],
-      cfg: { inTune: 2, range: 25, minF: 38, maxF: 1400, windowSec: 0.17, clarity: 0.7, median: 7, onsetSkip: 5, decimals: 1 },
+      cfg: GUITAR_CFG,
       presets: [
         ["Standard", [0, 0, 0, 0, 0, 0]],
         ["Drop D", [-2, 0, 0, 0, 0, 0]],
@@ -35,10 +40,28 @@
         ["Drop A", [-7, -5, -5, -5, -5, -5]]
       ]
     },
+    guitar7: {
+      label: "Guitar", base: [35, 40, 45, 50, 55, 59, 64], offMin: -12, offMax: 5,
+      left: [2, 1, 0], right: [3, 4, 5, 6], rows: [100, 50], rowsR: [50, 50],
+      cfg: GUITAR_CFG,
+      presets: [
+        ["Standard", [0, 0, 0, 0, 0, 0, 0]],
+        ["Drop A", [-2, 0, 0, 0, 0, 0, 0]]
+      ]
+    },
+    guitar8: {
+      label: "Guitar", base: [30, 35, 40, 45, 50, 55, 59, 64], offMin: -12, offMax: 5,
+      left: [3, 2, 1, 0], right: [4, 5, 6, 7], rows: [50, 50],
+      cfg: GUITAR_CFG,
+      presets: [
+        ["Standard", [0, 0, 0, 0, 0, 0, 0, 0]],
+        ["Drop E", [-2, 0, 0, 0, 0, 0, 0, 0]]
+      ]
+    },
     bass: {
       label: "Bass", base: [28, 33, 38, 43], offMin: -12, offMax: 5,
       left: [1, 0], right: [2, 3], rows: [100, 75],
-      cfg: { inTune: 2, range: 25, minF: 25, maxF: 600, windowSec: 0.22, clarity: 0.7, median: 7, onsetSkip: 6, decimals: 1 },
+      cfg: BASS_CFG,
       presets: [
         ["Standard", [0, 0, 0, 0]],
         ["Drop D", [-2, 0, 0, 0]],
@@ -50,6 +73,18 @@
         ["B standard", [-5, -5, -5, -5]],
         ["Drop A", [-7, -5, -5, -5]]
       ]
+    },
+    bass5: {
+      label: "Bass", base: [23, 28, 33, 38, 43], offMin: -12, offMax: 5,
+      left: [1, 0], right: [2, 3, 4], rows: [118, 58], rowsR: [60, 58],
+      cfg: BASS_CFG,
+      presets: [["Standard", [0, 0, 0, 0, 0]]]
+    },
+    bass6: {
+      label: "Bass", base: [23, 28, 33, 38, 43, 48], offMin: -12, offMax: 5,
+      left: [2, 1, 0], right: [3, 4, 5], rows: [60, 58],
+      cfg: BASS_CFG,
+      presets: [["Standard", [0, 0, 0, 0, 0, 0]]]
     },
     ukulele: {
       label: "Ukulele", base: [67, 60, 64, 69], offMin: -12, offMax: 5,
@@ -74,6 +109,8 @@
     }
   };
   const MODES = ["chromatic", "guitar", "bass", "ukulele", "violin"];
+  // string counts on offer; the first is the mode's own INSTR entry, the others are mode + count
+  const COUNTS = { guitar: [6, 7, 8], bass: [4, 5, 6] };
 
   const ICONS = {
     chromatic: '<path d="M11 3v10a5 5 0 0 0 10 0V3"/><path d="M16 18v11"/>',
@@ -97,12 +134,12 @@
     preset: $("tPreset"), auto: $("tAuto"), autoPill: $("tAutoPill"), pegsL: $("pegsL"), pegsR: $("pegsR"), head: $("tHead"),
     canvas: $("tStrobe"), cover: $("tCover"), start: $("tStart"), status: $("tStatus"), stop: $("tStop"),
     a4: $("a4"), a4d: $("a4Down"), a4u: $("a4Up"), presetWrap: $("tPresetWrap"),
-    gear: $("tGear"), help: $("tHelp"), setPop: $("tSettings"), helpPop: $("tHelpPop")
+    gear: $("tGear"), help: $("tHelp"), setPop: $("tSettings"), helpPop: $("tHelpPop"), count: $("tCount")
   };
 
   /* ---------- settings ---------- */
   const KEY = "7uner.tuner.v1";
-  const st = { mode: "chromatic", offsets: {}, a4: 440 };
+  const st = { mode: "chromatic", offsets: {}, a4: 440, strings: { guitar: 6, bass: 4 } };
   Object.keys(INSTR).forEach((k) => { st.offsets[k] = INSTR[k].base.map(() => 0); });
   const clampOff = (k, v) => Math.max(INSTR[k].offMin, Math.min(INSTR[k].offMax, Math.round(+v || 0)));
   try {
@@ -115,6 +152,7 @@
         if (Array.isArray(offs[k]) && offs[k].length === INSTR[k].base.length) st.offsets[k] = offs[k].map((v) => clampOff(k, v));
       });
       if (o.a4 >= 415 && o.a4 <= 466) st.a4 = +o.a4;
+      Object.keys(COUNTS).forEach((m) => { if (o.strings && COUNTS[m].includes(o.strings[m])) st.strings[m] = o.strings[m]; });
     } else {
       const v = +localStorage.getItem("7uner.a4");
       if (v >= 415 && v <= 466) st.a4 = v;
@@ -122,9 +160,11 @@
   } catch (e) {}
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
 
-  const instr = () => INSTR[st.mode] || null;
+  // the INSTR entry in use: the mode's own, or its 7-string, 5-string, ... variant
+  const ikey = () => (COUNTS[st.mode] && st.strings[st.mode] !== COUNTS[st.mode][0] ? st.mode + st.strings[st.mode] : st.mode);
+  const instr = () => INSTR[ikey()] || null;
   const cfg = () => (instr() ? instr().cfg : CHROMATIC);
-  const offs = () => st.offsets[st.mode];
+  const offs = () => st.offsets[ikey()];
   const target = (i) => instr().base[i] + offs()[i];
   const mtof = (m) => st.a4 * Math.pow(2, (m - 69) / 12);
   const noteName = (m) => NAMES[((m % 12) + 12) % 12];
@@ -174,12 +214,42 @@
       shape: "M58 248 L48 46 Q46 16 74 12 L100 22 L126 12 Q154 16 152 46 L142 248 Z", wood: "hsBlack",
       logo: logo(46, 19, "url(#hsGold)"), neck: [60, 140]
     }),
+    // extended range: 3+4 and 4+4 posts, closer together; a smaller logo fits between the top posts
+    guitar7: () => machineHead({
+      posts: [[70, 200], [70, 150], [70, 100], [130, 50], [130, 100], [130, 150], [130, 200]],
+      nut: [64, 76, 88, 100, 112, 124, 136], gauge: [3.1, 2.8, 2.3, 1.9, 1.5, 1.2, 1], post: 6.5,
+      knob: { inner: 44, w: 26, h: 20, r: 8, shaft: 18, sh: 5, fill: "#D3D6DB", stroke: "#7D838C" },
+      shape: "M58 248 L48 46 Q46 16 74 12 L100 22 L126 12 Q154 16 152 46 L142 248 Z", wood: "hsBlack",
+      logo: logo(44, 15, "url(#hsGold)"), neck: [60, 140]
+    }),
+    guitar8: () => machineHead({
+      posts: [[70, 200], [70, 150], [70, 100], [70, 50], [130, 50], [130, 100], [130, 150], [130, 200]],
+      nut: [62, 72.9, 83.7, 94.6, 105.4, 116.3, 127.1, 138], gauge: [3.4, 3.1, 2.8, 2.3, 1.9, 1.5, 1.2, 1], post: 6.5,
+      knob: { inner: 44, w: 26, h: 20, r: 8, shaft: 18, sh: 5, fill: "#D3D6DB", stroke: "#7D838C" },
+      shape: "M56 248 L47 46 Q45 16 74 12 L100 22 L126 12 Q155 16 153 46 L144 248 Z", wood: "hsBlack",
+      logo: logo(44, 15, "url(#hsGold)"), neck: [58, 142]
+    }),
     bass: () => machineHead({
       posts: [[66, 175], [66, 100], [134, 100], [134, 175]],
       nut: [70, 90, 110, 130], gauge: [4.2, 3.5, 2.8, 2.2], post: 8,
       knob: { inner: 42, w: 32, h: 26, r: 7, shaft: 22, sh: 7, fill: "#D3D6DB", stroke: "#7D838C" },
       shape: "M56 248 L42 64 Q38 22 78 16 Q100 12 122 16 Q162 22 158 64 L146 248 Z", wood: "hsBlack",
       logo: logo(52, 21), neck: [62, 138]
+    }),
+    // 2+3 and 3+3 posts
+    bass5: () => machineHead({
+      posts: [[66, 176], [66, 118], [134, 60], [134, 118], [134, 176]],
+      nut: [68, 84, 100, 116, 132], gauge: [4.6, 4.2, 3.5, 2.8, 2.2], post: 8,
+      knob: { inner: 42, w: 32, h: 26, r: 7, shaft: 22, sh: 7, fill: "#D3D6DB", stroke: "#7D838C" },
+      shape: "M56 248 L42 64 Q38 22 78 16 Q100 12 122 16 Q162 22 158 64 L146 248 Z", wood: "hsBlack",
+      logo: logo(46, 17), neck: [62, 138]
+    }),
+    bass6: () => machineHead({
+      posts: [[66, 176], [66, 118], [66, 60], [134, 60], [134, 118], [134, 176]],
+      nut: [64, 78.4, 92.8, 107.2, 121.6, 136], gauge: [4.6, 4.2, 3.5, 2.8, 2.2, 1.8], post: 8,
+      knob: { inner: 42, w: 32, h: 26, r: 7, shaft: 22, sh: 7, fill: "#D3D6DB", stroke: "#7D838C" },
+      shape: "M54 248 L42 64 Q38 22 78 16 Q100 12 122 16 Q162 22 158 64 L148 248 Z", wood: "hsBlack",
+      logo: logo(40, 17), neck: [58, 142]
     }),
     ukulele: () => machineHead({
       posts: [[78, 190], [78, 130], [122, 130], [122, 190]],
@@ -221,7 +291,7 @@
   function buildInstrument() {
     const I = instr();
     if (!I) return;
-    el.head.innerHTML = HEADS[st.mode]();
+    el.head.innerHTML = HEADS[ikey()]();
     strEls = []; postEls = [];
     el.head.querySelectorAll(".gstr").forEach((p) => { strEls[+p.dataset.i] = p; });
     el.head.querySelectorAll(".gpost").forEach((p) => { postEls[+p.dataset.i] = p; });
@@ -234,10 +304,11 @@
     pstrobe.innerHTML = ring(r * 2, 10) + ring(r * 2.9, 16);
     el.head.querySelector("svg").appendChild(pstrobe);
 
-    const n = I.base.length, [y0, gap] = I.rows;
-    const body = el.head.parentElement;
-    body.style.setProperty("--ptf", (y0 - gap / 2) / 200);
-    body.style.setProperty("--phf", gap / 200);
+    const n = I.base.length;
+    [[el.pegsL, I.rows], [el.pegsR, I.rowsR || I.rows]].forEach(([side, [y0, gap]]) => {
+      side.style.setProperty("--ptf", (y0 - gap / 2) / 200);
+      side.style.setProperty("--phf", gap / 200);
+    });
 
     pegEls = [];
     el.pegsL.innerHTML = ""; el.pegsR.innerHTML = "";
@@ -295,7 +366,7 @@
   }
 
   function setOffset(i, v) {
-    offs()[i] = clampOff(st.mode, v);
+    offs()[i] = clampOff(ikey(), v);
     tuned[i] = false;
     save(); renderPegs(); resetReading();
   }
@@ -363,6 +434,31 @@
     });
   }
 
+  /* ---------- string-count switch (guitar 6/7/8, bass 4/5/6) ---------- */
+  function buildCount() {
+    const counts = COUNTS[st.mode];
+    el.count.hidden = !counts;
+    if (!counts) return;
+    el.count.innerHTML = counts.map((n) => {
+      const on = n === st.strings[st.mode];
+      return '<button role="radio" data-n="' + n + '" aria-checked="' + on + '" tabindex="' + (on ? 0 : -1) + '" aria-label="' + n + ' strings">' + n + "</button>";
+    }).join("");
+  }
+  function setCount(n) {
+    if (!COUNTS[st.mode] || !COUNTS[st.mode].includes(n) || n === st.strings[st.mode]) return;
+    st.strings[st.mode] = n;
+    save(); applyMode();
+    el.count.querySelector('[data-n="' + n + '"]').focus();
+  }
+  el.count.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setCount(+b.dataset.n); });
+  el.count.addEventListener("keydown", (e) => {
+    const d = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+    const counts = COUNTS[st.mode];
+    if (!d || !counts) return;
+    e.preventDefault();
+    setCount(counts[(counts.indexOf(st.strings[st.mode]) + d + counts.length) % counts.length]);
+  });
+
   function applyMode() {
     el.modes.querySelectorAll("button").forEach((b) => {
       const on = b.dataset.mode === st.mode;
@@ -371,6 +467,7 @@
     });
     el.panel.hidden = !instr();
     el.presetWrap.hidden = !instr();
+    buildCount();
     el.auto.hidden = !instr();
     el.help.hidden = !instr();
     if (!instr()) closePops();
