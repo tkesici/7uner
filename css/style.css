@@ -141,8 +141,8 @@ button{cursor:pointer}
 
 /* strobe stage (tuner.js): a canvas, with the microphone button over it until it's on */
 .tstage{position:relative;margin:1rem auto .6rem;height:clamp(250px,40vh,340px)}
-.tuner.mode-instrument .tstage{height:130px}
-.tuner.mode-instrument .tstage .cover{min-height:150px}
+.tuner.mode-instrument .tstage{height:clamp(210px,28vh,260px)}
+.tuner.mode-instrument .tstage .cover{min-height:210px}
 .tstage canvas{display:block;width:100%;height:100%}
 .cover{position:absolute;inset:0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;background:color-mix(in srgb,var(--bg) 70%,transparent);padding:1rem}
 .cover p{max-width:36ch;color:var(--muted);font-size:.92rem}

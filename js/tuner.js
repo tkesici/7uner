@@ -84,10 +84,11 @@
   };
 
   const TICK_MS = 20;        // ~50 readings per second
-  const SILENCE_TICKS = 12;  // ~240 ms without a pitch before going idle
+  const SILENCE_TICKS = 25;  // ~500 ms without a pitch before going idle
   const HOLD_MS = 600;       // how long a string must stay in tune to get a tick
   const STROBE = 3;          // strobe speed: degrees per second for each cent off
-  const HIST_MS = 4000;      // how long a reading stays in the history trail
+  const HIST_SPEED = 60;     // the history trace scrolls down this many pixels a second
+  const GLIDE = 11;          // how quickly the display follows the pitch (spring stiffness, 1/s)
 
   const $ = (id) => document.getElementById(id);
   const el = {
@@ -387,35 +388,49 @@
     return (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toFixed(dec) + " cents";
   }
 
-  // what the strobe stage draws; the readout and the stage are updated from it
-  const view = { active: false, cents: 0, shown: 0, inTune: false, idx: null, phase: 0, waves: [], lastWave: 0, t: 0, hist: [] };
+  /* What the stage draws. The detector's readings can jump (a new note, a
+     new string, a wobble at the start of a pluck); the display never does:
+     "shown" follows "cents" on a critically damped spring, and when the
+     note or string changes it carries on from where the pitch really is, so
+     the dot slides in from the edge instead of snapping across. */
+  const view = { active: false, cents: 0, shown: 0, vel: 0, ok: false, inTune: false, idx: null, tgt: null,
+    phase: 0, waves: [], lastWave: 0, t: 0, hist: [], text: 0, lastIdx: undefined, lastOk: undefined };
+
+  // the note name eases in rather than switching
+  let shownName = "";
+  function setNote(name, oct) {
+    if (name + oct === shownName) return;
+    shownName = name + oct;
+    el.note.textContent = name;
+    el.oct.textContent = oct;
+    const box = el.note.parentElement;
+    if (box.animate) box.animate([{ opacity: 0.3, transform: "translateY(.06em)" }, { opacity: 1, transform: "none" }], { duration: 220, easing: "ease-out" });
+  }
 
   function show(freq, targetMidi, cents, stringIdx) {
-    const c = cfg(), inTune = Math.abs(cents) <= c.inTune;
-    el.note.textContent = noteName(targetMidi);
-    el.oct.textContent = octave(targetMidi);
-    el.hz.innerHTML = '<span class="nw"><b>' + freq.toFixed(c.decimals ? 2 : 1) + "</b> Hz</span>" +
-        (stringIdx != null ? ' &nbsp;<span class="nw">target ' + mtof(targetMidi).toFixed(2) + " Hz</span>" : "");
-    el.cents.textContent = fmtCents(cents, c.decimals);
+    const c = cfg();
+    setNote(noteName(targetMidi), octave(targetMidi));
     el.sub.textContent = stringIdx != null ? "String " + (instr().base.length - stringIdx) + (lock !== null ? " (locked)" : "") : "";
     el.readout.classList.remove("idle");
-    el.readout.classList.toggle("in", inTune);
-    if (!view.active) view.shown = cents;
-    Object.assign(view, { active: true, cents, inTune, idx: stringIdx });
-    view.hist.push({ t: performance.now(), c: cents, ok: inTune, k: stringIdx != null ? stringIdx : targetMidi });
-    if (instr()) highlight(stringIdx, inTune);
+    if (!view.active) { view.shown = cents; view.vel = 0; }
+    else if (view.tgt !== null && view.tgt !== targetMidi) {
+      // same pitch, new reference note: keep the dot where the sound is
+      view.shown = Math.max(-1.3 * c.range, Math.min(1.3 * c.range, view.shown + (view.tgt - targetMidi) * 100));
+      view.text = 0; // write the numbers for the new note straight away
+    }
+    Object.assign(view, { active: true, cents, inTune: Math.abs(cents) <= c.inTune, idx: stringIdx, tgt: targetMidi });
   }
 
   // nothing is being played: show a dash rather than a note that isn't there
   function idle() {
     el.readout.classList.add("idle");
     el.readout.classList.remove("in");
-    el.note.textContent = "–";
-    el.oct.textContent = "";
+    setNote("–", "");
     el.hz.innerHTML = "";
     el.cents.textContent = "";
     el.sub.textContent = instr() && lock !== null ? "String " + (instr().base.length - lock) + " (locked)" : "";
-    view.active = false; view.idx = null;
+    view.active = false; view.idx = null; view.tgt = null; view.vel = 0;
+    view.lastIdx = undefined;
     if (instr()) highlight(-1, false);
   }
 
@@ -449,21 +464,31 @@
     const dt = Math.min(0.1, Math.max(0, (now - (view.t || now)) / 1000));
     view.t = now;
     if (view.active) {
-      view.shown += (view.cents - view.shown) * Math.min(1, dt * 14);
+      for (let s = dt; s > 0; s -= 0.02) { // small steps keep the spring stable
+        const h = Math.min(0.02, s);
+        view.vel += (GLIDE * GLIDE * (view.cents - view.shown) - 2 * GLIDE * view.vel) * h;
+        view.shown += view.vel * h;
+      }
       view.phase = (view.phase + dt * view.shown * STROBE) % 360;
     }
-    const col = !view.active ? K.muted : view.inTune ? K.ok : K.amber;
+    // colours follow the eased reading too, so they don't flicker
+    view.ok = view.active && Math.abs(view.shown) <= c.inTune;
+    const col = !view.active ? K.muted : view.ok ? K.ok : K.amber;
+    if (view.active) updateReadout(now, c);
+    if (instr() && (view.idx !== view.lastIdx || view.ok !== view.lastOk)) {
+      view.lastIdx = view.idx; view.lastOk = view.ok;
+      highlight(view.active ? view.idx : -1, view.ok);
+    }
 
-    // geometry: in chromatic mode the arc is centred where the fork's sound
-    // comes from; otherwise its centre sits below the canvas so the gauge's
-    // ends reach the bottom edge and it fills the space
-    const R = chrom ? Math.min(W * 0.42, (H - 40 * dpr) / 1.85) : Math.min(W * 0.42, 2 * (H - 44 * dpr));
-    const cx = W / 2, cy = chrom ? R + 30 * dpr : H - 20 * dpr + R / 2;
+    // geometry: the arc sits at the top; the history scrolls down beneath it,
+    // and in chromatic mode the fork stands under it with its sound waves
+    const R = chrom ? Math.min(W * 0.42, (H - 40 * dpr) / 1.85) : Math.min(W * 0.42, H * 0.62);
+    const cx = W / 2, cy = R + 30 * dpr;
     const ang = (cents) => -Math.PI / 2 + Math.max(-1, Math.min(1, cents / c.range)) * SPAN;
     const A0 = -Math.PI / 2 - SPAN, A1 = -Math.PI / 2 + SPAN;
     g.clearRect(0, 0, W, H);
     g.lineCap = "round";
-    drawHistory(g, now, cx, cy, R, dpr, ang);
+    drawHistory(g, now, cx, cy, R, dpr, c, H);
 
     // in-tune zone, scale, ticks and labels
     g.lineWidth = 10 * dpr; g.strokeStyle = K.okSoft;
@@ -488,7 +513,7 @@
     if (view.active) {
       const a = ang(view.shown), x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R;
       g.save();
-      if (view.inTune) { g.shadowColor = K.ok; g.shadowBlur = 14 * dpr; }
+      if (view.ok) { g.shadowColor = K.ok; g.shadowBlur = 14 * dpr; }
       g.fillStyle = col; g.beginPath(); g.arc(x, y, 7 * dpr, 0, Math.PI * 2); g.fill();
       g.restore();
     }
@@ -497,22 +522,48 @@
     else placePostStrobe();
   }
 
-  /* history: each reading starts on the arc at its own angle and slides in
-     towards the centre as it fades, so the trail behind the gauge shows
-     whether the note held steady or wandered */
-  function drawHistory(g, now, cx, cy, R, dpr, ang) {
+  // the numbers under the note, from the eased reading, a few times a second
+  function updateReadout(now, c) {
+    if (now - view.text < 120) return;
+    view.text = now;
+    const f = mtof(view.tgt + view.shown / 100);
+    el.hz.innerHTML = '<span class="nw"><b>' + f.toFixed(c.decimals ? 2 : 1) + "</b> Hz</span>" +
+        (view.idx != null ? ' &nbsp;<span class="nw">target ' + mtof(view.tgt).toFixed(2) + " Hz</span>" : "");
+    el.cents.textContent = fmtCents(view.shown, c.decimals);
+    el.readout.classList.toggle("in", view.ok);
+  }
+
+  /* history: like a chart recorder. The newest reading sits on the arc right
+     where the dot is, and the trace scrolls down from there and fades, over
+     a faint in-tune band and centre line. */
+  function drawHistory(g, now, cx, cy, R, dpr, c, H) {
+    const clamp = (v) => Math.max(-1, Math.min(1, v / c.range));
+    const xOf = (v) => cx + R * Math.sin(SPAN * clamp(v));
+    const yArc = (v) => cy - R * Math.cos(SPAN * clamp(v));
+    const speed = (HIST_SPEED * dpr) / 1000, maxAge = (H - (cy - R)) / speed;
+    if (view.active) view.hist.push({ t: now, c: view.shown, ok: view.ok, k: view.idx != null ? view.idx : view.tgt });
     const h = view.hist;
-    while (h.length && now - h[0].t > HIST_MS) h.shift();
-    if (h.length < 2) return;
-    const pos = (s) => { const a = ang(s.c), r = R * (1 - 0.72 * ((now - s.t) / HIST_MS)); return [cx + Math.cos(a) * r, cy + Math.sin(a) * r]; };
-    g.lineWidth = 2 * dpr;
+    while (h.length && now - h[0].t > maxAge) h.shift();
+
+    // in-tune band and centre line, under the arc
+    const top = cy - R;
+    g.globalAlpha = 0.35; g.fillStyle = colors.okSoft;
+    g.fillRect(xOf(-c.inTune), top, xOf(c.inTune) - xOf(-c.inTune), H - top);
+    g.globalAlpha = 0.6; g.fillStyle = colors.line;
+    g.fillRect(cx - 0.5 * dpr, top, dpr, H - top);
+    g.globalAlpha = 1;
+
+    g.lineWidth = 2.5 * dpr; g.lineJoin = "round";
     for (let i = 1; i < h.length; i++) {
       const a = h[i - 1], b = h[i];
       if (b.t - a.t > 150 || a.k !== b.k) continue; // a pause, or another string or note: don't join them
-      const [x0, y0] = pos(a), [x1, y1] = pos(b);
-      g.globalAlpha = 0.5 * (1 - (now - b.t) / HIST_MS);
+      const age = (now - b.t) / maxAge;
+      g.globalAlpha = 0.85 * (1 - age);
       g.strokeStyle = b.ok ? colors.ok : colors.amber;
-      g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+      g.beginPath();
+      g.moveTo(xOf(a.c), yArc(a.c) + (now - a.t) * speed);
+      g.lineTo(xOf(b.c), yArc(b.c) + (now - b.t) * speed);
+      g.stroke();
     }
     g.globalAlpha = 1;
   }
@@ -546,7 +597,7 @@
     const metal = g.createLinearGradient(cx - gap - w, 0, cx + gap + w, 0);
     metal.addColorStop(0, "#8C939C"); metal.addColorStop(0.5, "#E3E7EC"); metal.addColorStop(1, "#8C939C");
     g.save();
-    if (view.active && view.inTune) { g.shadowColor = colors.ok; g.shadowBlur = 12 * dpr; }
+    if (view.ok) { g.shadowColor = colors.ok; g.shadowBlur = 12 * dpr; }
     g.strokeStyle = metal; g.lineWidth = w; g.lineCap = "round"; g.lineJoin = "round";
     const base = top + len, r = gap + w / 2;
     g.beginPath();
@@ -567,7 +618,7 @@
     const i = view.active ? view.idx : null, p = i != null ? postEls[i] : null;
     pstrobe.classList.toggle("on", !!p);
     if (!p) return;
-    pstrobe.classList.toggle("in", view.inTune);
+    pstrobe.classList.toggle("in", view.ok);
     pstrobe.setAttribute("transform", "translate(" + p.getAttribute("cx") + " " + p.getAttribute("cy") + ")");
     const [inner, outer] = pstrobe.children;
     inner.setAttribute("transform", "rotate(" + view.phase.toFixed(2) + ")");
@@ -618,7 +669,11 @@
 
       let key, tgt, idx = null;
       if (instr()) { idx = chooseString(med); key = idx; tgt = target(idx); }
-      else { tgt = Math.round(med); key = tgt; }
+      else {
+        tgt = Math.round(med);
+        if (lastKey !== null && Math.abs(med - lastKey) < 0.6) tgt = lastKey; // 10 cents of hysteresis at the ±50 boundary
+        key = tgt;
+      }
       const cents = (med - tgt) * 100;
 
       if (key !== lastKey || smooth === null) { smooth = cents; lastKey = key; inTuneSince = null; }
