@@ -1,0 +1,13 @@
+{
+  "name": "7uner",
+  "short_name": "7uner",
+  "description": "Tuner, guitar practice exercises and a Guitar Pro tab player that work offline.",
+  "start_url": "./#tuner",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#151A21",
+  "theme_color": "#151A21",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

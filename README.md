@@ -1,6 +1,6 @@
 # 7uner
 
-A chromatic tuner and guitar level test that run in the browser. No server, no build step, no dependencies: plain HTML, CSS and JavaScript.
+A chromatic and instrument tuner, guitar practice exercises and a Guitar Pro tab player that run in the browser. No server, no build step, no dependencies: plain HTML, CSS and JavaScript.
 
 ## Files
 

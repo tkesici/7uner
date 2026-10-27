@@ -579,7 +579,6 @@
         if (current && current.id === rec.id && api && api.score) return;
         if (!confirmDiscard()) return;
         current = rec;
-        if (window.levelTest) window.levelTest.pause();
         el.empty.hidden = true; el.player.hidden = false;
         renderList();
         setEdit(false);
