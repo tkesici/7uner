@@ -2,20 +2,21 @@
    A catalogue of exercises in three groups: techniques, modes and scales
    (js/exercises.js). Each exercise is a Guitar Pro file in practice/,
    written by tools/make-practice-files.js; alphaTab draws it and plays it
-   in a loop, at the tempo set here. */
+   in a loop. The sound goes through the amp (amp.js). The tempo is set on
+   the metronome (metronome.js), which swings along, clicks unless its
+   volume is turned to 0, and has the count-in switch. */
 (function () {
     "use strict";
 
     const CATS = window.practiceCatalogue;
-    const PROGRAM = { clean: 27, drive: 30 }; // General MIDI clean and distortion guitar
     const AT = () => window.alphaTab;
 
     /* ---------- settings ---------- */
     const KEY = "7uner.practice.v1";
-    let S = { bpm: {}, cat: "tech", sel: {}, notes: true, click: true, countIn: true, tone: "clean" };
+    let S = { bpm: {}, cat: "tech", sel: {} };
     try { const o = JSON.parse(localStorage.getItem(KEY) || "null"); if (o) S = Object.assign(S, o); } catch (e) {}
     if (S.bpm.chrom === 62) delete S.bpm.chrom; // old default
-    delete S.drone; delete S.droneSet; delete S.loops;
+    delete S.drone; delete S.droneSet; delete S.loops; delete S.tone; delete S.notes; delete S.click; delete S.countIn;
     const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
     /* ---------- elements ---------- */
@@ -23,12 +24,9 @@
     const el = {
         tabs: document.querySelectorAll("#page-test .tabs button"), list: $("exlist"),
         title: $("exTitle"), desc: $("exDesc"), facts: $("exFacts"),
-        bpm: $("bpm"), down: $("bpmDown"), up: $("bpmUp"), go: $("go"),
-        notes: $("pNotes"), click: $("pClick"), countIn: $("pCount"), tones: document.querySelectorAll("#pTone button"),
+        go: $("go"),
         wrap: $("pWrap"), score: $("pScoreEl"), msg: $("msg"), player: $("pPlayer"), page: $("page-test")
     };
-    const isOn = (b) => b.getAttribute("aria-pressed") === "true";
-    const setOn = (b, on) => b.setAttribute("aria-pressed", on ? "true" : "false");
     const visible = () => !el.page.hidden;
 
     function setMsg(text, isError) {
@@ -37,7 +35,7 @@
     }
 
     let cat = CATS[S.cat] ? S.cat : "tech";
-    let cur = null;
+    let cur = null, tempo = 60;
 
     function renderList() {
         el.list.innerHTML = "";
@@ -68,7 +66,7 @@
             });
         }
         el.facts.hidden = !ex.formula;
-        el.bpm.value = S.bpm[ex.id] || ex.start;
+        tempo = S.bpm[ex.id] || ex.start;
         setMsg("");
         renderList();
         if (visible()) loadExercise();
@@ -81,20 +79,20 @@
         select(ex);
     }
 
-    function clampBpm() {
-        let v = Math.round(+el.bpm.value || 60);
-        v = Math.max(30, Math.min(300, v));
-        el.bpm.value = v;
-        if (cur) { S.bpm[cur.id] = v; save(); }
+    function setTempo(v) {
+        tempo = Math.max(30, Math.min(300, Math.round(+v || 60)));
+        if (cur) { S.bpm[cur.id] = tempo; save(); }
         applySpeed();
-        return v;
+        renderList();
     }
 
     /* ---------- alphaTab ----------
        One player for the whole page, created the first time Practice is
        shown. The files are written at the exercise's starting tempo, so the
-       BPM box sets the playback speed relative to that. */
+       tempo becomes a playback speed relative to that. */
     let api = null, ready = false, playing = false, shown = null;
+
+    const metro = { bpm: () => (cur ? tempo : null), setBpm: setTempo, range: [30, 300], playing: () => playing };
 
     // on phones a bar of sixteenths is too cramped to wrap, so the tab
     // becomes one line that scrolls sideways with the cursor
@@ -124,6 +122,7 @@
                 el.go.textContent = playing ? "Stop" : "Start";
                 el.go.classList.toggle("stop", playing);
             });
+            api.playerPositionChanged.on((e) => window.metronome.sync(metro, e.currentTick));
             api.error.on(() => setMsg("Couldn’t play this exercise.", true));
         });
     }
@@ -137,7 +136,6 @@
             .then((buf) => {
                 if (cur !== ex) return;
                 const score = AT().importer.ScoreLoader.loadScoreFromBytes(new Uint8Array(buf), api.settings);
-                score.tracks.forEach((t) => { t.playbackInfo.program = PROGRAM[S.tone]; });
                 shown = ex;
                 api.renderScore(score);
                 applyOptions(); applySpeed();
@@ -147,45 +145,25 @@
 
     function applySpeed() {
         if (!api || !api.score || !cur) return;
-        api.playbackSpeed = +el.bpm.value / api.score.tempo;
+        api.playbackSpeed = tempo / api.score.tempo;
     }
     function applyOptions() {
         if (!api) return;
-        api.metronomeVolume = S.click ? 1 : 0;
-        api.countInVolume = S.countIn ? 1 : 0;
-        if (api.score) api.changeTrackVolume(api.score.tracks, S.notes ? 1 : 0);
-    }
-    function applyTone() {
-        if (!api || !api.score) return;
-        api.score.tracks.forEach((t) => { t.playbackInfo.program = PROGRAM[S.tone]; });
-        const was = playing;
-        stop();
-        api.loadMidiForScore();
-        applyOptions();
-        if (was) api.play();
+        api.metronomeVolume = window.metronome.level();
+        api.countInVolume = window.metronome.countIn() ? window.metronome.level() : 0;
     }
 
     function stop() { if (api && playing) api.stop(); }
     function toggle() {
         if (!api || !ready || !api.score) return;
         if (playing) api.stop();
-        else { clampBpm(); api.play(); }
+        else { applySpeed(); api.play(); }
     }
 
     /* ---------- wiring ---------- */
     el.go.disabled = true;
-    setOn(el.notes, S.notes); setOn(el.click, S.click); setOn(el.countIn, S.countIn);
-    const showTone = () => el.tones.forEach((b) => setOn(b, b.dataset.tone === S.tone));
-    showTone();
-    el.tones.forEach((b) => b.addEventListener("click", () => { S.tone = b.dataset.tone; save(); showTone(); applyTone(); }));
     el.tabs.forEach((b) => b.addEventListener("click", () => showCat(b.dataset.cat)));
-    el.down.addEventListener("click", () => { el.bpm.value = clampBpm() - 2; clampBpm(); renderList(); });
-    el.up.addEventListener("click", () => { el.bpm.value = clampBpm() + 2; clampBpm(); renderList(); });
-    el.bpm.addEventListener("change", () => { clampBpm(); renderList(); });
     el.go.addEventListener("click", toggle);
-    el.notes.addEventListener("click", () => { setOn(el.notes, !isOn(el.notes)); S.notes = isOn(el.notes); save(); applyOptions(); });
-    el.click.addEventListener("click", () => { setOn(el.click, !isOn(el.click)); S.click = isOn(el.click); save(); applyOptions(); });
-    el.countIn.addEventListener("click", () => { setOn(el.countIn, !isOn(el.countIn)); S.countIn = isOn(el.countIn); save(); applyOptions(); });
     document.addEventListener("keydown", (e) => {
         if (e.code !== "Space" || !el.go.offsetParent) return;
         if (["INPUT", "SELECT", "BUTTON", "TEXTAREA"].includes(e.target.tagName)) return;
@@ -193,6 +171,7 @@
         toggle();
     });
     window.at7.followTheme(() => api);
+    window.addEventListener("metronomechange", applyOptions);
 
     let wasNarrow = narrow(), rz = 0;
     window.addEventListener("resize", () => {
@@ -208,5 +187,5 @@
 
     showCat(cat);
 
-    window.practice = { pause: stop, show: loadExercise };
+    window.practice = { pause: stop, show() { window.metronome.bind(metro); loadExercise(); } };
 })();

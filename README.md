@@ -13,6 +13,8 @@ js/alphatab.js        Loads alphaTab once for Practice and Tab Studio
 js/exercises.js       Practice catalogue: names, descriptions, tempos
 js/practice.js        Practice: plays the exercise files with alphaTab, in a loop
 js/tab-studio.js      Tab Studio: opens, plays, loops and edits Guitar Pro / MusicXML files (alphaTab)
+js/amp.js             The amp: distortion, gain and volume for everything alphaTab plays
+js/metronome.js       The metronome beside the amp: swings at the playing tempo, sets tempo and click volume
 js/app.js             Switching between #tuner, #practice and #tab-studio, offline support
 practice/<id>.gp      The Practice exercises as Guitar Pro 7 files (generated, see below)
 tools/                Dev-only scripts (Node); not needed to run the site
@@ -61,7 +63,9 @@ The script reads every file back after writing it and stops if any note differs.
 - Guitar mode is stricter than chromatic mode: the in-tune zone is ±2 cents instead of ±5, the scale shows ±25 cents, readings use a longer analysis window, and the first moments of each pluck (which ring sharp) are ignored.
 - Chromatic mode detects roughly 27 Hz to 4200 Hz; guitar mode 38 Hz to 1400 Hz.
 - The A4 reference can be set between 415 and 466 Hz (440 by default). Mode, string tunings and A4 are saved in the browser.
-- Practice plays each exercise at the tempo you set by changing alphaTab’s playback speed relative to the file’s own tempo (the exercise’s starting tempo). Clean and Distortion switch the General MIDI instrument (27 and 30).
+- Practice plays each exercise at the tempo you set by changing alphaTab’s playback speed relative to the file’s own tempo (the exercise’s starting tempo).
+- Everything Practice and Tab Studio play goes through one amp (beside the page heading, `js/amp.js`): a distortion switch, gain and volume, saved in the browser. The metronome goes through it too, so Volume 0 silences it as well.
+- Beside the amp is a metronome (`js/metronome.js`). While Practice or Tab Studio plays, its rod swings at the playing tempo, kept in phase with the music. Sliding the weight or the − and + buttons (10 BPM a step) set the tempo; in Practice this is the only tempo control, and in Tab Studio it sets the speed relative to the song’s tempo. The knob on its right side sets the click and count-in volume (1.25× alphaTab’s default at the middle, 2.5× at the top); in Practice the click is always on and volume 0 silences it. The switch on its left side turns the one-bar count-in on (the default) or off, for both pages.
 - Practice tempos and Tab Studio settings are stored in `localStorage` and don't carry over to other devices.
 - Tab Studio uses [alphaTab](https://alphatab.net) (MPL-2.0), loaded from jsDelivr at a pinned version the first time Practice or Tab Studio needs it. Opened files are kept in the browser's IndexedDB and are never uploaded.
 - Tab Studio shows and edits guitar tracks only; drums, bass and other instruments play as backing. Edited files are saved as a separate copy and downloaded as Guitar Pro 7 (.gp).

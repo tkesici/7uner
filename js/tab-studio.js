@@ -24,7 +24,7 @@
         title: $("cTitle"), meta: $("cMeta"), notice: $("cNotice"), status: $("cStatus"), time: $("cTime"),
         edit: $("cEdit"), editPill: $("cEditPill"), dirty: $("cDirty"), save: $("cSave"), download: $("cDownload"),
         go: $("cGo"), stop: $("cStop"), pct: $("cPct"), bpm: $("cBpm"), speed: $("cSpeed"),
-        track: $("cTrack"), click: $("cClick"), count: $("cCount"), notation: $("cScore"),
+        track: $("cTrack"), click: $("cClick"), notation: $("cScore"),
         loopInfo: $("cLoopInfo"), loopPill: $("cLoopPill"),
         eBar: $("eBar"), ePos: $("ePos"), eFret: $("eFret"),
         wrap: $("cWrap"), score: $("cScoreEl")
@@ -42,7 +42,7 @@
 
     /* ---------- preferences ---------- */
     const PKEY = "7uner.tabstudio.v1";
-    let prefs = { speed: 100, master: 100, guitar: 100, backing: 80, muted: {}, click: false, count: false };
+    let prefs = { speed: 100, master: 100, guitar: 100, backing: 80, muted: {}, click: false };
     try { const o = JSON.parse(localStorage.getItem(PKEY) || "null"); if (o) prefs = Object.assign(prefs, o); } catch (e) {}
     const savePrefs = () => { try { localStorage.setItem(PKEY, JSON.stringify(prefs)); } catch (e) {} };
 
@@ -161,7 +161,10 @@
             el.go.textContent = playing ? "Pause" : "Play";
             el.go.classList.toggle("stop", playing);
         });
-        api.playerPositionChanged.on((e) => { el.time.textContent = mmss(e.currentTime) + " / " + mmss(e.endTime); });
+        api.playerPositionChanged.on((e) => {
+            el.time.textContent = mmss(e.currentTime) + " / " + mmss(e.endTime);
+            window.metronome.sync(metro, e.currentTick);
+        });
         api.playbackRangeHighlightChanged.on(onRangeHighlight);
         api.playbackRangeChanged.on((e) => setLoopState(!!(e && e.playbackRange)));
         api.renderStarted.on(() => { rendering = true; });
@@ -229,12 +232,22 @@
         prefs.speed = pct; savePrefs();
     }
     function applyPlayerOptions() {
-        prefs.click = isOn(el.click); prefs.count = isOn(el.count); savePrefs();
+        prefs.click = isOn(el.click); savePrefs();
         if (!api) return;
         api.isLooping = loopOn;
-        api.metronomeVolume = prefs.click ? 1 : 0;
-        api.countInVolume = prefs.count ? 1 : 0;
+        api.metronomeVolume = prefs.click ? window.metronome.level() : 0;
+        api.countInVolume = window.metronome.countIn() ? window.metronome.level() : 0; // the metronome’s switch
     }
+
+    /* the metronome (metronome.js) shows the playing tempo; sliding its
+       weight sets the speed relative to the song’s own tempo */
+    const baseTempo = () => (api && api.score ? api.score.tempo : 0);
+    const metro = {
+        bpm: () => (baseTempo() ? (baseTempo() * +el.speed.value) / 100 : null),
+        setBpm(v) { el.speed.value = Math.max(25, Math.min(125, Math.round((v / baseTempo()) * 100))); applySpeed(); },
+        get range() { return [Math.ceil(baseTempo() * 0.25), Math.floor(baseTempo() * 1.25)]; },
+        playing: () => playing
+    };
     function level(key) { return prefs.muted[key] ? 0 : prefs[key] / 100; }
     function applyVolumes() {
         document.querySelectorAll(".mute").forEach((b) => b.setAttribute("aria-pressed", prefs.muted[b.dataset.mix] ? "true" : "false"));
@@ -585,7 +598,7 @@
     }
 
     /* ---------- wiring ---------- */
-    el.speed.value = prefs.speed; setOn(el.click, prefs.click); setOn(el.count, prefs.count);
+    el.speed.value = prefs.speed; setOn(el.click, prefs.click);
     el.pct.textContent = prefs.speed + "%";
     applyVolumes();
 
@@ -617,7 +630,6 @@
         applyVolumes(); updateEditBar();
     });
     el.click.addEventListener("click", () => { setOn(el.click, !isOn(el.click)); applyPlayerOptions(); });
-    el.count.addEventListener("click", () => { setOn(el.count, !isOn(el.count)); applyPlayerOptions(); });
     el.notation.addEventListener("click", () => { if (el.notation.disabled) return; setOn(el.notation, !isOn(el.notation)); applyNotation(); });
 
     Object.keys(vol).forEach((k) => vol[k].addEventListener("input", () => {
@@ -696,5 +708,7 @@
 
     refresh();
 
-    window.tabStudio = { pause };
+    window.addEventListener("metronomechange", applyPlayerOptions);
+
+    window.tabStudio = { pause, show() { window.metronome.bind(metro); } };
 })();

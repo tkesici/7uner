@@ -48,6 +48,85 @@ button{cursor:pointer}
 .sitenav a:hover{color:var(--ink)}
 .sitenav a[aria-current="page"]{background:var(--ink);color:var(--bg)}
 
+/* page heading with the amp beside it (Practice, Tab Studio) */
+.pagehead{display:grid;grid-template-columns:minmax(0,1fr) minmax(440px,540px);gap:1.2rem 2.4rem;align-items:stretch}
+.pagehead .lede{margin-bottom:0}
+@media (max-width:1000px){.pagehead{grid-template-columns:1fr}}
+.rig{display:flex;align-items:stretch;gap:1rem;height:100%}
+.rig .amp{flex:1;min-width:0}
+
+/* amp (js/amp.js): a small combo, the same in light and dark themes, like the real thing */
+.amp{display:flex;flex-direction:column;gap:9px;height:100%;padding:9px;border-radius:14px;color:#E9E2CF;
+  background:repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0 2px,transparent 2px 4px),linear-gradient(#26272B,#141416);
+  border:2px solid #0A0A0C;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05),0 4px 14px rgba(0,0,0,.28)}
+.amp-ctl{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.75rem 1.1rem;border-radius:7px;
+  background:linear-gradient(#3A3C41,#24262A);border:1px solid #0A0A0C;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+.amp-sw{display:flex;align-items:center;gap:.55rem;height:2.4rem;padding:0 .9rem;border:1px solid #0A0A0B;border-radius:6px;
+  background:linear-gradient(#45474D,#2A2B2F);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);
+  font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:.95rem;letter-spacing:.1em;text-transform:uppercase;color:#E9E2CF}
+.amp-sw .led{width:.65rem;height:.65rem;border-radius:50%;background:#4A2222;box-shadow:inset 0 0 2px #000}
+.amp-sw[aria-pressed="true"] .led{background:#FF4A3A;box-shadow:0 0 6px 2px rgba(255,74,58,.65)}
+.knob{display:flex;flex-direction:column;align-items:center;gap:.35rem;cursor:ns-resize;touch-action:none;user-select:none;-webkit-user-select:none;border-radius:8px}
+.kcap{position:relative;width:2.7rem;height:2.7rem;flex:none;border-radius:50%;transform:rotate(var(--a,0deg));
+  background:radial-gradient(circle at 35% 30%,#54575E,#17181B 70%);border:2px solid #08080A;box-shadow:0 0 0 3px #303237,0 2px 4px rgba(0,0,0,.5)}
+.kcap::after{content:"";position:absolute;left:50%;top:3px;width:3px;height:42%;margin-left:-1.5px;border-radius:2px;background:#F2B33D}
+.knob.turning .kcap{box-shadow:0 0 0 3px #F2B33D,0 2px 4px rgba(0,0,0,.5)}
+.klab{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:#C9C1AC;line-height:1}
+.kval{font-family:"JetBrains Mono",monospace;font-size:.82rem;letter-spacing:0;color:#E9E2CF}
+.amp:not(.driven) .knob[data-k="gain"]{opacity:.45}
+/* speaker grille: woven cloth behind a dark frame, with the nameplate */
+.amp-grille{position:relative;flex:1;min-height:6.5rem;border-radius:7px;border:1px solid #050506;
+  background:repeating-linear-gradient(45deg,#3A342B 0 1.5px,transparent 1.5px 4px),repeating-linear-gradient(-45deg,#2F2A23 0 1.5px,#1A1714 1.5px 4px);
+  box-shadow:inset 0 0 22px rgba(0,0,0,.75)}
+.amp-badge{position:absolute;top:.6rem;left:.8rem;padding:.1rem .55rem .15rem;border-radius:4px;background:linear-gradient(#1E1F22,#0E0F11);
+  border:1px solid #6B5A2A;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.3rem;letter-spacing:-.01em;color:#D4AF37;line-height:1.1}
+.amp-badge small{margin-left:.3rem;font-size:.6rem;font-weight:600;letter-spacing:.25em;text-transform:uppercase;color:#9A9483}
+@media (max-width:1000px){
+  .rig{height:auto}
+  .amp{height:auto}
+  .amp-grille{min-height:5.5rem}
+}
+@media (max-width:560px){
+  .amp-grille{display:none}
+}
+
+/* metronome (js/metronome.js): drawn in SVG, wood and brass in both themes */
+.metro{flex:none;width:150px;display:flex;align-items:flex-end;justify-content:center}
+.metro-svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 4px 8px rgba(0,0,0,.28))}
+.metro-scale text{font-family:"JetBrains Mono",monospace;font-size:6.4px;font-weight:700;stroke:none}
+.metro-bpm{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:15px;fill:#F2B33D}
+.metro-unit{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:8px;letter-spacing:.1em;fill:#B79A5B}
+.metro-vollab{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:7px;letter-spacing:.14em;fill:var(--muted)}
+.metro-weight{cursor:ns-resize;touch-action:none}
+.metro-vol{cursor:ns-resize;touch-action:none}
+.metro.sliding .metro-weight path:first-of-type,.metro-weight:focus-visible path:first-of-type{stroke:#F2B33D;stroke-width:2}
+.metro.turning .metro-volcap circle:first-child,.metro-vol:focus-visible .metro-volcap circle:first-child{stroke:#F2B33D;stroke-width:2}
+.metro-weight:focus,.metro-vol:focus{outline:none}
+.metro.idle .metro-weight{cursor:default;opacity:.75}
+.metro-step{cursor:pointer}
+.metro-step:hover rect:nth-of-type(2){filter:brightness(1.12)}
+.metro-step:active rect:nth-of-type(2){filter:brightness(.85)}
+.metro-step:focus{outline:none}
+.metro-step:focus-visible rect:nth-of-type(2){stroke:#F2B33D;stroke-width:2}
+.metro.idle .metro-step{cursor:default;opacity:.45}
+/* count-in switch: the bat points up when on, down when off */
+.metro-cnt{cursor:pointer}
+.metro-cnt:focus{outline:none}
+.metro-cnt:focus-visible circle:nth-of-type(2){stroke:#F2B33D;stroke-width:2}
+.metro-bat{transform-box:view-box;transform-origin:15px 150px;transform:rotate(200deg);transition:transform .15s}
+.metro.counting .metro-bat{transform:rotate(-20deg)}
+.metro.counting .metro-cntlab{fill:var(--amber)}
+@media (prefers-reduced-motion:reduce){.metro-bat{transition:none}}
+@media (max-width:560px){
+  .rig{align-items:center;gap:.5rem}
+  .metro{width:96px}
+}
+@media (max-width:480px){
+  .amp-ctl{padding:.6rem .6rem;gap:.4rem}
+  .amp-sw{padding:0 .6rem;font-size:.85rem;letter-spacing:.05em}
+  .kcap{width:2.3rem;height:2.3rem}
+}
+
 /* ---------- tuner ---------- */
 .tuner{max-width:720px;margin:0 auto;padding:1.4rem 1.1rem 3rem;text-align:center}
 .readout{transition:opacity .2s}
@@ -95,7 +174,7 @@ button{cursor:pointer}
 .modes button[aria-checked="true"]{background:var(--ink);color:var(--bg)}
 .modes button:disabled{opacity:.4;cursor:not-allowed}
 .modes button:disabled:hover{color:var(--muted)}
-.learn-modes{margin-bottom:1.4rem}
+.learn-modes{margin-bottom:1.4rem;width:fit-content}
 .meter-wrap{margin-bottom:.8rem}
 @media (max-width:520px){
   .modes{display:flex;width:100%;gap:.1rem;padding:.25rem}
@@ -169,14 +248,6 @@ button{cursor:pointer}
 .exfacts{display:grid;grid-template-columns:auto 1fr;gap:.25rem .9rem;margin:.7rem 0 0;font-size:.95rem}
 .exfacts dt{color:var(--muted);font-weight:600}
 .exfacts dd{margin:0;font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--ink)}
-.pchips{margin:-.2rem 0 .6rem}
-.ptoolbar{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1rem;margin:-.2rem 0 .6rem}
-.ptoolbar .pchips{margin:0}
-.seg{display:inline-flex;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
-.seg button{display:inline-flex;align-items:center;gap:.4rem;height:2.15rem;padding:0 .9rem;border:0;border-radius:999px;background:none;font-weight:600;font-size:.92rem;color:var(--muted);white-space:nowrap}
-.seg button:hover{color:var(--ink)}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-.seg svg{width:1.15rem;height:1.15rem;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 @media (max-width:820px){
   .practice .exlist{flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:.4rem;gap:.5rem}
   .practice .exlist li{flex:0 0 min(72%,16rem);scroll-snap-align:start}
@@ -186,15 +257,12 @@ button{cursor:pointer}
 @media (max-width:640px){
   .practice .controls{gap:.7rem}
   .practice .controls .go{flex:1 1 100%;margin-left:0}
-  .chips.pchips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
-  .ptoolbar{flex-direction:column;align-items:stretch}
-  .ptoolbar .seg{display:grid;grid-template-columns:1fr 1fr}
-  .ptoolbar .seg button{justify-content:center}
-  .pchips .chip{flex-direction:column;justify-content:center;height:auto;padding:.5rem .3rem .45rem;border-radius:12px;font-size:.82rem;gap:.25rem;min-width:0}
-  .pchips .chip span{overflow:hidden;text-overflow:ellipsis}
 }
-.tabs{display:flex;gap:.25rem;margin-top:1.4rem;border-bottom:2px solid var(--line);overflow-x:auto}
-.tabs button{background:none;border:0;padding:.7rem 1rem;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.15rem;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+/* the bottom rule is an inset shadow, not a border, so the tabs can scroll
+   sideways on narrow screens without a scrollbar or clipping the underline */
+.tabs{display:flex;gap:.25rem;margin-top:1.4rem;box-shadow:inset 0 -2px 0 var(--line);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{background:none;border:0;padding:.7rem 1rem;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.15rem;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--amber)}
 .test-main{padding:1.6rem 1.1rem 4rem}
 
@@ -213,11 +281,6 @@ button{cursor:pointer}
 .phead p{color:var(--muted);max-width:70ch}
 .controls{display:flex;flex-wrap:wrap;align-items:center;gap:.8rem 1.2rem;margin:1.1rem 0}
 .controls .go{margin-left:auto}
-.bpm{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.bpm button{background:var(--bg);border:0;width:2.6rem;height:2.9rem;font-size:1.4rem}
-.bpm label{display:flex;align-items:baseline;gap:.3rem;padding:0 .6rem}
-.bpm input{width:3.6rem;border:0;background:transparent;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:1.5rem;text-align:right}
-.bpm span{color:var(--muted);font-size:.85rem}
 .sel select{margin-left:.35rem;padding:.35rem .4rem;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
 .chk{display:flex;align-items:center;gap:.4rem;color:var(--muted)}
 

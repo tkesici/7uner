@@ -35,6 +35,11 @@
     if (p !== "tab-studio" && window.tabStudio) window.tabStudio.pause();
     if (p === "tuner" && window.tuner) window.tuner.resize();
     if (p === "practice" && window.practice) window.practice.show();
+    if (p === "tab-studio" && window.tabStudio) window.tabStudio.show();
+    // one amp (amp.js) and metronome (metronome.js) for Practice and Tab Studio,
+    // shown beside the open page's heading
+    const slot = document.querySelector("#" + pages[p] + " .amp-slot"), rig = document.getElementById("rig");
+    if (slot && rig.parentElement !== slot) slot.appendChild(rig);
     document.title = titles[p];
   }
 
