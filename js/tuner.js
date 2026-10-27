@@ -87,6 +87,7 @@
   const SILENCE_TICKS = 12;  // ~240 ms without a pitch before going idle
   const HOLD_MS = 600;       // how long a string must stay in tune to get a tick
   const STROBE = 3;          // strobe speed: degrees per second for each cent off
+  const HIST_MS = 4000;      // how long a reading stays in the history trail
 
   const $ = (id) => document.getElementById(id);
   const el = {
@@ -375,6 +376,7 @@
     el.root.classList.toggle("mode-instrument", !!instr());
     buildInstrument();
     resetReading(); // also clears the last reading, so nothing from the previous mode stays on screen
+    clearHistory();
     resize();
   }
   function setMode(m) { if (m === st.mode || !MODES.includes(m)) return; st.mode = m; save(); applyMode(); }
@@ -386,7 +388,7 @@
   }
 
   // what the strobe stage draws; the readout and the stage are updated from it
-  const view = { active: false, cents: 0, shown: 0, inTune: false, idx: null, phase: 0, waves: [], lastWave: 0, t: 0 };
+  const view = { active: false, cents: 0, shown: 0, inTune: false, idx: null, phase: 0, waves: [], lastWave: 0, t: 0, hist: [] };
 
   function show(freq, targetMidi, cents, stringIdx) {
     const c = cfg(), inTune = Math.abs(cents) <= c.inTune;
@@ -400,6 +402,7 @@
     el.readout.classList.toggle("in", inTune);
     if (!view.active) view.shown = cents;
     Object.assign(view, { active: true, cents, inTune, idx: stringIdx });
+    view.hist.push({ t: performance.now(), c: cents, ok: inTune, k: stringIdx != null ? stringIdx : targetMidi });
     if (instr()) highlight(stringIdx, inTune);
   }
 
@@ -460,6 +463,7 @@
     const A0 = -Math.PI / 2 - SPAN, A1 = -Math.PI / 2 + SPAN;
     g.clearRect(0, 0, W, H);
     g.lineCap = "round";
+    drawHistory(g, now, cx, cy, R, dpr, ang);
 
     // in-tune zone, scale, ticks and labels
     g.lineWidth = 10 * dpr; g.strokeStyle = K.okSoft;
@@ -491,6 +495,26 @@
 
     if (chrom) drawFork(g, now, cx, cy + 4 * dpr, R, dpr);
     else placePostStrobe();
+  }
+
+  /* history: each reading starts on the arc at its own angle and slides in
+     towards the centre as it fades, so the trail behind the gauge shows
+     whether the note held steady or wandered */
+  function drawHistory(g, now, cx, cy, R, dpr, ang) {
+    const h = view.hist;
+    while (h.length && now - h[0].t > HIST_MS) h.shift();
+    if (h.length < 2) return;
+    const pos = (s) => { const a = ang(s.c), r = R * (1 - 0.72 * ((now - s.t) / HIST_MS)); return [cx + Math.cos(a) * r, cy + Math.sin(a) * r]; };
+    g.lineWidth = 2 * dpr;
+    for (let i = 1; i < h.length; i++) {
+      const a = h[i - 1], b = h[i];
+      if (b.t - a.t > 150 || a.k !== b.k) continue; // a pause, or another string or note: don't join them
+      const [x0, y0] = pos(a), [x1, y1] = pos(b);
+      g.globalAlpha = 0.5 * (1 - (now - b.t) / HIST_MS);
+      g.strokeStyle = b.ok ? colors.ok : colors.amber;
+      g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+    }
+    g.globalAlpha = 1;
   }
 
   function drawWaves(g, now, cx, cy, R, dpr, col, A0, A1) {
@@ -555,6 +579,7 @@
   let recent = [], smooth = null, lastKey = null, silent = 0, prevRms = 0, skip = 0, inTuneSince = null;
 
   function resetReading() { recent = []; smooth = null; lastKey = null; inTuneSince = null; idle(); }
+  const clearHistory = () => { view.hist = []; };
 
   function chooseString(midi) {
     if (lock !== null) return lock;
@@ -662,6 +687,7 @@
     ctx = stream = analyser = null;
     resetReading();
     view.waves = [];
+    clearHistory();
     drawStage(performance.now());
     el.cover.hidden = false;
     el.stop.hidden = true;

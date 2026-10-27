@@ -150,7 +150,7 @@ button{cursor:pointer}
 .tset{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.7rem 1.2rem;margin:.4rem 0 .2rem}
 .tbtn{width:2.5rem;height:2.5rem;border:1px solid var(--line);border-radius:50%;background:var(--panel);display:inline-flex;align-items:center;justify-content:center;padding:0;font-weight:700;font-size:1.05rem;color:var(--muted)}
 .tbtn:hover,.tbtn[aria-expanded="true"]{color:var(--ink);border-color:var(--ink)}
-.tbtn svg{width:1.3rem;height:1.3rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.tbtn svg{width:1.35rem;height:1.35rem;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .tpop{max-width:32rem;margin:.7rem auto 0;padding:.8rem 1rem;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--muted);font-size:.9rem;display:flex;justify-content:center}
 .tpop p{margin:0;line-height:1.5}
 .tpop .a4{flex-wrap:wrap;justify-content:center}
@@ -204,7 +204,7 @@ button{cursor:pointer}
 .poff{position:absolute;top:3px;right:5px;font-family:"JetBrains Mono",monospace;font-size:.68rem;font-weight:700;color:var(--blue)}
 .peg.active .pn{border-color:var(--amber);background:var(--amber-soft)}
 .peg.in .pn{border-color:var(--ok);background:var(--ok-soft)}
-.peg.tuned .pnote::after{content:"✓";color:var(--ok);font-size:.75em;margin-left:.2em}
+.peg.tuned .pn{border-color:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
 .peg .pn[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
 .peg .pn[aria-pressed="true"] sub,.peg .pn[aria-pressed="true"] .poff{color:var(--amber-ink)}
 .peg.in .pn[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
