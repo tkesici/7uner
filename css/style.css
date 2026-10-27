@@ -51,6 +51,12 @@ button{cursor:pointer}
 .sitenav a:hover{color:var(--ink)}
 .sitenav a[aria-current="page"]{background:var(--ink);color:var(--bg)}
 
+/* site footer: the privacy note */
+.sitefoot{border-top:1px solid var(--line);padding:1.2rem 0 1.6rem;color:var(--muted);font-size:.85rem}
+.sitefoot p{max-width:80ch;margin:.25rem 0}
+.sitefoot b{color:var(--ink);font-weight:600}
+.sitefoot a{color:inherit}
+
 /* page heading with the amp beside it (Practice, Tab Studio) */
 .pagehead{display:grid;grid-template-columns:minmax(0,1fr) minmax(440px,540px);gap:1.2rem 2.4rem;align-items:stretch}
 .pagehead .lede{margin-bottom:0}
