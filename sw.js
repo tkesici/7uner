@@ -5,14 +5,14 @@
    The ?v= hashes and the cache name are written by tools/stamp-assets.js. */
 "use strict";
 
-const CACHE = "7uner-171fbe61";
+const CACHE = "7uner-cde091e3";
 // the Practice exercise files, listed in js/exercises.js
 importScripts("js/exercises.js?v=5d9b570f");
 const PRACTICE = Object.keys(self.practiceCatalogue).flatMap((c) => self.practiceCatalogue[c].map((x) => x.id))
     .map((id) => "practice/" + id + ".gp?v=" + self.practiceFilesVersion);
 const SHELL = [
   "./", "index.html", "css/style.css?v=7d8680c3", "favicon.svg", "manifest.webmanifest",
-  "js/tuner.js?v=790cbe63", "js/pitch.js?v=72831019", "js/amp.js?v=eb9d514e", "js/metronome.js?v=a2ecc09e", "js/alphatab.js?v=ea58a266", "js/exercises.js?v=5d9b570f", "js/practice.js?v=f8b4a7bf", "js/tab-studio.js?v=68955429", "js/app.js?v=18d89ff3"
+  "js/tuner.js?v=790cbe63", "js/pitch.js?v=36c33db7", "js/amp.js?v=eb9d514e", "js/metronome.js?v=a2ecc09e", "js/alphatab.js?v=ea58a266", "js/exercises.js?v=5d9b570f", "js/practice.js?v=f8b4a7bf", "js/tab-studio.js?v=68955429", "js/app.js?v=18d89ff3"
 ].concat(PRACTICE);
 const CDN = ["https://cdn.jsdelivr.net", "https://fonts.googleapis.com", "https://fonts.gstatic.com"];
 

@@ -77,8 +77,11 @@
       n[t] = m > 1e-12 ? (2 * re[t]) / M / m : 0;
     }
 
-    // skip the first positive lobe, then collect the highest point of each positive lobe
-    let t = minLag;
+    // skip the positive lobe around lag 0, then collect the highest point of
+    // each positive lobe. The skipping starts at lag 1, not minLag: for notes
+    // near maxF, minLag already lies in the lobe of the true period, and
+    // skipping that one read the note an octave low.
+    let t = 1;
     while (t <= maxLag && n[t] > 0) t++;
     const peaks = [];
     let inPos = false, best = 0, bestV = -1;
@@ -86,9 +89,9 @@
       if (n[t] > 0) {
         if (!inPos) { inPos = true; best = t; bestV = n[t]; }
         else if (n[t] > bestV) { best = t; bestV = n[t]; }
-      } else if (inPos) { peaks.push(best); inPos = false; }
+      } else if (inPos) { if (best >= minLag) peaks.push(best); inPos = false; }
     }
-    if (inPos && best < maxLag) peaks.push(best);
+    if (inPos && best < maxLag && best >= minLag) peaks.push(best);
     if (!peaks.length) return { f: -1, rms, clarity: 0 };
 
     let gmax = 0;

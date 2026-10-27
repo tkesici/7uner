@@ -18,6 +18,7 @@ js/metronome.js       The metronome beside the amp: swings at the playing tempo,
 js/app.js             Switching between #tuner, #practice and #tab-studio, offline support
 practice/<id>.gp      The Practice exercises as Guitar Pro 7 files (generated, see below)
 tools/                Dev-only scripts (Node): exercise files, asset hashes, git hook; not needed to run the site
+tests/                Node tests (pitch detection); not needed to run the site
 sw.js                 Service worker: caches the app and the exercise files for offline use
 manifest.webmanifest  Lets the app be installed to the home screen
 favicon.svg
@@ -42,6 +43,14 @@ cd tools && npm install && npm run practice
 ```
 
 The script reads every file back after writing it and stops if any note differs. A new exercise needs an entry in `js/exercises.js` and, for techniques, its notes in the script; the service worker picks up the new file automatically.
+
+## Tests
+
+The pitch detector is tested with Node, no browser needed: sines and sawtooths at known frequencies, from a 5-string bass's low B to the top of the chromatic range, at 44.1 and 48 kHz, must come back within 1 cent.
+
+```bash
+node --test tests/*.test.js
+```
 
 ## Cache-busting asset URLs
 
