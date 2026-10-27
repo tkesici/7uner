@@ -187,7 +187,6 @@ button{cursor:pointer}
   .practice .controls{gap:.7rem}
   .practice .controls .go{flex:1 1 100%;margin-left:0}
   .chips.pchips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
-  .practice .tabline{--cw:1.6rem}
   .ptoolbar{flex-direction:column;align-items:stretch}
   .ptoolbar .seg{display:grid;grid-template-columns:1fr 1fr}
   .ptoolbar .seg button{justify-content:center}
@@ -223,18 +222,8 @@ button{cursor:pointer}
 .chk{display:flex;align-items:center;gap:.4rem;color:var(--muted)}
 
 .stage{position:relative;margin-top:.4rem}
-.countin{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:6rem;color:var(--amber);background:color-mix(in srgb,var(--panel) 82%,transparent);opacity:0;pointer-events:none;z-index:2}
-.countin.show{opacity:1}
-.tabwrap{overflow-x:auto;padding:.4rem 0 .6rem}
-.tabline{display:grid;width:max-content;margin:0 0 1.1rem;font-family:"JetBrains Mono",monospace;font-size:.95rem}
-.sl{height:1.75rem;display:flex;align-items:center;color:var(--ink);font-family:"JetBrains Mono",monospace;font-weight:700;font-size:1rem}
-.cell{height:1.75rem;position:relative;display:flex;align-items:center;justify-content:center;
-  background-image:linear-gradient(var(--line),var(--line));background-size:100% 1px;background-position:center;background-repeat:no-repeat}
-.cell.beat{box-shadow:inset 1px 0 0 var(--beat)}
-.cell .fn{background:var(--panel);padding:0 .15rem;font-weight:700;line-height:1;position:relative;z-index:1;border-radius:3px}
-.cell i{position:absolute;top:-.15rem;right:.05rem;font-style:normal;font-size:.62rem;color:var(--blue);z-index:1}
-.cell.on{background-color:var(--amber-soft)}
-.cell.on .fn{background:var(--amber);color:var(--amber-ink)}
+#pScoreEl{min-height:10rem;position:relative}
+.stage .atwrap{max-height:62vh;margin-top:0}
 
 
 
@@ -371,4 +360,3 @@ button.chip:hover:not(:disabled){border-color:var(--amber);color:var(--ink)}
 .loopmark.end .lm-badge svg{transform:scaleX(-1)}
 
 @media (prefers-reduced-motion:reduce){.needle,.readout,.pn,.gstr,.modes button,.autobtn,.emptystate{transition:none}}
-@media (prefers-reduced-motion:no-preference){.countin{transition:opacity .12s}}

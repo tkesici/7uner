@@ -4,15 +4,13 @@
    result can be downloaded as a Guitar Pro 7 (.gp) file.
 
    Rendering, playback and file import/export use alphaTab
-   (https://alphatab.net, MPL-2.0), loaded from jsDelivr at a pinned version
-   when the first file is opened. Files are kept in this browser (IndexedDB)
+   (https://alphatab.net, MPL-2.0), loaded by alphatab.js when the first
+   file is opened. Files are kept in this browser (IndexedDB)
    and never uploaded anywhere. Only guitar tracks are shown and edited;
    drums, bass and other instruments play as backing. */
 (function () {
     "use strict";
 
-    const AT_VERSION = "1.8.4";
-    const AT_BASE = "https://cdn.jsdelivr.net/npm/@coderline/alphatab@" + AT_VERSION + "/dist/";
     const MAX_BYTES = 20 * 1024 * 1024;
     const MAX_FRET = 29;
     const FORMATS = {
@@ -132,28 +130,8 @@
     }
 
     /* ---------- alphaTab ---------- */
-    let api = null, loading = null, playing = false, ready = false;
+    let api = null, playing = false, ready = false;
     let guitarTracks = [], trackIdx = 0;
-
-    function loadScript() {
-        if (AT()) return Promise.resolve();
-        if (loading) return loading;
-        loading = new Promise((resolve, reject) => {
-            const s = document.createElement("script");
-            s.src = AT_BASE + "alphaTab.min.js";
-            s.async = true;
-            s.onload = () => resolve();
-            s.onerror = () => { loading = null; reject(new Error("script")); };
-            document.head.appendChild(s);
-        });
-        return loading;
-    }
-
-    const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-    const colors = () => ({
-        mainGlyphColor: cssVar("--ink"), secondaryGlyphColor: cssVar("--muted"), scoreInfoColor: cssVar("--ink"),
-        staffLineColor: cssVar("--line"), barSeparatorColor: cssVar("--muted"), barNumberColor: cssVar("--muted")
-    });
 
     function setStatus(text, isError) {
         el.status.textContent = text || "";
@@ -162,17 +140,9 @@
 
     function createApi() {
         el.score.innerHTML = "";
-        api = new (AT().AlphaTabApi)(el.score, {
-            core: { scriptFile: AT_BASE + "alphaTab.min.js", fontDirectory: AT_BASE + "font/", includeNoteBounds: true },
-            display: { staveProfile: isOn(el.notation) ? "ScoreTab" : "Tab", layoutMode: "Page", resources: colors() },
-            player: {
-                // the script-processor output needs no extra module download, so it also
-                // works where loading an audio worklet from the CDN is blocked
-                playerMode: "EnabledSynthesizer", outputMode: "WebAudioScriptProcessor",
-                soundFont: AT_BASE + "soundfont/sonivox.sf2", scrollElement: el.wrap,
-                enableCursor: true, enableAnimatedBeatCursor: true, enableUserInteraction: true
-            }
-        });
+        const settings = window.at7.baseSettings(el.wrap);
+        settings.display.staveProfile = isOn(el.notation) ? "ScoreTab" : "Tab";
+        api = new (AT().AlphaTabApi)(el.score, settings);
         ready = false; playing = false;
 
         api.scoreLoaded.on(onScoreLoaded);
@@ -587,7 +557,7 @@
         el.go.disabled = true; el.stop.disabled = true;
         el.go.textContent = "Play"; el.go.classList.remove("stop");
         setStatus(AT() ? "Opening…" : "Loading the tab player…");
-        loadScript().then(() => {
+        window.at7.load().then(() => {
             if (!api) createApi();
             else { api.stop(); ready = api.isReadyForPlayback; }
             setStatus("Opening…");
@@ -722,16 +692,7 @@
 
     window.addEventListener("beforeunload", (e) => { if (ed.dirty) { e.preventDefault(); e.returnValue = ""; } });
 
-    // follow the site's light/dark theme
-    if (window.matchMedia) {
-        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-            if (!api || !AT()) return;
-            const c = colors(), r = api.settings.display.resources, C = AT().model.Color;
-            Object.keys(c).forEach((k) => { const v = C.fromJson(c[k]); if (v) r[k] = v; });
-            api.updateSettings();
-            api.render();
-        });
-    }
+    window.at7.followTheme(() => api);
 
     refresh();
 

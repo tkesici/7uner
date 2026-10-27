@@ -34,6 +34,7 @@
     if (p !== "practice" && window.practice) window.practice.pause();
     if (p !== "tab-studio" && window.tabStudio) window.tabStudio.pause();
     if (p === "tuner" && window.tuner) window.tuner.resize();
+    if (p === "practice" && window.practice) window.practice.show();
     document.title = titles[p];
   }
 

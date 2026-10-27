@@ -4,11 +4,14 @@
    alphaTab (pinned version on jsDelivr) and Google Fonts: cache first. */
 "use strict";
 
-const CACHE = "7uner-v1";
+const CACHE = "7uner-v2";
+// the Practice exercise files, listed in js/exercises.js
+importScripts("js/exercises.js");
+const PRACTICE = Object.keys(self.practiceCatalogue).flatMap((c) => self.practiceCatalogue[c].map((x) => x.id));
 const SHELL = [
   "./", "index.html", "css/style.css", "favicon.svg", "manifest.webmanifest",
-  "js/tuner.js", "js/pitch.js", "js/practice.js", "js/tab-studio.js", "js/app.js"
-];
+  "js/tuner.js", "js/pitch.js", "js/alphatab.js", "js/exercises.js", "js/practice.js", "js/tab-studio.js", "js/app.js"
+].concat(PRACTICE.map((id) => "practice/" + id + ".gp"));
 const CDN = ["https://cdn.jsdelivr.net", "https://fonts.googleapis.com", "https://fonts.gstatic.com"];
 
 self.addEventListener("install", (e) => {

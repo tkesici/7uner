@@ -108,7 +108,7 @@
               <label><input id="bpm" type="number" min="30" max="300" inputmode="numeric" aria-label="Tempo"><span>BPM</span></label>
               <button id="bpmUp" aria-label="Raise tempo">+</button>
             </div>
-            <button id="go" class="go">Start</button>
+            <button id="go" class="go" disabled>Start</button>
           </div>
           <div class="ptoolbar">
             <div class="chips pchips">
@@ -123,8 +123,7 @@
           </div>
           <p class="hint">The space bar starts and stops playback. To push yourself, turn off “Play notes” and play against the metronome alone.</p>
           <div class="stage">
-            <div class="countin" id="countin" aria-live="polite"></div>
-            <div class="tabwrap" id="tabwrap"></div>
+            <div class="atwrap" id="pWrap"><div id="pScoreEl"></div></div>
           </div>
           <p class="msg" id="msg" aria-live="polite"></p>
         </div>
@@ -248,6 +247,8 @@
 
 <script src="js/pitch.js"></script>
 <script src="js/tuner.js"></script>
+<script src="js/alphatab.js"></script>
+<script src="js/exercises.js"></script>
 <script src="js/practice.js"></script>
 <script src="js/tab-studio.js"></script>
 <script src="js/app.js"></script>

@@ -1,0 +1,7 @@
+{
+  "name": "7uner-tools",
+  "private": true,
+  "description": "Dev-only scripts. make-practice-files.js writes the Practice exercises to ../practice/*.gp",
+  "scripts": { "practice": "node make-practice-files.js" },
+  "devDependencies": { "@coderline/alphatab": "1.8.4" }
+}
