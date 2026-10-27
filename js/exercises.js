@@ -75,6 +75,10 @@
     };
     ["modes", "scales"].forEach((c) => CATS[c].forEach((x) => { x.sub = 4; x.start = 70; x.step = 6; }));
 
+    // a hash of practice/*.gp, added to their URLs so caches never serve an
+    // old copy; kept up to date by tools/stamp-assets.js
+    const practiceFilesVersion = "e28a98be";
+
     if (typeof module !== "undefined" && module.exports) module.exports = CATS;
-    else root.practiceCatalogue = CATS;
+    else { root.practiceCatalogue = CATS; root.practiceFilesVersion = practiceFilesVersion; }
 })(this);

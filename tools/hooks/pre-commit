@@ -1,0 +1,6 @@
+#!/bin/sh
+# 7uner: keep the ?v= content hashes in index.html, sw.js and js/exercises.js
+# in step with the files being committed (see tools/stamp-assets.js).
+# Enable once per clone with:  git config core.hooksPath tools/hooks
+node tools/stamp-assets.js || exit 1
+git add index.html sw.js js/exercises.js

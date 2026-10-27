@@ -17,7 +17,7 @@ js/amp.js             The amp: distortion, gain and volume for everything alphaT
 js/metronome.js       The metronome beside the amp: swings at the playing tempo, sets tempo and click volume
 js/app.js             Switching between #tuner, #practice and #tab-studio, offline support
 practice/<id>.gp      The Practice exercises as Guitar Pro 7 files (generated, see below)
-tools/                Dev-only scripts (Node); not needed to run the site
+tools/                Dev-only scripts (Node): exercise files, asset hashes, git hook; not needed to run the site
 sw.js                 Service worker: caches the app and the exercise files for offline use
 manifest.webmanifest  Lets the app be installed to the home screen
 favicon.svg
@@ -42,6 +42,18 @@ cd tools && npm install && npm run practice
 ```
 
 The script reads every file back after writing it and stops if any note differs. A new exercise needs an entry in `js/exercises.js` and, for techniques, its notes in the script; the service worker picks up the new file automatically.
+
+## Cache-busting asset URLs
+
+Every CSS and JS link in `index.html` carries a hash of the file's content (`css/style.css?v=36afc388`), and so do the exercise files and the service worker's precache list. When a file changes, its URL changes, so a CDN or browser cache can't serve an old stylesheet next to new HTML. (In front of 7uner.com, Cloudflare keeps CSS and JS for hours; without this, a deploy can show the new page with the old styles.)
+
+The hashes are written by `tools/stamp-assets.js`. Run it before committing, or let git do it by turning on the hook in `tools/hooks` once per clone:
+
+```bash
+git config core.hooksPath tools/hooks
+```
+
+The hook stamps and re-adds `index.html`, `sw.js` and `js/exercises.js` to the commit.
 
 ## Publishing with GitHub Pages
 

@@ -131,7 +131,7 @@
         const ex = cur;
         if (!ex || shown === ex) return;
         ensureApi()
-            .then(() => fetch("practice/" + ex.id + ".gp"))
+            .then(() => fetch("practice/" + ex.id + ".gp?v=" + window.practiceFilesVersion))
             .then((r) => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
             .then((buf) => {
                 if (cur !== ex) return;

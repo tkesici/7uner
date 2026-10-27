@@ -1,17 +1,19 @@
 /* 7uner – service worker: keeps the app usable offline.
    Own files: network first, so a new deploy shows up on the next visit,
    with the cached copy as the fallback.
-   alphaTab (pinned version on jsDelivr) and Google Fonts: cache first. */
+   alphaTab (pinned version on jsDelivr) and Google Fonts: cache first.
+   The ?v= hashes and the cache name are written by tools/stamp-assets.js. */
 "use strict";
 
-const CACHE = "7uner-v5";
+const CACHE = "7uner-1c48a58b";
 // the Practice exercise files, listed in js/exercises.js
-importScripts("js/exercises.js");
-const PRACTICE = Object.keys(self.practiceCatalogue).flatMap((c) => self.practiceCatalogue[c].map((x) => x.id));
+importScripts("js/exercises.js?v=5d9b570f");
+const PRACTICE = Object.keys(self.practiceCatalogue).flatMap((c) => self.practiceCatalogue[c].map((x) => x.id))
+    .map((id) => "practice/" + id + ".gp?v=" + self.practiceFilesVersion);
 const SHELL = [
-  "./", "index.html", "css/style.css", "favicon.svg", "manifest.webmanifest",
-  "js/tuner.js", "js/pitch.js", "js/amp.js", "js/metronome.js", "js/alphatab.js", "js/exercises.js", "js/practice.js", "js/tab-studio.js", "js/app.js"
-].concat(PRACTICE.map((id) => "practice/" + id + ".gp"));
+  "./", "index.html", "css/style.css?v=36afc388", "favicon.svg", "manifest.webmanifest",
+  "js/tuner.js?v=a09ef1e6", "js/pitch.js?v=72831019", "js/amp.js?v=eb9d514e", "js/metronome.js?v=a2ecc09e", "js/alphatab.js?v=fecad006", "js/exercises.js?v=5d9b570f", "js/practice.js?v=0dfcccfb", "js/tab-studio.js?v=ccb820e2", "js/app.js?v=18d89ff3"
+].concat(PRACTICE);
 const CDN = ["https://cdn.jsdelivr.net", "https://fonts.googleapis.com", "https://fonts.gstatic.com"];
 
 self.addEventListener("install", (e) => {
