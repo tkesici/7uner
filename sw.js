@@ -5,14 +5,14 @@
    The ?v= hashes and the cache name are written by tools/stamp-assets.js. */
 "use strict";
 
-const CACHE = "7uner-e4013add";
+const CACHE = "7uner-f3ba10d0";
 // the Practice exercise files, listed in js/exercises.js: techniques, and
 // the first position of each scale and mode (the others are cached when used)
 importScripts("js/exercises.js?v=096c399e");
 const PRACTICE = Object.keys(self.practiceCatalogue).flatMap((c) => self.practiceCatalogue[c].map((x) => (x.iv ? x.id + "-p1" : x.id)))
     .map((id) => "practice/" + id + ".gp?v=" + self.practiceFilesVersion);
 const SHELL = [
-  "./", "index.html", "css/style.css?v=095cffb6", "favicon.svg", "icons/icon-192.png", "icons/apple-touch-icon.png", "manifest.webmanifest",
+  "./", "index.html", "css/style.css?v=873c6b2d", "favicon.svg", "icons/icon-192.png", "icons/apple-touch-icon.png", "manifest.webmanifest",
   "js/tuner.js?v=1b51d44a", "js/pitch.js?v=36c33db7", "js/amp.js?v=27f64277", "js/metronome.js?v=7480cb06", "js/alphatab.js?v=ea58a266", "js/exercises.js?v=096c399e", "js/practice.js?v=2c728b42", "js/tab-studio.js?v=68955429", "js/app.js?v=d3dd4f65"
 ].concat(PRACTICE);
 const CDN = ["https://cdn.jsdelivr.net", "https://fonts.googleapis.com", "https://fonts.gstatic.com"];

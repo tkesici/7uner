@@ -36,11 +36,11 @@ button{cursor:pointer}
 .vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .noscript{margin:0;padding:.8rem 1.1rem;background:var(--amber-soft);border-bottom:1px solid var(--amber);text-align:center;font-weight:500}
 
-/* site header */
+/* site header: logo, the instrument picker in the true centre, sections */
 .site{border-bottom:1px solid var(--line)}
-.site .wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:4rem}
-.brand{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:2rem;letter-spacing:-.02em;color:var(--ink);text-decoration:none}
-.sitenav{display:flex;gap:.2rem}
+.site .wrap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:1rem;min-height:4.6rem}
+.brand{justify-self:start;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:2rem;letter-spacing:-.02em;color:var(--ink);text-decoration:none}
+.sitenav{grid-column:3;justify-self:end;display:flex;gap:.2rem}
 .sitenav a{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.15rem;color:var(--muted);text-decoration:none;padding:.45rem .9rem;border-radius:999px;white-space:nowrap}
 @media (max-width:480px){
   .site .wrap{gap:.4rem}
@@ -49,17 +49,24 @@ button{cursor:pointer}
   .sitenav a{font-size:1rem;padding:.4rem .6rem}
 }
 .sitenav a:hover{color:var(--ink)}
-/* the tuner's instrument picker, in the header: small icons with labels;
-   icons only when narrow, and on a phone a row of its own under the logo */
-.modes.hmodes{margin:0 auto;padding:.25rem;border-radius:14px;gap:.25rem}
-.modes.hmodes button{flex-direction:row;justify-content:center;min-width:0;width:2.9rem;height:2.6rem;padding:0;border-radius:10px;color:var(--muted)}
-.modes.hmodes button:hover{color:var(--ink);background:var(--bg)}
-.modes.hmodes button[aria-checked="true"]{background:var(--ink);color:var(--bg)}
-.modes.hmodes svg{width:28px;height:28px;stroke-width:1.75}
+/* the tuner's instrument picker, in the header: a segmented control of
+   icons; on a phone a full-width row of its own under the logo */
+.modes.hmodes{grid-column:2;margin:0;padding:.3rem;border:1px solid color-mix(in srgb,var(--line) 55%,transparent);border-radius:999px;gap:.2rem;background:color-mix(in srgb,var(--panel) 80%,transparent);box-shadow:inset 0 1px 2px rgba(0,0,0,.18)}
+.modes.hmodes button{flex-direction:row;justify-content:center;min-width:0;width:3.6rem;height:3rem;padding:0;border-radius:999px;color:var(--muted)}
+.modes.hmodes button:hover{color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.modes.hmodes button[aria-checked="true"]{background:var(--ink);color:var(--bg);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.modes.hmodes button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.modes.hmodes svg{width:30px;height:30px;stroke-width:1.6}
+@media (max-width:760px){
+  .modes.hmodes button{width:3rem;height:2.7rem}
+  .modes.hmodes svg{width:27px;height:27px}
+}
 @media (max-width:600px){
-  .site .wrap{flex-wrap:wrap;row-gap:.3rem;padding-bottom:.4rem}
-  .modes.hmodes{order:3;width:100%;display:flex;justify-content:space-around;margin:0}
-  .modes.hmodes button{flex:1;justify-content:center}
+  .site .wrap{grid-template-columns:auto 1fr;row-gap:.45rem;padding-bottom:.55rem}
+  .sitenav{grid-column:2}
+  .modes.hmodes{grid-column:1/-1;grid-row:2;display:flex;width:100%;justify-content:space-between}
+  .modes.hmodes button{flex:1;width:auto;height:2.9rem}
+  .modes.hmodes svg{width:28px;height:28px}
 }
 .sitenav a[aria-current="page"]{background:var(--ink);color:var(--bg)}
 
