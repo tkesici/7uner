@@ -41,6 +41,7 @@
     const slot = document.querySelector("#" + pages[p] + " .amp-slot"), rig = document.getElementById("rig");
     if (slot && rig.parentElement !== slot) slot.appendChild(rig);
     document.title = titles[p];
+    document.getElementById("tModes").hidden = p !== "tuner";
     // help for the page that's open
     document.querySelectorAll("[data-help]").forEach((x) => { x.hidden = x.dataset.help !== p; });
   }

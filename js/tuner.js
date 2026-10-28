@@ -9,7 +9,7 @@
   const NAMES = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
 
   /* Chromatic mode: any instrument, nearest note. */
-  const CHROMATIC = { inTune: 5, range: 100, minF: 27, maxF: 4200, windowSec: 0.085, clarity: 0.5, median: 5, onsetSkip: 2, decimals: 0 };
+  const CHROMATIC = { inTune: 5, range: 50, minF: 27, maxF: 4200, windowSec: 0.085, clarity: 0.5, median: 5, onsetSkip: 2, decimals: 0 };
 
   /* Instrument modes are stricter: a ±2 cent in-tune zone, a ±50 cent scale,
      longer analysis windows and heavier smoothing.
@@ -621,6 +621,7 @@
      instrument modes a strobe also turns on the headstock post of the string
      being tuned. */
   const SPAN = (60 * Math.PI) / 180; // the gauge runs 60° either side of straight up
+  const ARC_H = 200;                  // CSS pixels for the arc and its labels (the stage's height in instrument modes)
   const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   let colors = null;
   const readColors = () => { colors = { ok: cssVar("--ok"), okSoft: cssVar("--ok-soft"), amber: cssVar("--amber"), line: cssVar("--line"), muted: cssVar("--muted"), ink: cssVar("--ink") }; };
@@ -650,10 +651,10 @@
     const col = !view.active ? K.muted : view.ok ? K.ok : K.amber;
 
     // geometry: the arc at the top, the history filling the space below it
-    // the arc fills the stage box; in instrument modes the canvas goes on below it
-    const arcH = el.stage.clientHeight * dpr;
-    const R = instr() ? Math.min(W * 0.36, (arcH - 40 * dpr) * 1.7) : Math.min(W * 0.42, arcH * 0.42);
-    const cx = W / 2, cy = R + 30 * dpr;
+    // the arc is the same size in every mode, sized to fit ARC_H and the
+    // width; below it the canvas goes on for the history
+    const R = Math.min((W - 80 * dpr) / 1.75, 2 * (ARC_H - 36) * dpr, 270 * dpr);
+    const cx = W / 2, cy = R + 24 * dpr;
     const ang = (cents) => -Math.PI / 2 + Math.max(-1, Math.min(1, cents / c.range)) * SPAN;
     const A0 = -Math.PI / 2 - SPAN, A1 = -Math.PI / 2 + SPAN;
     g.clearRect(0, 0, W, H);
@@ -690,8 +691,7 @@
   }
 
   /* history: like a chart recorder. The newest reading sits on the arc right
-     where the dot is, and the trace scrolls down from there and slowly fades,
-     over a faint in-tune band and centre line. */
+     where the dot is, and the trace scrolls down from there and slowly fades. */
   function drawHistory(g, now, cx, cy, R, dpr, c, H) {
     const clamp = (v) => Math.max(-1, Math.min(1, v / c.range));
     const xOf = (v) => cx + R * Math.sin(SPAN * clamp(v));
@@ -700,14 +700,6 @@
     if (view.active) view.hist.push({ t: now, c: view.cents, ok: view.ok, k: view.idx != null ? view.idx : view.tgt });
     const h = view.hist;
     while (h.length && now - h[0].t > maxAge) h.shift();
-
-    // in-tune band and centre line, under the arc
-    const top = cy - R;
-    g.globalAlpha = 0.4; g.fillStyle = colors.okSoft;
-    g.fillRect(xOf(-c.inTune), top, xOf(c.inTune) - xOf(-c.inTune), H - top);
-    g.globalAlpha = 0.7; g.fillStyle = colors.line;
-    g.fillRect(cx - 0.5 * dpr, top, dpr, H - top);
-    g.globalAlpha = 1;
 
     g.lineWidth = 3 * dpr; g.lineJoin = "round";
     for (let i = 1; i < h.length; i++) {

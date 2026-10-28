@@ -49,6 +49,20 @@ button{cursor:pointer}
   .sitenav a{font-size:1rem;padding:.4rem .6rem}
 }
 .sitenav a:hover{color:var(--ink)}
+/* the tuner's instrument picker, in the header: small icons with labels;
+   icons only when narrow, and on a phone a row of its own under the logo */
+.modes.hmodes{margin:0 auto;padding:.2rem;border-radius:14px;gap:.1rem}
+.modes.hmodes button{flex-direction:row;gap:.35rem;min-width:0;padding:.35rem .6rem;border-radius:10px;font-size:1.05rem}
+.modes.hmodes svg{width:24px;height:24px}
+@media (max-width:900px){
+  .modes.hmodes button span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .modes.hmodes button{padding:.4rem .5rem}
+}
+@media (max-width:600px){
+  .site .wrap{flex-wrap:wrap;row-gap:.3rem;padding-bottom:.4rem}
+  .modes.hmodes{order:3;width:100%;display:flex;justify-content:space-around;margin:0}
+  .modes.hmodes button{flex:1;justify-content:center}
+}
 .sitenav a[aria-current="page"]{background:var(--ink);color:var(--bg)}
 
 /* site footer: the privacy note */
@@ -126,10 +140,10 @@ button{cursor:pointer}
 }
 
 /* ---------- tuner ---------- */
-.tuner{max-width:720px;margin:0 auto;padding:1.4rem 1.1rem 3rem;text-align:center}
+.tuner{max-width:880px;margin:0 auto;padding:1rem 1.1rem 3rem;text-align:center}
 .readout{transition:opacity .2s}
 .readout.idle{opacity:.45}
-.note{height:.88em;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:clamp(6.5rem,26vw,10.5rem);line-height:.88;color:var(--amber);font-variant-numeric:tabular-nums}
+.note{height:.88em;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:clamp(5.2rem,20vw,8rem);line-height:.88;color:var(--amber);font-variant-numeric:tabular-nums}
 .note sub{font-size:.36em;vertical-align:baseline;margin-left:.04em;color:var(--muted)}
 .readout.in .note{color:var(--ok)}
 .readout.idle .note{color:var(--muted)}
@@ -139,9 +153,9 @@ button{cursor:pointer}
 @media (max-width:520px){.hz .tgt{display:none}}
 
 /* strobe stage (tuner.js): a canvas, with the microphone button over it until it's on */
-.tstage{position:relative;margin:1rem auto .6rem;height:clamp(300px,46vh,420px)}
+.tstage{position:relative;margin:.2rem auto .4rem;height:clamp(320px,50vh,460px)}
 .tstage canvas{position:absolute;top:0;left:0;display:block;width:100%;height:100%;pointer-events:none}
-.tuner.mode-instrument .tstage{height:170px}
+.tuner.mode-instrument .tstage{height:200px} /* ARC_H in tuner.js */
 .tuner .guitar{position:relative;z-index:1}
 .cover{position:absolute;inset:0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;background:color-mix(in srgb,var(--bg) 70%,transparent);padding:1rem}
 .cover p{max-width:36ch;color:var(--muted);font-size:.92rem}
