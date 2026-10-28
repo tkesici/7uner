@@ -51,13 +51,11 @@ button{cursor:pointer}
 .sitenav a:hover{color:var(--ink)}
 /* the tuner's instrument picker, in the header: small icons with labels;
    icons only when narrow, and on a phone a row of its own under the logo */
-.modes.hmodes{margin:0 auto;padding:.2rem;border-radius:14px;gap:.1rem}
-.modes.hmodes button{flex-direction:row;gap:.35rem;min-width:0;padding:.35rem .6rem;border-radius:10px;font-size:1.05rem}
-.modes.hmodes svg{width:24px;height:24px}
-@media (max-width:900px){
-  .modes.hmodes button span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-  .modes.hmodes button{padding:.4rem .5rem}
-}
+.modes.hmodes{margin:0 auto;padding:.25rem;border-radius:14px;gap:.25rem}
+.modes.hmodes button{flex-direction:row;justify-content:center;min-width:0;width:2.9rem;height:2.6rem;padding:0;border-radius:10px;color:var(--muted)}
+.modes.hmodes button:hover{color:var(--ink);background:var(--bg)}
+.modes.hmodes button[aria-checked="true"]{background:var(--ink);color:var(--bg)}
+.modes.hmodes svg{width:28px;height:28px;stroke-width:1.75}
 @media (max-width:600px){
   .site .wrap{flex-wrap:wrap;row-gap:.3rem;padding-bottom:.4rem}
   .modes.hmodes{order:3;width:100%;display:flex;justify-content:space-around;margin:0}
@@ -252,7 +250,7 @@ button{cursor:pointer}
 .parr button:hover{background:var(--amber-soft)}
 .parr button:disabled{opacity:.35;cursor:default}
 .pn{position:relative;min-width:5rem;height:min(3.5rem,calc(var(--hw) * var(--phf, .3) - 4px));border:1px solid var(--line);border-radius:9px;background:var(--panel);display:flex;align-items:center;justify-content:center;line-height:1;padding:0 .4rem;transition:background-color .15s,border-color .15s}
-.pnote{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:2.4rem}
+.pnote{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:min(2.4rem,calc(var(--hw) * var(--phf, .3) * .72))}
 .pnote sub{font-size:.62em;color:var(--muted);vertical-align:baseline;margin-left:.05em}
 .poff{position:absolute;top:3px;right:5px;font-family:"JetBrains Mono",monospace;font-size:.68rem;font-weight:700;color:var(--blue)}
 .peg.active .pn{border-color:var(--amber);background:var(--amber-soft)}
@@ -284,7 +282,7 @@ button{cursor:pointer}
   .peg{gap:.12rem}
   .parr button{width:1.5rem;height:1.3rem}
   .pn{min-width:3.3rem;height:min(2.3rem,calc(var(--hw) * var(--phf, .3) - 3px));padding:0 .2rem}
-  .pnote{font-size:1.75rem}
+  .pnote{font-size:min(1.75rem,calc(var(--hw) * var(--phf, .3) * .72))}
   .poff{font-size:.58rem;top:1px;right:3px}
 }
 

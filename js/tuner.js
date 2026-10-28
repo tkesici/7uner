@@ -157,13 +157,12 @@
 
   /* ---------- settings ---------- */
   const KEY = "7uner.tuner.v1";
-  const st = { mode: "chromatic", offsets: {}, a4: 440, strings: { guitar: 6, bass: 4 } };
+  const st = { mode: "guitar", offsets: {}, a4: 440, strings: { guitar: 6, bass: 4 } };
   Object.keys(INSTR).forEach((k) => { st.offsets[k] = INSTR[k].base.map(() => 0); });
   const clampOff = (k, v) => Math.max(INSTR[k].offMin, Math.min(INSTR[k].offMax, Math.round(+v || 0)));
   try {
     const o = JSON.parse(localStorage.getItem(KEY) || "null");
     if (o) {
-      if (MODES.includes(o.mode)) st.mode = o.mode;
       // earlier versions stored only the guitar offsets as a plain array
       const offs = Array.isArray(o.offsets) ? { guitar: o.offsets } : (o.offsets || {});
       Object.keys(INSTR).forEach((k) => {
@@ -273,7 +272,7 @@
     const L = LOOKS[name], w = o.wide || 1, X = (x) => 100 + (x - 100) * w;
     const shape = L.shape(X);
     const edgeX = (y, left) => (left ? X(L.edge(y)) : L.edgeR ? X(L.edgeR(y)) : 200 - X(L.edge(y)));
-    const n = o.posts.length, lo = X(L.neck[0] - 2), hi = X(L.neck[1] + 2);
+    const n = o.posts.length, lo = X(L.neck[0] + 5), hi = X(L.neck[1] - 5);
     // nut slots: evenly spread, or in pairs for a 12-string
     const nut = o.pairs
       ? o.posts.map((p, i) => { const course = Math.floor(i / 2), step = (hi - lo) / 5; return lo + course * step + (i % 2 ? 4.4 : 0) - 2.2 + (course === 5 ? -2.2 : 0); })
@@ -493,9 +492,9 @@
   /* ---------- mode picker ---------- */
   function buildModes() {
     el.modes.innerHTML = MODES.map((m) =>
-        '<button role="radio" data-mode="' + m + '" aria-checked="false">' +
+        '<button role="radio" data-mode="' + m + '" aria-checked="false" title="' + (INSTR[m] ? INSTR[m].label : "Chromatic") + '">' +
         '<svg viewBox="0 0 32 32" aria-hidden="true">' + ICONS[m] + "</svg>" +
-        "<span>" + (INSTR[m] ? INSTR[m].label : "Chromatic") + "</span></button>").join("");
+        '<span class="vh">' + (INSTR[m] ? INSTR[m].label : "Chromatic") + "</span></button>").join("");
     el.modes.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
     el.modes.addEventListener("keydown", (e) => {
       const d = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
