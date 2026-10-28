@@ -204,7 +204,9 @@
       '<radialGradient id="hsBrassPost" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#FFF3B8"/><stop offset=".5" stop-color="#D9B44A"/><stop offset="1" stop-color="#8A6A1A"/></radialGradient>' +
       '<radialGradient id="hsChromePost" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#C9CDD3"/><stop offset="1" stop-color="#6E747C"/></radialGradient>' +
       '<linearGradient id="hsGloss" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".16"/><stop offset=".45" stop-color="#FFFFFF" stop-opacity=".03"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>' +
-      '<linearGradient id="hsGreen" x1="0" x2="1"><stop offset="0" stop-color="#0B2318"/><stop offset=".5" stop-color="#1D4A34"/><stop offset="1" stop-color="#0B2318"/></linearGradient>' +
+      '<linearGradient id="hsTurq" x1="0" x2="1"><stop offset="0" stop-color="#0B5E5C"/><stop offset=".5" stop-color="#1BA39C"/><stop offset="1" stop-color="#0B5E5C"/></linearGradient>' +
+      '<linearGradient id="hsBlackKey" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4A4D53"/><stop offset=".45" stop-color="#1A1B1E"/><stop offset="1" stop-color="#2C2E33"/></linearGradient>' +
+      '<radialGradient id="hsBlackPost" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#6A6E76"/><stop offset=".55" stop-color="#1E1F23"/><stop offset="1" stop-color="#0A0A0C"/></radialGradient>' +
       '<radialGradient id="hsAbalone" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#9FE7DC"/><stop offset=".45" stop-color="#3FA79B"/><stop offset=".8" stop-color="#2B5E8A"/><stop offset="1" stop-color="#1B3F4E"/></radialGradient>' +
       '<linearGradient id="hsMaple" x1="0" x2="1"><stop offset="0" stop-color="#8A5A2B"/><stop offset=".5" stop-color="#C08A50"/><stop offset="1" stop-color="#8A5A2B"/></linearGradient>' +
       '<linearGradient id="hsPearl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7F4EC"/><stop offset=".5" stop-color="#DCE3E6"/><stop offset="1" stop-color="#EFE8DA"/></linearGradient>' +
@@ -222,10 +224,10 @@
         [130, 88], [130, 112], [130, 136], [130, 160], [130, 184], [130, 208]],
       gauge: [2.8, 1.3, 2.3, 1.1, 1.9, 1, 1.5, 0.9, 1.2, 1.2, 1, 1], wide: 1.06, pairs: true, small: true, tiny: true
     }),
-    bass: () => luthierHead("crown", { posts: [[82, 160], [82, 96], [118, 96], [118, 160]], gauge: [4.2, 3.5, 2.8, 2.2] }),
+    bass: () => luthierHead("sr", { posts: [[80, 160], [80, 96], [120, 96], [120, 160]], gauge: [4.2, 3.5, 2.8, 2.2] }),
     // 2+3 and 3+3 posts
-    bass5: () => luthierHead("crown", { posts: [[82, 170], [82, 118], [118, 92], [118, 131], [118, 170]], gauge: [4.6, 4.2, 3.5, 2.8, 2.2], small: true }),
-    bass6: () => luthierHead("crown", { posts: [[82, 170], [82, 131], [82, 92], [118, 92], [118, 131], [118, 170]], gauge: [4.6, 4.2, 3.5, 2.8, 2.2, 1.8], wide: 1.05, small: true }),
+    bass5: () => luthierHead("sr", { posts: [[80, 170], [80, 118], [120, 92], [120, 131], [120, 170]], gauge: [4.6, 4.2, 3.5, 2.8, 2.2], small: true }),
+    bass6: () => luthierHead("sr", { posts: [[80, 170], [80, 131], [80, 92], [120, 92], [120, 131], [120, 170]], gauge: [4.6, 4.2, 3.5, 2.8, 2.2, 1.8], wide: 1.05, small: true }),
     ukulele: () => luthierHead("uke", { posts: [[78, 190], [78, 130], [122, 130], [122, 190]], gauge: [1.5, 1.9, 1.7, 1.4] }),
     violin: () => scrollHead([1.7, 1.4, 1.2, 1], 0.78),
     cello: () => scrollHead([2.6, 2.2, 1.8, 1.5], 1.12)
@@ -238,11 +240,13 @@
      block and a bone nut. The looks differ in outline, wood and hardware:
      esp    guitar, after the ESP Eclipse: black face, horns at the outer
             corners and a point in the middle, tulip tuners, bell truss cover
-     crown  bass: a crowned head in dark green figured wood, wide winged
-            tuners, posts set in abalone
+     sr     bass, after the Ibanez SR: a slim head with a slanted, rounded
+            end in turquoise curly figured wood, no binding, black winged
+            tuners on silver washers, black posts and a black logo
      uke    ukulele: a small crown in maple with small tulip tuners
      wide spreads a look sideways for more strings; edge(y) is where the
-     face's side is at height y, so the tuners sit just outside it. */
+     face's left side is at height y (edgeR the right side's, when the head
+     isn't symmetrical), so the tuners sit just outside it. */
   const LOOKS = {
     esp: {
       shape: (X) => "M" + X(60) + " 248 L" + X(37) + " 32 Q" + X(35) + " 18 " + X(42) + " 15 C" + X(58) + " 34 " + X(88) + " 46 100 30 C" + X(112) + " 46 " + X(142) + " 34 " + X(158) + " 15 Q" + X(165) + " 18 " + X(163) + " 32 L" + X(140) + " 248 Z",
@@ -250,11 +254,12 @@
       face: "hsBlack", tuner: "tulip", post: "gold", truss: true, neck: [64, 136],
       logo: [62, 20], logoSmall: [66, 17], font: "Georgia, 'Times New Roman', serif"
     },
-    crown: {
-      shape: (X) => "M" + X(66) + " 248 L" + X(62) + " 156 Q" + X(61) + " 138 " + X(52) + " 130 L" + X(46) + " 96 Q" + X(44) + " 70 " + X(62) + " 58 Q" + X(76) + " 50 " + X(82) + " 40 Q" + X(86) + " 18 100 14 Q" + X(114) + " 18 " + X(118) + " 40 Q" + X(124) + " 50 " + X(138) + " 58 Q" + X(156) + " 70 " + X(154) + " 96 L" + X(148) + " 130 Q" + X(139) + " 138 " + X(138) + " 156 L" + X(134) + " 248 Z",
-      edge: (y) => (y <= 96 ? 46 : y <= 130 ? 46 + ((y - 96) * 6) / 34 : 52 + ((y - 130) * 14) / 118),
-      face: "hsGreen", figure: true, tuner: "fan", post: "abalone", crest: true, neck: [62, 138],
-      logo: [74, 16], logoSmall: [72, 14], font: "Georgia, 'Times New Roman', serif"
+    sr: {
+      shape: (X) => "M" + X(64) + " 248 L" + X(54) + " 44 Q" + X(52) + " 22 " + X(72) + " 20 L" + X(136) + " 32 Q" + X(152) + " 36 " + X(150) + " 56 L" + X(136) + " 248 Z",
+      edge: (y) => 64 - ((248 - y) * 10) / 204,
+      edgeR: (y) => 136 + ((248 - y) * 14) / 192,
+      face: "hsTurq", figure: "flame", binding: false, tuner: "fan", metal: "black", post: "black", neck: [62, 138],
+      logo: [52, 18], logoSmall: [52, 16], logoFill: "#0B0B0C", logoUpright: true, font: "'Barlow Condensed', 'Arial Narrow', sans-serif"
     },
     uke: {
       shape: (X) => "M" + X(70) + " 248 L" + X(66) + " 170 Q" + X(65) + " 156 " + X(58) + " 150 L" + X(54) + " 124 Q" + X(52) + " 104 " + X(66) + " 96 Q" + X(78) + " 90 " + X(84) + " 82 Q" + X(88) + " 66 100 62 Q" + X(112) + " 66 " + X(116) + " 82 Q" + X(122) + " 90 " + X(134) + " 96 Q" + X(148) + " 104 " + X(146) + " 124 L" + X(142) + " 150 Q" + X(135) + " 156 " + X(134) + " 170 L" + X(130) + " 248 Z",
@@ -267,14 +272,15 @@
   function luthierHead(name, o) {
     const L = LOOKS[name], w = o.wide || 1, X = (x) => 100 + (x - 100) * w;
     const shape = L.shape(X);
-    const edgeX = (y, left) => { const e = X(L.edge(y)); return left ? e : 200 - e; };
+    const edgeX = (y, left) => (left ? X(L.edge(y)) : L.edgeR ? X(L.edgeR(y)) : 200 - X(L.edge(y)));
     const n = o.posts.length, lo = X(L.neck[0] - 2), hi = X(L.neck[1] + 2);
     // nut slots: evenly spread, or in pairs for a 12-string
     const nut = o.pairs
       ? o.posts.map((p, i) => { const course = Math.floor(i / 2), step = (hi - lo) / 5; return lo + course * step + (i % 2 ? 4.4 : 0) - 2.2 + (course === 5 ? -2.2 : 0); })
       : o.posts.map((p, i) => lo + ((hi - lo) * i) / (n - 1));
     const ts = (L.tunerScale || 1) * (o.tiny ? 0.7 : o.small ? 0.85 : 1);
-    const r = (L.post === "abalone" ? 7.5 : 6.5) * (o.tiny ? 0.85 : 1);
+    const r = (L.post === "black" ? 7.5 : 6.5) * (o.tiny ? 0.85 : 1);
+    const black = L.metal === "black";
     let tuners = "", strs = "", posts = "";
     o.posts.forEach(([x, y], i) => {
       const left = x < 100, e = edgeX(y, left), d = left ? -1 : 1, b0 = e + d * 6 * ts;
@@ -285,28 +291,34 @@
         // a tulip key, flaring away from the headstock
         : "M" + b0 + " " + (y - 4 * ts) + " L" + (b0 + d * 8.4 * ts) + " " + (y - 10 * ts) + " Q" + (b0 + d * 24 * ts) + " " + (y - 11 * ts) + " " + (b0 + d * 24 * ts) + " " + y +
           " Q" + (b0 + d * 24 * ts) + " " + (y + 11 * ts) + " " + (b0 + d * 8.4 * ts) + " " + (y + 10 * ts) + " L" + b0 + " " + (y + 4 * ts) + " Z";
-      tuners += '<rect x="' + Math.min(e, b0) + '" y="' + (y - 2.5 * ts) + '" width="' + 6 * ts + '" height="' + 5 * ts + '" fill="url(#hsGold)"/>' +
-          '<path d="' + key + '" fill="url(#hsGold)" stroke="#7A5A14" stroke-width=".8"/>';
+      tuners += '<rect x="' + Math.min(e, b0) + '" y="' + (y - 2.5 * ts) + '" width="' + 6 * ts + '" height="' + 5 * ts + '" fill="url(#' + (black ? "hsChrome" : "hsGold") + ')"/>' +
+          '<path d="' + key + '" fill="url(#' + (black ? "hsBlackKey" : "hsGold") + ')" stroke="' + (black ? "#000" : "#7A5A14") + '" stroke-width=".8"/>';
       strs += strPath(i, x, y, nut[i], o.gauge[i]);
       posts += '<circle cx="' + x + '" cy="' + y + '" r="' + (r + 2) + '" fill="#000" opacity=".5"/>' +
-          '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#hsBrassPost)" stroke="#6E5212" stroke-width=".8"/>' +
-          (L.post === "abalone" ? '<circle cx="' + x + '" cy="' + y + '" r="' + r * 0.7 + '" fill="url(#hsAbalone)"/>' : "") +
-          '<circle cx="' + x + '" cy="' + y + '" r="' + r * 0.38 + '" fill="#C9A13C" stroke="#6E5212" stroke-width=".6"/>';
+          (L.post === "black"
+            // a black bushing with a silver ring and the slotted post
+            ? '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#hsBlackPost)" stroke="#000" stroke-width=".8"/>' +
+              '<circle cx="' + x + '" cy="' + y + '" r="' + r * 0.62 + '" fill="none" stroke="url(#hsChrome)" stroke-width="1.4"/>' +
+              '<path d="M' + (x - r * 0.35) + " " + y + " L" + (x + r * 0.35) + " " + y + '" stroke="#000" stroke-width="1.2"/>'
+            : '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#hsBrassPost)" stroke="#6E5212" stroke-width=".8"/>' +
+              '<circle cx="' + x + '" cy="' + y + '" r="' + r * 0.38 + '" fill="#C9A13C" stroke="#6E5212" stroke-width=".6"/>');
     });
-    // figured wood: soft swirls in the finish
-    const figure = L.figure ? '<g opacity=".28" fill="none" stroke="#3E7D5D" stroke-width="1.2">' +
-        [[74, 120, 9], [124, 104, 7], [88, 190, 11], [116, 214, 8], [70, 74, 6], [130, 160, 10]].map(([x, y, s]) =>
-          '<ellipse cx="' + X(x) + '" cy="' + y + '" rx="' + s + '" ry="' + s * 0.6 + '"/><ellipse cx="' + X(x) + '" cy="' + y + '" rx="' + s * 0.55 + '" ry="' + s * 0.32 + '"/>').join("") + "</g>" : "";
+    // curly figure: wavy bands across the face, clipped to it
+    const clip = "hsClip" + name;
+    const figure = L.figure === "flame" ? '<clipPath id="' + clip + '"><path d="' + shape + '"/></clipPath><g clip-path="url(#' + clip + ')" fill="none" stroke="#063F3D" stroke-width="2.2" opacity=".35">' +
+        Array.from({ length: 22 }, (_, k) => { const y = 26 + k * 10; return '<path d="M30 ' + y + " Q" + 60 + " " + (y - 4) + " 85 " + y + " T140 " + y + " T175 " + (y + 1) + '"/>'; }).join("") + "</g>" : "";
     // a carved crest at the top of a crowned head
     const crest = L.crest ? '<path d="M' + 92 + " " + (name === "uke" ? 76 : 30) + " Q100 " + (name === "uke" ? 66 : 18) + " 108 " + (name === "uke" ? 76 : 30) + '" fill="none" stroke="url(#hsGold)" stroke-width="1.6"/>' +
         '<circle cx="100" cy="' + (name === "uke" ? 76 : 32) + '" r="' + (name === "uke" ? 2.4 : 4) + '" fill="url(#hsAbalone)" stroke="url(#hsGold)" stroke-width="1"/>' : "";
     const [ly, ls] = o.small || o.tiny ? L.logoSmall : L.logo;
     const neck = [X(L.neck[0]), X(L.neck[1])];
     return '<svg class="headstock" viewBox="0 0 200 320" aria-hidden="true">' + DEFS + tuners +
-        '<path d="' + shape + '" fill="url(#' + L.face + ')" stroke="#EDE3C8" stroke-width="5" stroke-linejoin="round"/>' + figure +
-        '<path d="' + shape + '" fill="none" stroke="#0B0B0C" stroke-width="1.4" stroke-linejoin="round"/>' +
+        (L.binding === false
+          ? '<path d="' + shape + '" fill="url(#' + L.face + ')" stroke="#07302F" stroke-width="1.6" stroke-linejoin="round"/>' + figure
+          : '<path d="' + shape + '" fill="url(#' + L.face + ')" stroke="#EDE3C8" stroke-width="5" stroke-linejoin="round"/>' + figure +
+            '<path d="' + shape + '" fill="none" stroke="#0B0B0C" stroke-width="1.4" stroke-linejoin="round"/>') +
         '<path d="' + shape + '" fill="url(#hsGloss)"/>' + crest +
-        '<text x="100" y="' + ly + '" text-anchor="middle" fill="' + (L.logoFill || "url(#hsGold)") + '" font-family="' + L.font.replace(/'/g, "&#39;") + '" font-style="italic" font-weight="700" font-size="' + ls + '">7uner</text>' +
+        '<text x="100" y="' + ly + '" text-anchor="middle" fill="' + (L.logoFill || "url(#hsGold)") + '" font-family="' + L.font.replace(/'/g, "&#39;") + '" font-style="' + (L.logoUpright ? "normal" : "italic") + '" font-weight="700" font-size="' + ls + '" letter-spacing="' + (L.logoUpright ? ".5" : "0") + '">7uner</text>' +
         (L.truss ? '<path d="M89 238 L92 210 Q100 199 108 210 L111 238 Z" fill="#0B0B0C" stroke="#EDE3C8" stroke-width="1.4"/><circle cx="100" cy="210" r="1.6" fill="url(#hsGold)"/>' : "") +
         '<rect x="' + neck[0] + '" y="252" width="' + (neck[1] - neck[0]) + '" height="70" fill="#141416"/>' +
         '<rect x="' + (neck[0] - 2) + '" y="252" width="2.5" height="70" fill="#EDE3C8"/><rect x="' + (neck[1] - 0.5) + '" y="252" width="2.5" height="70" fill="#EDE3C8"/>' +
