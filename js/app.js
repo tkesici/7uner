@@ -1,5 +1,5 @@
-/* 7uner – page switching (#tuner, #practice, #tab-studio), the header's
-   settings and help panels, and the Practice instrument picker */
+/* 7uner – page switching (#tuner, #practice, #tab-studio), the settings
+   and help bubbles in the bottom-left corner, and the Practice instrument picker */
 (function () {
   "use strict";
   const pages = { "tuner": "page-tuner", "practice": "page-test", "tab-studio": "page-studio" };
@@ -45,15 +45,15 @@
     document.querySelectorAll("[data-help]").forEach((x) => { x.hidden = x.dataset.help !== p; });
   }
 
-  /* settings (⚙) and help (?) beside the logo: small panels under the header */
-  const POPS = [["hGear", "hSettings"], ["hHelp", "hHelpPop"]].map(([b, p]) => [document.getElementById(b), document.getElementById(p)]);
+  /* settings and help: buttons in the bottom-left corner, each opening a bubble just above it */
+  const POPS = [["cGearBtn", "cSettings"], ["cInfoBtn", "cInfo"]].map(([b, p]) => [document.getElementById(b), document.getElementById(p)]);
   function closePops() { POPS.forEach(([b, p]) => { p.hidden = true; b.setAttribute("aria-expanded", "false"); }); }
   POPS.forEach(([b, p]) => b.addEventListener("click", () => {
     const open = p.hidden;
     closePops();
     if (open) { p.hidden = false; b.setAttribute("aria-expanded", "true"); }
   }));
-  document.addEventListener("click", (e) => { if (!e.target.closest(".tpop, .hbtn")) closePops(); });
+  document.addEventListener("click", (e) => { if (!e.target.closest(".corner")) closePops(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePops(); });
 
   window.addEventListener("hashchange", go);

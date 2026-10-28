@@ -109,7 +109,7 @@
     },
     violin: {
       label: "Violin", base: [55, 62, 69, 76], offMin: -5, offMax: 3,
-      left: [0, 1], right: [3, 2], rows: [130, 60],
+      left: [0, 1], right: [3, 2], rows: [156, 46.8], // the pegs of a head drawn at 0.78 (see scrollHead)
       cfg: { inTune: 2, range: 25, minF: 130, maxF: 3000, windowSec: 0.1, clarity: 0.7, median: 7, onsetSkip: 2, decimals: 1 },
       presets: [
         ["Standard", [0, 0, 0, 0]],
@@ -120,7 +120,7 @@
     },
     cello: {
       label: "Cello", base: [36, 43, 50, 57], offMin: -5, offMax: 3,
-      left: [0, 1], right: [3, 2], rows: [130, 60],
+      left: [0, 1], right: [3, 2], rows: [115.8, 67.2], // drawn at 1.12
       cfg: { inTune: 2, range: 25, minF: 55, maxF: 1500, windowSec: 0.17, clarity: 0.7, median: 7, onsetSkip: 3, decimals: 1 },
       presets: [["Standard", [0, 0, 0, 0]]]
     }
@@ -148,9 +148,10 @@
   const el = {
     root: $("tRoot"), modes: $("tModes"), readout: $("tReadout"), sub: $("tSub"), note: $("tNote"), oct: $("tOct"),
     hz: $("tHz"), cents: $("tCents"), panel: $("tGuitar"), allIn: $("tAllIn"),
-    preset: $("tPreset"), auto: $("tAuto"), autoPill: $("tAutoPill"), pegsL: $("pegsL"), pegsR: $("pegsR"), head: $("tHead"),
+    preset: $("tPreset"), auto: $("tAuto"), autoRow: $("tAutoRow"), pegsL: $("pegsL"), pegsR: $("pegsR"), head: $("tHead"),
+    pick: $("tPick"), pickLab: $("tPickLab"), pickPop: $("tPickPop"), stage: $("tStage"),
     canvas: $("tStrobe"), cover: $("tCover"), start: $("tStart"), status: $("tStatus"), stop: $("tStop"),
-    a4: $("a4"), a4d: $("a4Down"), a4u: $("a4Up"), presetWrap: $("tPresetWrap"),
+    a4: $("a4"), a4d: $("a4Down"), a4u: $("a4Up"),
     count: $("tCount")
   };
 
@@ -199,6 +200,11 @@
       '<linearGradient id="hsVarnish" x1="0" x2="1"><stop offset="0" stop-color="#6E2A0C"/><stop offset=".5" stop-color="#B85A1F"/><stop offset="1" stop-color="#6E2A0C"/></linearGradient>' +
       '<linearGradient id="hsRosewood" x1="0" x2="1"><stop offset="0" stop-color="#3A2315"/><stop offset=".5" stop-color="#5C3B24"/><stop offset="1" stop-color="#3A2315"/></linearGradient>' +
       '<linearGradient id="hsEbony" x1="0" x2="1"><stop offset="0" stop-color="#0E0E10"/><stop offset=".5" stop-color="#26262A"/><stop offset="1" stop-color="#0E0E10"/></linearGradient>' +
+      '<linearGradient id="hsChrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4F5F7"/><stop offset=".45" stop-color="#C3C7CD"/><stop offset=".55" stop-color="#9DA2AA"/><stop offset="1" stop-color="#E2E4E8"/></linearGradient>' +
+      '<radialGradient id="hsBrassPost" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#FFF3B8"/><stop offset=".5" stop-color="#D9B44A"/><stop offset="1" stop-color="#8A6A1A"/></radialGradient>' +
+      '<radialGradient id="hsChromePost" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#C9CDD3"/><stop offset="1" stop-color="#6E747C"/></radialGradient>' +
+      '<linearGradient id="hsGloss" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".16"/><stop offset=".45" stop-color="#FFFFFF" stop-opacity=".03"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>' +
+      '<linearGradient id="hsPearl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7F4EC"/><stop offset=".5" stop-color="#DCE3E6"/><stop offset="1" stop-color="#EFE8DA"/></linearGradient>' +
       '</defs>';
 
   const logo = (y, size, color) => '<text x="100" y="' + y + '" text-anchor="middle" fill="' + (color || "#F2B33D") + '" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="' + size + '">7uner</text>';
@@ -210,13 +216,16 @@
     o.posts.forEach(([x, y], i) => {
       const left = x < 100, k = o.knob;
       const kx = left ? k.inner - k.w : 200 - k.inner, sx = left ? k.inner - 4 : 200 - k.inner - k.shaft + 4;
-      knobs += '<rect x="' + sx + '" y="' + (y - k.sh / 2) + '" width="' + k.shaft + '" height="' + k.sh + '" fill="#8E939B"/>' +
-          '<rect x="' + kx + '" y="' + (y - k.h / 2) + '" width="' + k.w + '" height="' + k.h + '" rx="' + k.r + '" fill="' + k.fill + '" stroke="' + k.stroke + '" stroke-width="1"/>';
+      const fill = k.fill === "#D3D6DB" ? "url(#hsChrome)" : k.fill;
+      knobs += '<rect x="' + sx + '" y="' + (y - k.sh / 2) + '" width="' + k.shaft + '" height="' + k.sh + '" fill="url(#hsChrome)"/>' +
+          '<rect x="' + kx + '" y="' + (y - k.h / 2) + '" width="' + k.w + '" height="' + k.h + '" rx="' + k.r + '" fill="' + fill + '" stroke="' + k.stroke + '" stroke-width="1"/>';
       strs += strPath(i, x, y, o.nut[i], o.gauge[i]);
-      posts += '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + o.post + '" fill="#D3D6DB" stroke="#5E646C" stroke-width="1"/><circle cx="' + x + '" cy="' + y + '" r="' + o.post / 3 + '" fill="#5E646C"/>';
+      posts += '<circle cx="' + x + '" cy="' + y + '" r="' + (o.post + 1.6) + '" fill="#2A2D32" opacity=".55"/>' +
+          '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + o.post + '" fill="url(#hsChromePost)" stroke="#5E646C" stroke-width="1"/><circle cx="' + x + '" cy="' + y + '" r="' + o.post / 3 + '" fill="#4A4F56"/>';
     });
     return '<svg class="headstock' + (o.light ? " light" : "") + '" viewBox="0 0 200 320" aria-hidden="true">' + DEFS + knobs +
-        '<path d="' + o.shape + '" fill="url(#' + o.wood + ')" stroke="#0B0C0E" stroke-width="1.5"/>' + o.logo +
+        '<path d="' + o.shape + '" fill="url(#' + o.wood + ')" stroke="#0B0C0E" stroke-width="1.5"/>' +
+        '<path d="' + o.shape + '" fill="url(#hsGloss)"/>' + o.logo +
         '<rect x="' + o.neck[0] + '" y="252" width="' + (o.neck[1] - o.neck[0]) + '" height="70" fill="url(#hsRosewood)"/>' +
         '<rect x="' + o.neck[0] + '" y="294" width="' + (o.neck[1] - o.neck[0]) + '" height="3" fill="#C9CCD1"/>' +
         '<rect x="' + (o.neck[0] - 3) + '" y="245" width="' + (o.neck[1] - o.neck[0] + 6) + '" height="8" rx="2" fill="#ECE4D2"/>' +
@@ -224,37 +233,14 @@
   }
 
   const HEADS = {
-    guitar: () => machineHead({
-      posts: [[70, 190], [70, 130], [70, 70], [130, 70], [130, 130], [130, 190]],
-      nut: [66, 79.6, 93.2, 106.8, 120.4, 134], gauge: [2.8, 2.3, 1.9, 1.5, 1.2, 1], post: 6.5,
-      knob: { inner: 44, w: 26, h: 20, r: 8, shaft: 18, sh: 5, fill: "#D3D6DB", stroke: "#7D838C" },
-      shape: "M58 248 L46 52 Q42 14 70 10 Q104 6 124 26 Q134 34 150 22 L160 13 Q159 34 152 52 L142 248 Z", wood: "hsBlack",
-      logo: logo(46, 19, "url(#hsGold)"), neck: [60, 140]
-    }),
-    // extended range: 3+4 and 4+4 posts, closer together; a smaller logo fits between the top posts
-    guitar7: () => machineHead({
-      posts: [[70, 200], [70, 150], [70, 100], [130, 50], [130, 100], [130, 150], [130, 200]],
-      nut: [64, 76, 88, 100, 112, 124, 136], gauge: [3.1, 2.8, 2.3, 1.9, 1.5, 1.2, 1], post: 6.5,
-      knob: { inner: 44, w: 26, h: 20, r: 8, shaft: 18, sh: 5, fill: "#D3D6DB", stroke: "#7D838C" },
-      shape: "M58 248 L46 52 Q42 14 70 10 Q104 6 124 26 Q134 34 150 22 L160 13 Q159 34 152 52 L142 248 Z", wood: "hsBlack",
-      logo: logo(44, 15, "url(#hsGold)"), neck: [60, 140]
-    }),
-    guitar8: () => machineHead({
-      posts: [[70, 200], [70, 150], [70, 100], [70, 50], [130, 50], [130, 100], [130, 150], [130, 200]],
-      nut: [62, 72.9, 83.7, 94.6, 105.4, 116.3, 127.1, 138], gauge: [3.4, 3.1, 2.8, 2.3, 1.9, 1.5, 1.2, 1], post: 6.5,
-      knob: { inner: 44, w: 26, h: 20, r: 8, shaft: 18, sh: 5, fill: "#D3D6DB", stroke: "#7D838C" },
-      shape: "M56 248 L44 52 Q40 14 70 10 Q104 6 124 26 Q134 34 150 22 L161 13 Q161 34 154 52 L144 248 Z", wood: "hsBlack",
-      logo: logo(44, 15, "url(#hsGold)"), neck: [58, 142]
-    }),
+    guitar: () => espHead({ posts: [[70, 190], [70, 130], [70, 70], [130, 70], [130, 130], [130, 190]], gauge: [2.8, 2.3, 1.9, 1.5, 1.2, 1], wide: 1 }),
+    guitar7: () => espHead({ posts: [[70, 200], [70, 150], [70, 100], [130, 50], [130, 100], [130, 150], [130, 200]], gauge: [3.1, 2.8, 2.3, 1.9, 1.5, 1.2, 1], wide: 1 }),
+    guitar8: () => espHead({ posts: [[70, 200], [70, 150], [70, 100], [70, 50], [130, 50], [130, 100], [130, 150], [130, 200]], gauge: [3.4, 3.1, 2.8, 2.3, 1.9, 1.5, 1.2, 1], wide: 1.06 }),
     // 6+6 posts; each course's two strings run side by side to the nut
-    guitar12: () => machineHead({
+    guitar12: () => espHead({
       posts: [[70, 226], [70, 190], [70, 154], [70, 118], [70, 82], [70, 46],
         [130, 46], [130, 82], [130, 118], [130, 154], [130, 190], [130, 226]],
-      nut: [62, 66.4, 76, 80.4, 90, 94.4, 105.6, 110, 119.6, 124, 133.6, 138],
-      gauge: [2.8, 1.3, 2.3, 1.1, 1.9, 1, 1.5, 0.9, 1.2, 1.2, 1, 1], post: 6,
-      knob: { inner: 44, w: 24, h: 18, r: 7, shaft: 18, sh: 5, fill: "#D3D6DB", stroke: "#7D838C" },
-      shape: "M56 248 L44 52 Q40 14 70 10 Q104 6 124 26 Q134 34 150 22 L161 13 Q161 34 154 52 L144 248 Z", wood: "hsBlack",
-      logo: logo(30, 13, "url(#hsGold)"), neck: [56, 144]
+      gauge: [2.8, 1.3, 2.3, 1.1, 1.9, 1, 1.5, 0.9, 1.2, 1.2, 1, 1], wide: 1.06, pairs: true, small: true
     }),
     bass: () => machineHead({
       posts: [[66, 175], [66, 100], [134, 100], [134, 175]],
@@ -285,17 +271,61 @@
       shape: "M66 248 L60 104 Q58 74 82 66 Q100 76 118 66 Q142 74 140 104 L134 248 Z", wood: "hsMahogany",
       logo: logo(100, 15), neck: [68, 132]
     }),
-    violin: () => scrollHead([1.7, 1.4, 1.2, 1]),
-    cello: () => scrollHead([2.6, 2.2, 1.8, 1.5])
+    violin: () => scrollHead([1.7, 1.4, 1.2, 1], 0.78),
+    cello: () => scrollHead([2.6, 2.2, 1.8, 1.5], 1.12)
   };
 
-  // scroll, pegbox and side-mounted pegs (violin, cello)
-  function scrollHead(gauge) {
-    const ends = [[90, 130], [95, 190], [105, 190], [110, 130]], nut = [88, 96, 104, 112];
+  /* Guitar headstock after ESP's Eclipse: a black face with cream binding
+     (cream, a fine black line, cream), horns rising at the outer corners
+     and two scallops meeting at a point in the middle, gold tulip tuners,
+     a bell truss-rod cover, and a bound ebony fretboard with pearl blocks.
+     wide spreads it sideways for 8 and 12 strings. */
+  function espHead(o) {
+    const X = (x) => 100 + (x - 100) * o.wide;
+    const shape = "M" + X(60) + " 248 L" + X(37) + " 32 Q" + X(35) + " 18 " + X(42) + " 15 C" + X(58) + " 34 " + X(88) + " 46 100 30 C" + X(112) + " 46 " + X(142) + " 34 " + X(158) + " 15 Q" + X(165) + " 18 " + X(163) + " 32 L" + X(140) + " 248 Z";
+    const edgeX = (y, left) => (left ? X(60) - ((248 - y) * (X(60) - X(37))) / 216 : X(140) + ((248 - y) * (X(163) - X(140))) / 216);
+    const n = o.posts.length, lo = X(62), hi = X(138);
+    // nut slots: evenly spread, or in pairs for a 12-string
+    const nut = o.pairs
+      ? o.posts.map((p, i) => { const course = Math.floor(i / 2), w = (hi - lo) / 5; return lo + course * w + (i % 2 ? 4.4 : 0) - 2.2 + (course === 5 ? -2.2 : 0); })
+      : o.posts.map((p, i) => lo + ((hi - lo) * i) / (n - 1));
+    let tuners = "", strs = "", posts = "";
+    const r = o.small ? 5.5 : 6.5, bw = o.small ? 20 : 24, bh = o.small ? 16 : 20;
+    o.posts.forEach(([x, y], i) => {
+      const left = x < 100, e = edgeX(y, left), dir = left ? -1 : 1, b0 = e + dir * 6;
+      // shaft, then a tulip-shaped gold button flaring away from the headstock
+      tuners += '<rect x="' + Math.min(e, b0) + '" y="' + (y - 2.5) + '" width="6" height="5" fill="url(#hsGold)"/>' +
+          '<path d="M' + b0 + " " + (y - 4) + " L" + (b0 + dir * bw * 0.35) + " " + (y - bh / 2) + " Q" + (b0 + dir * bw) + " " + (y - bh / 2 - 1) + " " + (b0 + dir * bw) + " " + y +
+          " Q" + (b0 + dir * bw) + " " + (y + bh / 2 + 1) + " " + (b0 + dir * bw * 0.35) + " " + (y + bh / 2) + " L" + b0 + " " + (y + 4) + ' Z" fill="url(#hsGold)" stroke="#7A5A14" stroke-width=".8"/>';
+      strs += strPath(i, x, y, nut[i], o.gauge[i]);
+      posts += '<circle cx="' + x + '" cy="' + y + '" r="' + (r + 2) + '" fill="#000" opacity=".5"/>' +
+          '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#hsBrassPost)" stroke="#6E5212" stroke-width=".8"/>' +
+          '<circle cx="' + x + '" cy="' + y + '" r="' + r * 0.45 + '" fill="#C9A13C" stroke="#6E5212" stroke-width=".6"/>';
+    });
+    const neck = [X(64), X(136)];
+    return '<svg class="headstock" viewBox="0 0 200 320" aria-hidden="true">' + DEFS + tuners +
+        '<path d="' + shape + '" fill="url(#hsBlack)" stroke="#EDE3C8" stroke-width="5" stroke-linejoin="round"/>' +
+        '<path d="' + shape + '" fill="none" stroke="#0B0B0C" stroke-width="1.4" stroke-linejoin="round"/>' +
+        '<path d="' + shape + '" fill="url(#hsGloss)"/>' +
+        '<text x="100" y="' + (o.small ? 36 : 62) + '" text-anchor="middle" fill="url(#hsGold)" font-family="Georgia, \'Times New Roman\', serif" font-style="italic" font-weight="700" font-size="' + (o.small ? 13 : 20) + '">7uner</text>' +
+        '<path d="M89 238 L92 210 Q100 199 108 210 L111 238 Z" fill="#0B0B0C" stroke="#EDE3C8" stroke-width="1.4"/><circle cx="100" cy="210" r="1.6" fill="url(#hsGold)"/>' +
+        '<rect x="' + neck[0] + '" y="252" width="' + (neck[1] - neck[0]) + '" height="70" fill="#141416"/>' +
+        '<rect x="' + (neck[0] - 2) + '" y="252" width="2.5" height="70" fill="#EDE3C8"/><rect x="' + (neck[1] - 0.5) + '" y="252" width="2.5" height="70" fill="#EDE3C8"/>' +
+        '<rect x="' + neck[0] + '" y="294" width="' + (neck[1] - neck[0]) + '" height="2.5" fill="url(#hsChrome)"/>' +
+        '<path d="M' + (neck[0] + 10) + " 304 L" + (neck[1] - 10) + " 304 L" + (neck[1] - 14) + " 322 L" + (neck[0] + 14) + ' 322 Z" fill="url(#hsPearl)" opacity=".9"/>' +
+        '<rect x="' + (neck[0] - 3) + '" y="245" width="' + (neck[1] - neck[0] + 6) + '" height="8" rx="2" fill="#F3EEDF"/>' +
+        strs + posts + "</svg>";
+  }
+
+  // scroll, pegbox and side-mounted pegs (violin, cello); k sets the size,
+  // growing from the nut, so the cello's head is clearly bigger than the violin's
+  function scrollHead(gauge, k) {
+    const M = (x, y) => [100 + (x - 100) * k, 248 - (248 - y) * k];
+    const ends = [[90, 130], [95, 190], [105, 190], [110, 130]].map(([x, y]) => M(x, y)), nut = [88, 96, 104, 112].map((x) => M(x, 249)[0]);
     let strs = "", pegs = "";
     ends.forEach(([x, y], i) => {
       strs += '<path class="gstr" data-i="' + i + '" stroke-width="' + gauge[i] + '" d="M' + x + " " + y + " L" + nut[i] + " 249 L" + nut[i] + ' 320"/>' +
-          '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="4" fill="none"/>'; // where the string meets its peg
+          '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + 4 * k + '" fill="none"/>'; // where the string meets its peg
     });
     [130, 190].forEach((y) => {
       pegs += '<rect x="58" y="' + (y - 3) + '" width="84" height="6" rx="3" fill="#1B1411"/>' +
@@ -304,14 +334,18 @@
           '<ellipse cx="156" cy="' + y + '" rx="15" ry="11" fill="url(#hsEbony)" stroke="#000" stroke-width="1"/>' +
           '<circle cx="138" cy="' + y + '" r="5" fill="#2A221E" stroke="#000" stroke-width="1"/>';
     });
+    const fb = [100 - 14 * k, 28 * k];
     return '<svg class="headstock" viewBox="0 0 200 320" aria-hidden="true">' + DEFS +
+        '<g transform="matrix(' + k + " 0 0 " + k + " " + 100 * (1 - k) + " " + 248 * (1 - k) + ')">' +
         '<circle cx="100" cy="58" r="26" fill="url(#hsVarnish)" stroke="#3A1505" stroke-width="1.5"/>' +
         '<path d="M100 58 m-4 0 a4 4 0 1 1 8 0 a8 8 0 1 1 -16 0 a12 12 0 1 1 24 0 a16 16 0 1 1 -32 0" fill="none" stroke="#3A1505" stroke-width="2"/>' +
         '<path d="M84 248 L80 98 Q80 82 92 80 L108 80 Q120 82 120 98 L116 248 Z" fill="url(#hsVarnish)" stroke="#3A1505" stroke-width="1.5"/>' +
         '<path d="M89 240 L86 104 L114 104 L111 240 Z" fill="#2A1208"/>' +
-        '<rect x="86" y="252" width="28" height="70" fill="url(#hsEbony)" stroke="#55555C" stroke-width="1"/>' +
-        '<rect x="84" y="245" width="32" height="7" rx="2" fill="#1B1B1E" stroke="#000" stroke-width="1"/>' +
-        strs + pegs + "</svg>";
+        '<path d="M84 248 L80 98 Q80 82 92 80 L108 80 Q120 82 120 98 L116 248 Z" fill="url(#hsGloss)"/>' +
+        '<circle cx="100" cy="58" r="26" fill="url(#hsGloss)"/>' + pegs + "</g>" +
+        '<rect x="' + fb[0] + '" y="252" width="' + fb[1] + '" height="70" fill="url(#hsEbony)" stroke="#55555C" stroke-width="1"/>' +
+        '<rect x="' + (fb[0] - 2) + '" y="245" width="' + (fb[1] + 4) + '" height="7" rx="2" fill="#1B1B1E" stroke="#000" stroke-width="1"/>' +
+        strs + "</svg>";
   }
 
   /* ---------- instrument panel ---------- */
@@ -352,10 +386,11 @@
           '<button data-d="-1" aria-label="Tune string ' + num + ' down a semitone">▼</button></div>' +
           '<button class="pn" aria-pressed="false" aria-label="Lock to string ' + num + '"><span class="pnote"></span><span class="poff"></span></button>';
       d.querySelectorAll(".parr button").forEach((b) => b.addEventListener("click", () => { setOffset(i, offs()[i] + +b.dataset.d); playRef(i); }));
-      // tapping a note always selects that string and plays it; only the
-      // Auto-detect button returns to automatic string detection
+      // tapping a note locks the tuner to that string and plays it;
+      // tapping it again goes back to detecting the string
       d.querySelector(".pn").addEventListener("click", () => {
-        if (lock !== i) setLock(i);
+        if (lock === i) { setLock(null); return; }
+        setLock(i);
         playRef(i);
       });
       pegEls[i] = d;
@@ -364,7 +399,6 @@
     I.left.forEach((i) => el.pegsL.appendChild(make(i)));
     I.right.forEach((i) => el.pegsR.appendChild(make(i)));
 
-    el.preset.innerHTML = I.presets.map((p, k) => '<option value="' + k + '">' + p[0] + "</option>").join("") + '<option value="custom">Custom</option>';
     lock = null;
     tuned = I.base.map(() => false);
     renderPegs();
@@ -386,10 +420,8 @@
       strEls[i].classList.toggle("tuned", tuned[i]);
       strEls[i].classList.toggle("locked", lock === i);
     }
-    const k = I.presets.findIndex((p) => p[1].every((v, j) => v === o[j]));
-    el.preset.value = k >= 0 ? String(k) : "custom";
-    el.auto.setAttribute("aria-pressed", lock === null ? "true" : "false");
-    el.autoPill.textContent = lock === null ? "ON" : "OFF";
+    renderPick();
+    el.auto.setAttribute("aria-checked", lock === null ? "true" : "false");
     const all = tuned.length > 0 && tuned.every(Boolean);
     el.allIn.hidden = !all;
     el.panel.classList.toggle("allin-on", all);
@@ -464,38 +496,57 @@
     });
   }
 
-  /* ---------- string-count dial (guitar 6/7/8/12, bass 4/5/6) ----------
-     The counts sit on an arc over a small knob whose pointer turns to the
-     one in use; click a count, or the knob to step to the next one. */
-  const DIAL_R = 2.3, DIAL_Y = 2.55; // rem: label radius, and the knob centre from the top
-  function buildCount() {
-    const counts = COUNTS[st.mode];
+  /* ---------- strings and tuning ----------
+     One quiet button under the headstock ("6 strings · Standard") opens a
+     bubble with the number of strings (guitar and bass) and the tunings. */
+  const presetIndex = () => { const o = offs(); return instr().presets.findIndex((p) => p[1].every((v, j) => v === o[j])); };
+  function renderPick() {
+    const I = instr();
+    if (!I) return;
+    const k = presetIndex(), counts = COUNTS[st.mode];
+    el.pickLab.textContent = (counts ? st.strings[st.mode] + " strings · " : "") + (k >= 0 ? I.presets[k][0] : "Custom");
     el.count.hidden = !counts;
-    if (!counts) return;
-    const deg = (k) => (counts.length === 1 ? 0 : -55 + (110 * k) / (counts.length - 1));
-    el.count.innerHTML = counts.map((n, k) => {
-      const on = n === st.strings[st.mode], a = (deg(k) * Math.PI) / 180;
-      return '<button role="radio" data-n="' + n + '" aria-checked="' + on + '" tabindex="' + (on ? 0 : -1) + '" aria-label="' + n + ' strings"' +
-          ' style="left:calc(50% + ' + (Math.sin(a) * DIAL_R).toFixed(2) + "rem);top:" + (DIAL_Y - Math.cos(a) * DIAL_R).toFixed(2) + 'rem">' + n + "</button>";
-    }).join("") + '<span class="tdial-knob" aria-hidden="true" style="--a:' + deg(counts.indexOf(st.strings[st.mode])) + 'deg"></span>';
+    el.count.innerHTML = counts ? counts.map((n) => {
+      const on = n === st.strings[st.mode];
+      return '<button role="radio" data-n="' + n + '" aria-checked="' + on + '" tabindex="' + (on ? 0 : -1) + '" aria-label="' + n + ' strings">' + n + "</button>";
+    }).join("") : "";
+    el.preset.innerHTML = I.presets.map((p, j) =>
+        '<button role="radio" data-k="' + j + '" aria-checked="' + (j === k) + '" tabindex="' + (j === k || (k < 0 && j === 0) ? 0 : -1) + '">' + p[0] + "</button>").join("") +
+        (k < 0 ? '<button role="radio" aria-checked="true" tabindex="-1" disabled>Custom</button>' : "");
   }
   function setCount(n) {
     if (!COUNTS[st.mode] || !COUNTS[st.mode].includes(n) || n === st.strings[st.mode]) return;
     st.strings[st.mode] = n;
     save(); applyMode();
-    el.count.querySelector('[data-n="' + n + '"]').focus();
+    const b = el.count.querySelector('[data-n="' + n + '"]');
+    if (b) b.focus();
   }
-  el.count.addEventListener("click", (e) => {
-    const b = e.target.closest("button"), counts = COUNTS[st.mode];
-    if (b) setCount(+b.dataset.n);
-    else if (counts && e.target.closest(".tdial-knob")) setCount(counts[(counts.indexOf(st.strings[st.mode]) + 1) % counts.length]);
-  });
-  el.count.addEventListener("keydown", (e) => {
-    const d = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
-    const counts = COUNTS[st.mode];
-    if (!d || !counts) return;
-    e.preventDefault();
-    setCount(counts[(counts.indexOf(st.strings[st.mode]) + d + counts.length) % counts.length]);
+  function setPreset(k) {
+    const I = instr();
+    if (!I || !I.presets[k]) return;
+    st.offsets[ikey()] = I.presets[k][1].slice();
+    tuned = I.base.map(() => false);
+    lock = null;
+    save(); renderPegs(); resetReading();
+    const b = el.preset.querySelector('[data-k="' + k + '"]');
+    if (b) b.focus();
+  }
+  const togglePick = (open) => { el.pickPop.hidden = !open; el.pick.setAttribute("aria-expanded", open ? "true" : "false"); };
+  el.pick.addEventListener("click", () => togglePick(el.pickPop.hidden));
+  document.addEventListener("click", (e) => { if (!el.pickPop.hidden && !e.target.closest(".tset")) togglePick(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !el.pickPop.hidden) { togglePick(false); el.pick.focus(); } });
+  el.count.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setCount(+b.dataset.n); });
+  el.preset.addEventListener("click", (e) => { const b = e.target.closest("button[data-k]"); if (b) setPreset(+b.dataset.k); });
+  // arrow keys move within each radio group
+  [[el.count, () => COUNTS[st.mode] || [], () => st.strings[st.mode], setCount],
+    [el.preset, () => instr().presets.map((p, j) => j), () => presetIndex(), setPreset]].forEach(([box, list, cur, set]) => {
+    box.addEventListener("keydown", (e) => {
+      const d = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+      const l = list();
+      if (!d || !l.length) return;
+      e.preventDefault();
+      set(l[(Math.max(0, l.indexOf(cur())) + d + l.length) % l.length]);
+    });
   });
 
   function applyMode() {
@@ -505,9 +556,8 @@
       b.tabIndex = on ? 0 : -1;
     });
     el.panel.hidden = !instr();
-    el.presetWrap.hidden = !instr();
-    buildCount();
-    el.auto.hidden = !instr();
+    el.autoRow.hidden = !instr();
+    togglePick(false);
     el.root.classList.toggle("mode-instrument", !!instr());
     buildInstrument();
     resetReading(); // also clears the last reading, so nothing from the previous mode stays on screen
@@ -532,7 +582,7 @@
     el.note.textContent = noteName(targetMidi);
     el.oct.textContent = octave(targetMidi);
     el.hz.innerHTML = '<span class="nw"><b>' + freq.toFixed(c.decimals ? 2 : 1) + "</b> Hz</span>" +
-        (stringIdx != null ? ' &nbsp;<span class="nw">target ' + mtof(targetMidi).toFixed(2) + " Hz</span>" : "");
+        (stringIdx != null ? ' &nbsp;<span class="nw tgt">target ' + mtof(targetMidi).toFixed(2) + " Hz</span>" : "");
     el.cents.textContent = fmtCents(cents, c.decimals);
     el.sub.textContent = stringIdx != null ? "String " + (instr().base.length - stringIdx) + (lock !== null ? " (locked)" : "") : "";
     el.readout.classList.remove("idle");
@@ -564,7 +614,11 @@
   let colors = null;
   const readColors = () => { colors = { ok: cssVar("--ok"), okSoft: cssVar("--ok-soft"), amber: cssVar("--amber"), line: cssVar("--line"), muted: cssVar("--muted"), ink: cssVar("--ink") }; };
 
+  // in instrument modes the canvas reaches down behind the instrument, so
+  // the history scrolls on behind it
   function resize() {
+    const top = el.stage.getBoundingClientRect().top;
+    el.canvas.style.height = instr() && !el.panel.hidden ? Math.max(el.stage.offsetHeight, el.panel.getBoundingClientRect().bottom - top) + "px" : "";
     const r = el.canvas.getBoundingClientRect();
     if (!r.width) return;
     const dpr = window.devicePixelRatio || 1;
@@ -585,7 +639,9 @@
     const col = !view.active ? K.muted : view.ok ? K.ok : K.amber;
 
     // geometry: the arc at the top, the history filling the space below it
-    const R = Math.min(W * 0.42, H * 0.42);
+    // the arc fills the stage box; in instrument modes the canvas goes on below it
+    const arcH = el.stage.clientHeight * dpr;
+    const R = instr() ? Math.min(W * 0.36, (arcH - 40 * dpr) * 1.7) : Math.min(W * 0.42, arcH * 0.42);
     const cx = W / 2, cy = R + 30 * dpr;
     const ang = (cents) => -Math.PI / 2 + Math.max(-1, Math.min(1, cents / c.range)) * SPAN;
     const A0 = -Math.PI / 2 - SPAN, A1 = -Math.PI / 2 + SPAN;
@@ -647,7 +703,7 @@
       const a = h[i - 1], b = h[i];
       if (b.t - a.t > 150 || a.k !== b.k) continue; // a pause, or another string or note: don't join them
       const age = (now - b.t) / maxAge;
-      g.globalAlpha = 1 - 0.75 * age;
+      g.globalAlpha = (1 - 0.75 * age) * (instr() ? 0.45 : 1); // fainter behind an instrument
       g.strokeStyle = b.ok ? colors.ok : colors.amber;
       g.beginPath();
       g.moveTo(xOf(a.c), yArc(a.c) + (now - a.t) * speed);
@@ -804,15 +860,12 @@
   buildModes();
   el.a4.value = st.a4;
 
-  el.preset.addEventListener("change", () => {
-    const I = instr();
-    if (!I || el.preset.value === "custom") return;
-    st.offsets[st.mode] = I.presets[+el.preset.value][1].slice();
-    tuned = I.base.map(() => false);
-    lock = null;
-    save(); renderPegs(); resetReading();
+  // auto-detect, in the settings bubble: off locks to the string last heard (or the lowest)
+  el.auto.addEventListener("click", () => {
+    if (!instr()) return;
+    if (lock !== null) setLock(null);
+    else setLock(lastKey !== null && instr().base[lastKey] !== undefined ? lastKey : 0);
   });
-  el.auto.addEventListener("click", () => setLock(null));
   el.start.addEventListener("click", start);
   el.stop.addEventListener("click", stop);
   el.a4.addEventListener("change", () => setA4(el.a4.value));

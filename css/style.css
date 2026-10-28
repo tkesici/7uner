@@ -39,13 +39,6 @@ button{cursor:pointer}
 /* site header */
 .site{border-bottom:1px solid var(--line)}
 .site .wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:4rem}
-.brandbar{display:flex;align-items:center;gap:.15rem}
-.brandbar .brand{margin-right:.35rem}
-/* settings and help: quiet icons beside the logo */
-.hbtn{width:2rem;height:2rem;border:0;border-radius:50%;background:none;display:inline-flex;align-items:center;justify-content:center;padding:0;font-weight:700;font-size:1rem;color:var(--muted);opacity:.7;transition:opacity .15s,background-color .15s,color .15s}
-.hbtn:hover,.hbtn[aria-expanded="true"]{opacity:1;color:var(--ink);background:var(--panel)}
-.hbtn svg{width:1.15rem;height:1.15rem;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.hpops .tpop{margin-top:.8rem}
 .brand{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:2rem;letter-spacing:-.02em;color:var(--ink);text-decoration:none}
 .sitenav{display:flex;gap:.2rem}
 .sitenav a{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.15rem;color:var(--muted);text-decoration:none;padding:.45rem .9rem;border-radius:999px;white-space:nowrap}
@@ -59,10 +52,6 @@ button{cursor:pointer}
 .sitenav a[aria-current="page"]{background:var(--ink);color:var(--bg)}
 
 /* site footer: the privacy note */
-.sitefoot{border-top:1px solid var(--line);padding:1.2rem 0 1.6rem;color:var(--muted);font-size:.85rem}
-.sitefoot p{max-width:80ch;margin:.25rem 0}
-.sitefoot b{color:var(--ink);font-weight:600}
-.sitefoot a{color:inherit}
 
 /* page heading with the amp beside it (Practice, Tab Studio) */
 .pagehead{display:grid;grid-template-columns:minmax(0,1fr) minmax(440px,540px);gap:1.2rem 2.4rem;align-items:stretch}
@@ -140,21 +129,66 @@ button{cursor:pointer}
 .tuner{max-width:720px;margin:0 auto;padding:1.4rem 1.1rem 3rem;text-align:center}
 .readout{transition:opacity .2s}
 .readout.idle{opacity:.45}
-.note{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:clamp(6.5rem,26vw,10.5rem);line-height:.88;color:var(--amber);font-variant-numeric:tabular-nums}
+.note{height:.88em;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:clamp(6.5rem,26vw,10.5rem);line-height:.88;color:var(--amber);font-variant-numeric:tabular-nums}
 .note sub{font-size:.36em;vertical-align:baseline;margin-left:.04em;color:var(--muted)}
 .readout.in .note{color:var(--ok)}
 .readout.idle .note{color:var(--muted)}
-.hz{min-height:1.6rem;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:1.05rem;color:var(--muted);margin-top:.4rem}
+.hz{height:1.6rem;white-space:nowrap;overflow:hidden;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:1.05rem;color:var(--muted);margin-top:.4rem}
 .hz b{color:var(--ink);font-weight:700}
 .nw{white-space:nowrap}
+@media (max-width:520px){.hz .tgt{display:none}}
 
 /* strobe stage (tuner.js): a canvas, with the microphone button over it until it's on */
 .tstage{position:relative;margin:1rem auto .6rem;height:clamp(300px,46vh,420px)}
-.tstage canvas{display:block;width:100%;height:100%}
+.tstage canvas{position:absolute;top:0;left:0;display:block;width:100%;height:100%;pointer-events:none}
+.tuner.mode-instrument .tstage{height:170px}
+.tuner .guitar,.tuner .tfoot{position:relative;z-index:1}
 .cover{position:absolute;inset:0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;background:color-mix(in srgb,var(--bg) 70%,transparent);padding:1rem}
 .cover p{max-width:36ch;color:var(--muted);font-size:.92rem}
 
-.tset{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.7rem 1.2rem;margin:.4rem 0 .2rem}
+/* strings and tuning: one quiet button under the headstock, opening a bubble */
+.tset{position:relative;display:flex;justify-content:center;margin:.7rem 0 0}
+.tpick{display:inline-flex;align-items:center;gap:.3rem;border:0;border-radius:999px;background:none;padding:.4rem .8rem;font-weight:600;font-size:.95rem;color:var(--muted)}
+.tpick:hover,.tpick[aria-expanded="true"]{color:var(--ink);background:var(--panel)}
+.tpick svg{width:1rem;height:1rem;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tpickpop{position:absolute;top:calc(100% + .45rem);left:50%;width:17rem;margin-left:-8.5rem;z-index:5}
+.tpickpop::after{content:"";position:absolute;top:-6px;left:50%;width:10px;height:10px;margin-left:-5px;background:var(--panel);border-left:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
+.tstrings{display:flex;justify-content:center;gap:.3rem;padding-bottom:.6rem;margin-bottom:.4rem;border-bottom:1px solid var(--line)}
+.tstrings[hidden]{display:none}
+.tstrings button{min-width:2.4rem;height:2.1rem;border:1px solid var(--line);border-radius:8px;background:none;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:.9rem;color:var(--muted);padding:0 .4rem}
+.tstrings button:hover{color:var(--ink);border-color:var(--ink)}
+.tstrings button[aria-checked="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.ttunings{display:flex;flex-direction:column;gap:.1rem;max-height:15rem;overflow:auto}
+.ttunings button{display:flex;justify-content:space-between;align-items:center;border:0;border-radius:8px;background:none;padding:.45rem .6rem;text-align:left;font-weight:600;color:var(--ink)}
+.ttunings button:hover{background:var(--bg)}
+.ttunings button[aria-checked="true"]{background:var(--amber-soft)}
+.ttunings button[aria-checked="true"]::after{content:"";width:.45rem;height:.8rem;margin-right:.2rem;border-right:2px solid var(--amber);border-bottom:2px solid var(--amber);transform:rotate(45deg) translate(-2px,-2px)}
+.ttunings button:disabled{cursor:default;color:var(--muted)}
+
+/* bubbles: small panels that open beside what opened them */
+.bubble{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:.75rem .9rem;text-align:left;color:var(--muted);font-size:.9rem;animation:bubin .16s ease-out}
+@keyframes bubin{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.bubble{animation:none}}
+.bubble p{margin:0 0 .5rem;line-height:1.5}
+.bubble p:last-child{margin-bottom:0}
+.bubble a{color:inherit}
+.bsmall{font-size:.8rem}
+
+/* settings and help in the bottom-left corner of every page */
+.corner{position:fixed;left:1rem;bottom:1rem;z-index:40;display:flex;gap:.4rem}
+.cbtn{width:2.4rem;height:2.4rem;border:1px solid var(--line);border-radius:50%;background:var(--panel);display:inline-flex;align-items:center;justify-content:center;padding:0;color:var(--muted);box-shadow:0 2px 8px rgba(0,0,0,.18);opacity:.85;transition:opacity .15s,color .15s}
+.cbtn:hover,.cbtn[aria-expanded="true"]{opacity:1;color:var(--ink)}
+.cbtn svg{width:1.25rem;height:1.25rem;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.corner .bubble{position:absolute;left:0;bottom:calc(100% + .6rem);width:min(21rem,calc(100vw - 2rem))}
+.corner .bubble::after{content:"";position:absolute;bottom:-6px;left:1rem;width:10px;height:10px;background:var(--panel);border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg)}
+#cInfo::after{left:3.8rem}
+.brow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem .8rem;padding:.3rem 0}
+.brow[hidden]{display:none}
+.blab{color:var(--ink);font-weight:600}
+.switch{position:relative;flex:none;width:2.6rem;height:1.5rem;border:0;border-radius:999px;background:var(--line);padding:0;transition:background-color .15s}
+.switch span{position:absolute;top:3px;left:3px;width:1.1rem;height:1.1rem;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .15s}
+.switch[aria-checked="true"]{background:var(--ok)}
+.switch[aria-checked="true"] span{transform:translateX(1.1rem)}
 .tpop{max-width:32rem;margin:.7rem auto 0;padding:.8rem 1rem;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--muted);font-size:.9rem;display:flex;justify-content:center}
 .tpop p{margin:0;line-height:1.5}
 .tpop .a4{flex-wrap:wrap;justify-content:center}
@@ -180,22 +214,11 @@ button{cursor:pointer}
   .modes button{font-size:.9rem}
   .modes svg{width:40px;height:40px}
 }
-.tsub{min-height:1.4rem;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.1rem;color:var(--muted)}
+.tsub{height:1.4rem;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.1rem;color:var(--muted)}
 
 /* tuner: guitar */
 .guitar{margin-top:1.1rem}
-.gpreset{display:flex;align-items:center;gap:.5rem;color:var(--muted)}
-.gpreset select{padding:.45rem .5rem;border:1px solid var(--line);border-radius:7px;background:var(--panel);font-weight:600;color:var(--ink)}
 /* string count: a small segmented switch beside the tuning menu */
-/* string-count dial: counts on an arc over a small knob */
-.tcount{position:relative;flex:none;width:6.6rem;height:3.6rem}
-.tcount button{position:absolute;transform:translate(-50%,-50%);min-width:1.7rem;height:1.4rem;border:0;border-radius:6px;background:none;padding:0 .2rem;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:.8rem;color:var(--muted);transition:color .15s}
-.tcount button:hover{color:var(--ink)}
-.tcount button[aria-checked="true"]{color:var(--amber)}
-.tdial-knob{position:absolute;left:50%;top:2.55rem;width:1.9rem;height:1.9rem;margin:-.95rem 0 0 -.95rem;border-radius:50%;cursor:pointer;
-  background:radial-gradient(circle at 35% 30%,var(--panel),var(--bg));border:1px solid var(--line);box-shadow:0 1px 3px rgba(0,0,0,.25);transform:rotate(var(--a,0deg));transition:transform .2s}
-.tdial-knob::after{content:"";position:absolute;left:50%;top:2px;width:2px;height:40%;margin-left:-1px;border-radius:1px;background:var(--amber)}
-@media (prefers-reduced-motion:reduce){.tdial-knob{transition:none}}
 .autobtn{display:inline-flex;align-items:center;gap:.65rem;padding:.4rem .45rem .4rem 1rem;border:1px solid var(--line);border-radius:999px;background:var(--panel);font-weight:600;color:var(--ink);transition:background-color .15s,border-color .15s,color .15s}
 .autobtn:hover{border-color:var(--amber)}
 .autobtn[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
@@ -460,4 +483,4 @@ button.chip:hover:not(:disabled){border-color:var(--amber);color:var(--ink)}
 .loopmark .lm-badge svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .loopmark.end .lm-badge svg{transform:scaleX(-1)}
 
-@media (prefers-reduced-motion:reduce){.readout,.pn,.gstr,.modes button,.tcount button,.autobtn,.emptystate,.pstrobe{transition:none}.headstock .gstr.active,.headstock .gstr.in{animation:none}}
+@media (prefers-reduced-motion:reduce){.readout,.pn,.gstr,.modes button,.autobtn,.emptystate,.pstrobe{transition:none}.headstock .gstr.active,.headstock .gstr.in{animation:none}}

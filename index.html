@@ -27,17 +27,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=2a969e84">
+  <link rel="stylesheet" href="css/style.css?v=1a58c2e9">
 </head>
 <body>
 <noscript><p class="noscript">7uner needs JavaScript: the tuner, the exercises and the tab player all run in your browser. Please turn JavaScript on, or open the page in another browser.</p></noscript>
 <header class="site">
   <div class="wrap">
-    <div class="brandbar">
-      <a class="brand" href="#tuner">7uner</a>
-      <button class="hbtn" id="hGear" aria-expanded="false" aria-controls="hSettings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.54 9.33L22.27 9.81L22.27 14.19L19.54 14.67L19.22 15.45L20.81 17.71L17.71 20.81L15.45 19.22L14.67 19.54L14.19 22.27L9.81 22.27L9.33 19.54L8.55 19.22L6.29 20.81L3.19 17.71L4.78 15.45L4.46 14.67L1.73 14.19L1.73 9.81L4.46 9.33L4.78 8.55L3.19 6.29L6.29 3.19L8.55 4.78L9.33 4.46L9.81 1.73L14.19 1.73L14.67 4.46L15.45 4.78L17.71 3.19L20.81 6.29L19.22 8.55Z"/><circle cx="12" cy="12" r="3.4"/></svg></button>
-      <button class="hbtn" id="hHelp" aria-expanded="false" aria-controls="hHelpPop" aria-label="Help" title="Help">?</button>
-    </div>
+    <a class="brand" href="#tuner">7uner</a>
     <nav class="sitenav" aria-label="Sections">
       <a href="#tuner" data-page="tuner">Tuner</a>
       <a href="#practice" data-page="practice">Practice</a>
@@ -46,21 +42,6 @@
   </div>
 </header>
 
-<!-- site-wide settings and help, opened from the header (app.js) -->
-<div class="wrap hpops">
-  <div class="tpop" id="hSettings" hidden>
-    <span class="a4">Tuner reference pitch, A4
-      <button id="a4Down" aria-label="Lower reference pitch">−</button>
-      <input id="a4" type="number" min="415" max="466" inputmode="numeric" aria-label="A4 reference frequency">
-      <button id="a4Up" aria-label="Raise reference pitch">+</button> Hz
-    </span>
-  </div>
-  <div class="tpop" id="hHelpPop" hidden>
-    <p data-help="tuner">Turn on the microphone and play a note. The gauge shows how far off it is, and the trace under it shows the last few seconds. In an instrument mode, tap a string’s note to lock the tuner to it and hear it; ▲ ▼ beside it retune it by a semitone. Auto-detect follows whichever string you play. The dial beside the tuning picks the number of strings.</p>
-    <p data-help="practice">Pick an exercise and press Play, or the space bar. Set the tempo on the metronome: slide its weight or use − and +. Its knob sets the click volume (0 silences it) and its COUNT switch counts in a bar first. Scales and modes come in several positions along the neck. The amp shapes the sound.</p>
-    <p data-help="tab-studio">Add a Guitar Pro (3–8) or MusicXML file; it stays in this browser. Drag across bars to loop them and slow down with the speed slider. Edit mode lets you change the tab and save a copy.</p>
-  </div>
-</div>
 
 <section class="page" id="page-tuner">
   <div class="tuner" id="tRoot">
@@ -72,7 +53,7 @@
       <div class="hz"><span id="tHz"></span>&nbsp;&nbsp;<span id="tCents"></span></div>
     </div>
 
-    <!-- strobe stage (tuner.js): the gauge, and in chromatic mode the tuning fork and its sound waves -->
+    <!-- the gauge (tuner.js); its history scrolls down behind whatever comes below -->
     <div class="tstage" id="tStage">
       <canvas id="tStrobe" aria-hidden="true"></canvas>
       <div class="cover" id="tCover">
@@ -81,19 +62,19 @@
       </div>
     </div>
 
-    <div class="tset">
-      <label class="gpreset" id="tPresetWrap" hidden>Tuning
-        <select id="tPreset" aria-label="Tuning preset"></select>
-      </label>
-      <div class="tcount" id="tCount" role="radiogroup" aria-label="Number of strings" hidden></div>
-      <button class="autobtn" id="tAuto" aria-pressed="true" hidden><span>Auto-detect string</span><span class="pill" id="tAutoPill">ON</span></button>
-    </div>
-
     <div class="guitar" id="tGuitar" hidden>
       <div class="gbody">
         <div class="pegs left" id="pegsL"></div>
         <div id="tHead"></div>
         <div class="pegs right" id="pegsR"></div>
+      </div>
+      <!-- one picker for the number of strings and the tuning (tuner.js) -->
+      <div class="tset">
+        <button class="tpick" id="tPick" aria-expanded="false" aria-controls="tPickPop"><span id="tPickLab"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
+        <div class="bubble tpickpop" id="tPickPop" hidden>
+          <div class="tstrings" id="tCount" role="radiogroup" aria-label="Number of strings"></div>
+          <div class="ttunings" id="tPreset" role="radiogroup" aria-label="Tuning"></div>
+        </div>
       </div>
       <p class="allin" id="tAllIn" hidden>✓ All strings in tune</p>
     </div>
@@ -280,21 +261,32 @@
   </div>
 </section>
 
-<footer class="sitefoot">
-  <div class="wrap">
-    <p><b>Private by design.</b> The microphone is processed only in your browser and never recorded or sent anywhere; the files you open in Tab Studio stay on this device. No account, no ads, no analytics. Once loaded, 7uner also works offline.</p>
-    <p>Tab rendering and playback by <a href="https://alphatab.net" rel="noopener">alphaTab</a> (MPL-2.0).</p>
+<!-- settings and help, in the bottom-left corner of every page (app.js) -->
+<div class="corner">
+  <div class="bubble" id="cSettings" role="dialog" aria-label="Settings" hidden>
+    <div class="brow"><span class="blab">Reference pitch A4</span>
+      <span class="a4"><button id="a4Down" aria-label="Lower reference pitch">−</button><input id="a4" type="number" min="415" max="466" inputmode="numeric" aria-label="A4 reference frequency"><button id="a4Up" aria-label="Raise reference pitch">+</button> Hz</span>
+    </div>
+    <div class="brow" id="tAutoRow"><span class="blab">Auto-detect string</span><button class="switch" id="tAuto" role="switch" aria-checked="true" aria-label="Auto-detect string"><span></span></button></div>
   </div>
-</footer>
+  <div class="bubble" id="cInfo" role="dialog" aria-label="Help" hidden>
+    <p data-help="tuner">Turn on the microphone and play a note: the dot shows how far off it is, and its trail scrolls down behind the instrument. Tap a string’s note to lock the tuner to it and hear it (tap again to let go); ▲ ▼ beside it retune it by a semitone. The picker under the headstock sets the number of strings and the tuning.</p>
+    <p data-help="practice">Pick an exercise and press Play, or the space bar. Set the tempo on the metronome by sliding its weight or with − and +; its knob sets the click (0 silences it) and its COUNT switch counts in a bar. Scales and modes come in positions along the neck.</p>
+    <p data-help="tab-studio">Add a Guitar Pro (3–8) or MusicXML file; it stays in this browser. Drag across bars to loop them, and slow down with the speed slider. Edit mode changes the tab and saves a copy.</p>
+    <p class="bsmall">Private by design: the microphone is processed only in your browser, files stay on this device, and there’s no account, ads or analytics. Tabs by <a href="https://alphatab.net" rel="noopener">alphaTab</a> (MPL-2.0).</p>
+  </div>
+  <button class="cbtn" id="cGearBtn" aria-expanded="false" aria-controls="cSettings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.54 9.33L22.27 9.81L22.27 14.19L19.54 14.67L19.22 15.45L20.81 17.71L17.71 20.81L15.45 19.22L14.67 19.54L14.19 22.27L9.81 22.27L9.33 19.54L8.55 19.22L6.29 20.81L3.19 17.71L4.78 15.45L4.46 14.67L1.73 14.19L1.73 9.81L4.46 9.33L4.78 8.55L3.19 6.29L6.29 3.19L8.55 4.78L9.33 4.46L9.81 1.73L14.19 1.73L14.67 4.46L15.45 4.78L17.71 3.19L20.81 6.29L19.22 8.55Z"/><circle cx="12" cy="12" r="3.4"/></svg></button>
+  <button class="cbtn" id="cInfoBtn" aria-expanded="false" aria-controls="cInfo" aria-label="Help" title="Help"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></button>
+</div>
 
 <script src="js/pitch.js?v=36c33db7"></script>
-<script src="js/tuner.js?v=42aef39d"></script>
+<script src="js/tuner.js?v=fe787d54"></script>
 <script src="js/amp.js?v=27f64277"></script>
 <script src="js/metronome.js?v=7480cb06"></script>
 <script src="js/alphatab.js?v=ea58a266"></script>
 <script src="js/exercises.js?v=096c399e"></script>
 <script src="js/practice.js?v=2c728b42"></script>
 <script src="js/tab-studio.js?v=68955429"></script>
-<script src="js/app.js?v=ef47e46e"></script>
+<script src="js/app.js?v=77611dff"></script>
 </body>
 </html>
