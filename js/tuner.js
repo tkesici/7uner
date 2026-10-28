@@ -1,6 +1,6 @@
-/* 7uner – chromatic and instrument tuner (guitar, bass, ukulele, violin)
+/* 7uner – chromatic and instrument tuner (guitar, bass, ukulele, violin, cello)
    Pitch detection (McLeod Pitch Method) lives in pitch.js; the display is a
-   strobe: a gauge, plus a tuning fork (chromatic) or turning rings on the
+   gauge with a scrolling history under it, plus turning strobe rings on the
    headstock post of the string being tuned (instrument modes).
    All audio processing happens in the browser; nothing is sent to a server. */
 (function () {
@@ -17,8 +17,8 @@
      left/right: which strings sit on each side of the headstock, top to bottom.
      rows: y of the first peg and the gap between pegs, in headstock units (200×320);
      rowsR, when the right side's pegs sit differently from the left side's.
-     Extended-range guitars and basses (guitar7, bass5, ...) are variants of
-     their mode, picked with the string-count switch (COUNTS). */
+     Extended-range guitars and basses (guitar7, guitar12, bass5, ...) are
+     variants of their mode, picked with the string-count dial (COUNTS). */
   const GUITAR_CFG = { inTune: 2, range: 25, minF: 38, maxF: 1400, windowSec: 0.17, clarity: 0.7, median: 7, onsetSkip: 5, decimals: 1 };
   const BASS_CFG = { inTune: 2, range: 25, minF: 25, maxF: 600, windowSec: 0.22, clarity: 0.7, median: 7, onsetSkip: 6, decimals: 1 };
   const INSTR = {
@@ -58,6 +58,17 @@
         ["Drop E", [-2, 0, 0, 0, 0, 0, 0, 0]]
       ]
     },
+    guitar12: {
+      label: "Guitar", base: [40, 52, 45, 57, 50, 62, 55, 67, 59, 59, 64, 64], offMin: -12, offMax: 5,
+      left: [5, 4, 3, 2, 1, 0], right: [6, 7, 8, 9, 10, 11], rows: [46, 36],
+      cfg: GUITAR_CFG,
+      presets: [
+        ["Standard", [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+        ["Drop D", [-2, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+        ["E♭ standard", [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]],
+        ["D standard", [-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2]]
+      ]
+    },
     bass: {
       label: "Bass", base: [28, 33, 38, 43], offMin: -12, offMax: 5,
       left: [1, 0], right: [2, 3], rows: [100, 75],
@@ -91,7 +102,7 @@
       left: [1, 0], right: [2, 3], rows: [130, 60],
       cfg: { inTune: 2, range: 25, minF: 110, maxF: 1600, windowSec: 0.1, clarity: 0.7, median: 7, onsetSkip: 4, decimals: 1 },
       presets: [
-        ["Standard (high G)", [0, 0, 0, 0]],
+        ["Standard", [0, 0, 0, 0]],
         ["Low G", [-12, 0, 0, 0]],
         ["D tuning", [2, 2, 2, 2]]
       ]
@@ -102,30 +113,36 @@
       cfg: { inTune: 2, range: 25, minF: 130, maxF: 3000, windowSec: 0.1, clarity: 0.7, median: 7, onsetSkip: 2, decimals: 1 },
       presets: [
         ["Standard", [0, 0, 0, 0]],
-        ["Cross tuning (AEAE)", [2, 2, 0, 0]],
-        ["Scordatura (ADAE)", [2, 0, 0, 0]],
+        ["Cross tuning", [2, 2, 0, 0]],
+        ["Scordatura", [2, 0, 0, 0]],
         ["GDGD", [0, 0, -2, -2]]
       ]
+    },
+    cello: {
+      label: "Cello", base: [36, 43, 50, 57], offMin: -5, offMax: 3,
+      left: [0, 1], right: [3, 2], rows: [130, 60],
+      cfg: { inTune: 2, range: 25, minF: 55, maxF: 1500, windowSec: 0.17, clarity: 0.7, median: 7, onsetSkip: 3, decimals: 1 },
+      presets: [["Standard", [0, 0, 0, 0]]]
     }
   };
-  const MODES = ["chromatic", "guitar", "bass", "ukulele", "violin"];
+  const MODES = ["chromatic", "guitar", "bass", "ukulele", "violin", "cello"];
   // string counts on offer; the first is the mode's own INSTR entry, the others are mode + count
-  const COUNTS = { guitar: [6, 7, 8], bass: [4, 5, 6] };
+  const COUNTS = { guitar: [6, 7, 8, 12], bass: [4, 5, 6] };
 
   const ICONS = {
     chromatic: '<path d="M11 3v10a5 5 0 0 0 10 0V3"/><path d="M16 18v11"/>',
     guitar: '<path d="M16 2v11M14.3 2h3.4"/><path d="M16 13c-3.2 0-5.2 1.6-5.2 4 0 1.4.9 2.2.9 3 0 .9-1.7 1.6-1.7 4 0 3.4 2.6 6 6 6s6-2.6 6-6c0-2.4-1.7-3.1-1.7-4 0-.8.9-1.6.9-3 0-2.4-2-4-5.2-4z"/><circle cx="16" cy="21.5" r="1.8"/>',
     bass: '<path d="M16 1v16M14 2.2h4M14 4.8h4"/><path d="M16 17c-2.4 0-3.4-1.6-5-1-1.3.5-.6 2.6-1 4.5-.6 2.6-1.5 3.6-1.5 5.5 0 2.6 2.7 4 7.5 4s7.5-1.4 7.5-4c0-1.9-.9-2.9-1.5-5.5-.4-1.9.3-4-1-4.5-1.6-.6-2.6 1-5 1z"/><path d="M13 22.5h6M13.5 26.5h5"/>',
     ukulele: '<path d="M16 5v9M14.5 5h3"/><path d="M16 14c-2.5 0-4.1 1.3-4.1 3.2 0 1.1.7 1.7.7 2.4 0 .7-1.4 1.3-1.4 3.2 0 2.7 2.1 4.8 4.8 4.8s4.8-2.1 4.8-4.8c0-1.9-1.4-2.5-1.4-3.2 0-.7.7-1.3.7-2.4 0-1.9-1.6-3.2-4.1-3.2z"/><circle cx="16" cy="21.6" r="1.4"/>',
-    violin: '<circle cx="16" cy="3.2" r="1.4"/><path d="M16 4.6V11"/><path d="M16 11c-2.8 0-4.3 1.2-4.3 3 0 1.1.9 1.6.9 2.4 0 .8-1.6 1.3-1.6 3.4 0 3.4 2.3 6.2 5 6.2s5-2.8 5-6.2c0-2.1-1.6-2.6-1.6-3.4 0-.8.9-1.3.9-2.4 0-1.8-1.5-3-4.3-3z"/><path d="M13.7 18.4c.6.8-.6 2.4 0 3.2M18.3 18.4c-.6.8.6 2.4 0 3.2"/><path d="M4.5 29.5 27.5 8.5"/>'
+    violin: '<circle cx="16" cy="3.2" r="1.4"/><path d="M16 4.6V11"/><path d="M16 11c-2.8 0-4.3 1.2-4.3 3 0 1.1.9 1.6.9 2.4 0 .8-1.6 1.3-1.6 3.4 0 3.4 2.3 6.2 5 6.2s5-2.8 5-6.2c0-2.1-1.6-2.6-1.6-3.4 0-.8.9-1.3.9-2.4 0-1.8-1.5-3-4.3-3z"/><path d="M13.7 18.4c.6.8-.6 2.4 0 3.2M18.3 18.4c-.6.8.6 2.4 0 3.2"/><path d="M4.5 29.5 27.5 8.5"/>',
+    cello: '<circle cx="16" cy="2.6" r="1.3"/><path d="M16 3.9V9"/><path d="M16 9c-3.1 0-4.8 1.3-4.8 3.3 0 1.2 1 1.8 1 2.6 0 .9-1.8 1.5-1.8 3.8 0 3.8 2.6 6.9 5.6 6.9s5.6-3.1 5.6-6.9c0-2.3-1.8-2.9-1.8-3.8 0-.8 1-1.4 1-2.6 0-2-1.7-3.3-4.8-3.3z"/><path d="M13.4 17.2c.7.9-.7 2.7 0 3.6M18.6 17.2c-.7.9.7 2.7 0 3.6"/><path d="M16 25.6V30.5"/>'
   };
 
   const TICK_MS = 20;        // ~50 readings per second
   const SILENCE_TICKS = 25;  // ~500 ms without a pitch before going idle
   const HOLD_MS = 600;       // how long a string must stay in tune to get a tick
   const STROBE = 3;          // strobe speed: degrees per second for each cent off
-  const HIST_SPEED = 60;     // the history trace scrolls down this many pixels a second
-  const GLIDE = 11;          // how quickly the display follows the pitch (spring stiffness, 1/s)
+  const HIST_SPEED = 40;     // the history trace scrolls down this many pixels a second
 
   const $ = (id) => document.getElementById(id);
   const el = {
@@ -134,7 +151,7 @@
     preset: $("tPreset"), auto: $("tAuto"), autoPill: $("tAutoPill"), pegsL: $("pegsL"), pegsR: $("pegsR"), head: $("tHead"),
     canvas: $("tStrobe"), cover: $("tCover"), start: $("tStart"), status: $("tStatus"), stop: $("tStop"),
     a4: $("a4"), a4d: $("a4Down"), a4u: $("a4Up"), presetWrap: $("tPresetWrap"),
-    gear: $("tGear"), help: $("tHelp"), setPop: $("tSettings"), helpPop: $("tHelpPop"), count: $("tCount")
+    count: $("tCount")
   };
 
   /* ---------- settings ---------- */
@@ -211,7 +228,7 @@
       posts: [[70, 190], [70, 130], [70, 70], [130, 70], [130, 130], [130, 190]],
       nut: [66, 79.6, 93.2, 106.8, 120.4, 134], gauge: [2.8, 2.3, 1.9, 1.5, 1.2, 1], post: 6.5,
       knob: { inner: 44, w: 26, h: 20, r: 8, shaft: 18, sh: 5, fill: "#D3D6DB", stroke: "#7D838C" },
-      shape: "M58 248 L48 46 Q46 16 74 12 L100 22 L126 12 Q154 16 152 46 L142 248 Z", wood: "hsBlack",
+      shape: "M58 248 L46 52 Q42 14 70 10 Q104 6 124 26 Q134 34 150 22 L160 13 Q159 34 152 52 L142 248 Z", wood: "hsBlack",
       logo: logo(46, 19, "url(#hsGold)"), neck: [60, 140]
     }),
     // extended range: 3+4 and 4+4 posts, closer together; a smaller logo fits between the top posts
@@ -219,15 +236,25 @@
       posts: [[70, 200], [70, 150], [70, 100], [130, 50], [130, 100], [130, 150], [130, 200]],
       nut: [64, 76, 88, 100, 112, 124, 136], gauge: [3.1, 2.8, 2.3, 1.9, 1.5, 1.2, 1], post: 6.5,
       knob: { inner: 44, w: 26, h: 20, r: 8, shaft: 18, sh: 5, fill: "#D3D6DB", stroke: "#7D838C" },
-      shape: "M58 248 L48 46 Q46 16 74 12 L100 22 L126 12 Q154 16 152 46 L142 248 Z", wood: "hsBlack",
+      shape: "M58 248 L46 52 Q42 14 70 10 Q104 6 124 26 Q134 34 150 22 L160 13 Q159 34 152 52 L142 248 Z", wood: "hsBlack",
       logo: logo(44, 15, "url(#hsGold)"), neck: [60, 140]
     }),
     guitar8: () => machineHead({
       posts: [[70, 200], [70, 150], [70, 100], [70, 50], [130, 50], [130, 100], [130, 150], [130, 200]],
       nut: [62, 72.9, 83.7, 94.6, 105.4, 116.3, 127.1, 138], gauge: [3.4, 3.1, 2.8, 2.3, 1.9, 1.5, 1.2, 1], post: 6.5,
       knob: { inner: 44, w: 26, h: 20, r: 8, shaft: 18, sh: 5, fill: "#D3D6DB", stroke: "#7D838C" },
-      shape: "M56 248 L47 46 Q45 16 74 12 L100 22 L126 12 Q155 16 153 46 L144 248 Z", wood: "hsBlack",
+      shape: "M56 248 L44 52 Q40 14 70 10 Q104 6 124 26 Q134 34 150 22 L161 13 Q161 34 154 52 L144 248 Z", wood: "hsBlack",
       logo: logo(44, 15, "url(#hsGold)"), neck: [58, 142]
+    }),
+    // 6+6 posts; each course's two strings run side by side to the nut
+    guitar12: () => machineHead({
+      posts: [[70, 226], [70, 190], [70, 154], [70, 118], [70, 82], [70, 46],
+        [130, 46], [130, 82], [130, 118], [130, 154], [130, 190], [130, 226]],
+      nut: [62, 66.4, 76, 80.4, 90, 94.4, 105.6, 110, 119.6, 124, 133.6, 138],
+      gauge: [2.8, 1.3, 2.3, 1.1, 1.9, 1, 1.5, 0.9, 1.2, 1.2, 1, 1], post: 6,
+      knob: { inner: 44, w: 24, h: 18, r: 7, shaft: 18, sh: 5, fill: "#D3D6DB", stroke: "#7D838C" },
+      shape: "M56 248 L44 52 Q40 14 70 10 Q104 6 124 26 Q134 34 150 22 L161 13 Q161 34 154 52 L144 248 Z", wood: "hsBlack",
+      logo: logo(30, 13, "url(#hsGold)"), neck: [56, 144]
     }),
     bass: () => machineHead({
       posts: [[66, 175], [66, 100], [134, 100], [134, 175]],
@@ -258,31 +285,34 @@
       shape: "M66 248 L60 104 Q58 74 82 66 Q100 76 118 66 Q142 74 140 104 L134 248 Z", wood: "hsMahogany",
       logo: logo(100, 15), neck: [68, 132]
     }),
-    violin: () => {
-      // scroll, pegbox and side-mounted pegs
-      const ends = [[90, 130], [95, 190], [105, 190], [110, 130]], nut = [88, 96, 104, 112], gauge = [1.7, 1.4, 1.2, 1];
-      let strs = "", pegs = "";
-      ends.forEach(([x, y], i) => {
-        strs += '<path class="gstr" data-i="' + i + '" stroke-width="' + gauge[i] + '" d="M' + x + " " + y + " L" + nut[i] + " 249 L" + nut[i] + ' 320"/>' +
-            '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="4" fill="none"/>'; // where the string meets its peg
-      });
-      [130, 190].forEach((y) => {
-        pegs += '<rect x="58" y="' + (y - 3) + '" width="84" height="6" rx="3" fill="#1B1411"/>' +
-            '<ellipse cx="44" cy="' + y + '" rx="15" ry="11" fill="url(#hsEbony)" stroke="#000" stroke-width="1"/>' +
-            '<circle cx="62" cy="' + y + '" r="5" fill="#2A221E" stroke="#000" stroke-width="1"/>' +
-            '<ellipse cx="156" cy="' + y + '" rx="15" ry="11" fill="url(#hsEbony)" stroke="#000" stroke-width="1"/>' +
-            '<circle cx="138" cy="' + y + '" r="5" fill="#2A221E" stroke="#000" stroke-width="1"/>';
-      });
-      return '<svg class="headstock" viewBox="0 0 200 320" aria-hidden="true">' + DEFS +
-          '<circle cx="100" cy="58" r="26" fill="url(#hsVarnish)" stroke="#3A1505" stroke-width="1.5"/>' +
-          '<path d="M100 58 m-4 0 a4 4 0 1 1 8 0 a8 8 0 1 1 -16 0 a12 12 0 1 1 24 0 a16 16 0 1 1 -32 0" fill="none" stroke="#3A1505" stroke-width="2"/>' +
-          '<path d="M84 248 L80 98 Q80 82 92 80 L108 80 Q120 82 120 98 L116 248 Z" fill="url(#hsVarnish)" stroke="#3A1505" stroke-width="1.5"/>' +
-          '<path d="M89 240 L86 104 L114 104 L111 240 Z" fill="#2A1208"/>' +
-          '<rect x="86" y="252" width="28" height="70" fill="url(#hsEbony)" stroke="#55555C" stroke-width="1"/>' +
-          '<rect x="84" y="245" width="32" height="7" rx="2" fill="#1B1B1E" stroke="#000" stroke-width="1"/>' +
-          strs + pegs + "</svg>";
-    }
+    violin: () => scrollHead([1.7, 1.4, 1.2, 1]),
+    cello: () => scrollHead([2.6, 2.2, 1.8, 1.5])
   };
+
+  // scroll, pegbox and side-mounted pegs (violin, cello)
+  function scrollHead(gauge) {
+    const ends = [[90, 130], [95, 190], [105, 190], [110, 130]], nut = [88, 96, 104, 112];
+    let strs = "", pegs = "";
+    ends.forEach(([x, y], i) => {
+      strs += '<path class="gstr" data-i="' + i + '" stroke-width="' + gauge[i] + '" d="M' + x + " " + y + " L" + nut[i] + " 249 L" + nut[i] + ' 320"/>' +
+          '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="4" fill="none"/>'; // where the string meets its peg
+    });
+    [130, 190].forEach((y) => {
+      pegs += '<rect x="58" y="' + (y - 3) + '" width="84" height="6" rx="3" fill="#1B1411"/>' +
+          '<ellipse cx="44" cy="' + y + '" rx="15" ry="11" fill="url(#hsEbony)" stroke="#000" stroke-width="1"/>' +
+          '<circle cx="62" cy="' + y + '" r="5" fill="#2A221E" stroke="#000" stroke-width="1"/>' +
+          '<ellipse cx="156" cy="' + y + '" rx="15" ry="11" fill="url(#hsEbony)" stroke="#000" stroke-width="1"/>' +
+          '<circle cx="138" cy="' + y + '" r="5" fill="#2A221E" stroke="#000" stroke-width="1"/>';
+    });
+    return '<svg class="headstock" viewBox="0 0 200 320" aria-hidden="true">' + DEFS +
+        '<circle cx="100" cy="58" r="26" fill="url(#hsVarnish)" stroke="#3A1505" stroke-width="1.5"/>' +
+        '<path d="M100 58 m-4 0 a4 4 0 1 1 8 0 a8 8 0 1 1 -16 0 a12 12 0 1 1 24 0 a16 16 0 1 1 -32 0" fill="none" stroke="#3A1505" stroke-width="2"/>' +
+        '<path d="M84 248 L80 98 Q80 82 92 80 L108 80 Q120 82 120 98 L116 248 Z" fill="url(#hsVarnish)" stroke="#3A1505" stroke-width="1.5"/>' +
+        '<path d="M89 240 L86 104 L114 104 L111 240 Z" fill="#2A1208"/>' +
+        '<rect x="86" y="252" width="28" height="70" fill="url(#hsEbony)" stroke="#55555C" stroke-width="1"/>' +
+        '<rect x="84" y="245" width="32" height="7" rx="2" fill="#1B1B1E" stroke="#000" stroke-width="1"/>' +
+        strs + pegs + "</svg>";
+  }
 
   /* ---------- instrument panel ---------- */
   let strEls = [], pegEls = [], postEls = [], pstrobe = null, lock = null, tuned = [];
@@ -382,7 +412,7 @@
       if (!outCtx) outCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (outCtx.state === "suspended") outCtx.resume();
     } catch (e) { return; }
-    const t = outCtx.currentTime + 0.02, f = mtof(target(i)), bowed = st.mode === "violin";
+    const t = outCtx.currentTime + 0.02, f = mtof(target(i)), bowed = st.mode === "violin" || st.mode === "cello";
     const o = outCtx.createOscillator(), o2 = outCtx.createOscillator();
     const lp = outCtx.createBiquadFilter(), g = outCtx.createGain();
     o.type = "sawtooth"; o.frequency.value = f;
@@ -434,15 +464,20 @@
     });
   }
 
-  /* ---------- string-count switch (guitar 6/7/8, bass 4/5/6) ---------- */
+  /* ---------- string-count dial (guitar 6/7/8/12, bass 4/5/6) ----------
+     The counts sit on an arc over a small knob whose pointer turns to the
+     one in use; click a count, or the knob to step to the next one. */
+  const DIAL_R = 2.3, DIAL_Y = 2.55; // rem: label radius, and the knob centre from the top
   function buildCount() {
     const counts = COUNTS[st.mode];
     el.count.hidden = !counts;
     if (!counts) return;
-    el.count.innerHTML = counts.map((n) => {
-      const on = n === st.strings[st.mode];
-      return '<button role="radio" data-n="' + n + '" aria-checked="' + on + '" tabindex="' + (on ? 0 : -1) + '" aria-label="' + n + ' strings">' + n + "</button>";
-    }).join("");
+    const deg = (k) => (counts.length === 1 ? 0 : -55 + (110 * k) / (counts.length - 1));
+    el.count.innerHTML = counts.map((n, k) => {
+      const on = n === st.strings[st.mode], a = (deg(k) * Math.PI) / 180;
+      return '<button role="radio" data-n="' + n + '" aria-checked="' + on + '" tabindex="' + (on ? 0 : -1) + '" aria-label="' + n + ' strings"' +
+          ' style="left:calc(50% + ' + (Math.sin(a) * DIAL_R).toFixed(2) + "rem);top:" + (DIAL_Y - Math.cos(a) * DIAL_R).toFixed(2) + 'rem">' + n + "</button>";
+    }).join("") + '<span class="tdial-knob" aria-hidden="true" style="--a:' + deg(counts.indexOf(st.strings[st.mode])) + 'deg"></span>';
   }
   function setCount(n) {
     if (!COUNTS[st.mode] || !COUNTS[st.mode].includes(n) || n === st.strings[st.mode]) return;
@@ -450,7 +485,11 @@
     save(); applyMode();
     el.count.querySelector('[data-n="' + n + '"]').focus();
   }
-  el.count.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setCount(+b.dataset.n); });
+  el.count.addEventListener("click", (e) => {
+    const b = e.target.closest("button"), counts = COUNTS[st.mode];
+    if (b) setCount(+b.dataset.n);
+    else if (counts && e.target.closest(".tdial-knob")) setCount(counts[(counts.indexOf(st.strings[st.mode]) + 1) % counts.length]);
+  });
   el.count.addEventListener("keydown", (e) => {
     const d = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
     const counts = COUNTS[st.mode];
@@ -469,8 +508,6 @@
     el.presetWrap.hidden = !instr();
     buildCount();
     el.auto.hidden = !instr();
-    el.help.hidden = !instr();
-    if (!instr()) closePops();
     el.root.classList.toggle("mode-instrument", !!instr());
     buildInstrument();
     resetReading(); // also clears the last reading, so nothing from the previous mode stays on screen
@@ -485,59 +522,43 @@
     return (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toFixed(dec) + " cents";
   }
 
-  /* What the stage draws. The detector's readings can jump (a new note, a
-     new string, a wobble at the start of a pluck); the display never does:
-     "shown" follows "cents" on a critically damped spring, and when the
-     note or string changes it carries on from where the pitch really is, so
-     the dot slides in from the edge instead of snapping across. */
-  const view = { active: false, cents: 0, shown: 0, vel: 0, ok: false, inTune: false, idx: null, tgt: null,
-    phase: 0, waves: [], lastWave: 0, t: 0, hist: [], text: 0, lastIdx: undefined, lastOk: undefined };
-
-  // the note name eases in rather than switching
-  let shownName = "";
-  function setNote(name, oct) {
-    if (name + oct === shownName) return;
-    shownName = name + oct;
-    el.note.textContent = name;
-    el.oct.textContent = oct;
-    const box = el.note.parentElement;
-    if (box.animate) box.animate([{ opacity: 0.3, transform: "translateY(.06em)" }, { opacity: 1, transform: "none" }], { duration: 220, easing: "ease-out" });
-  }
+  /* What the stage draws: the latest reading, shown as it is heard (the
+     detector already steadies it a little with a median and a short
+     average, so it doesn't shake). */
+  const view = { active: false, cents: 0, ok: false, idx: null, tgt: null, phase: 0, t: 0, hist: [] };
 
   function show(freq, targetMidi, cents, stringIdx) {
-    const c = cfg();
-    setNote(noteName(targetMidi), octave(targetMidi));
+    const c = cfg(), ok = Math.abs(cents) <= c.inTune;
+    el.note.textContent = noteName(targetMidi);
+    el.oct.textContent = octave(targetMidi);
+    el.hz.innerHTML = '<span class="nw"><b>' + freq.toFixed(c.decimals ? 2 : 1) + "</b> Hz</span>" +
+        (stringIdx != null ? ' &nbsp;<span class="nw">target ' + mtof(targetMidi).toFixed(2) + " Hz</span>" : "");
+    el.cents.textContent = fmtCents(cents, c.decimals);
     el.sub.textContent = stringIdx != null ? "String " + (instr().base.length - stringIdx) + (lock !== null ? " (locked)" : "") : "";
     el.readout.classList.remove("idle");
-    if (!view.active) { view.shown = cents; view.vel = 0; }
-    else if (view.tgt !== null && view.tgt !== targetMidi) {
-      // same pitch, new reference note: keep the dot where the sound is
-      view.shown = Math.max(-1.3 * c.range, Math.min(1.3 * c.range, view.shown + (view.tgt - targetMidi) * 100));
-      view.text = 0; // write the numbers for the new note straight away
-    }
-    Object.assign(view, { active: true, cents, inTune: Math.abs(cents) <= c.inTune, idx: stringIdx, tgt: targetMidi });
+    el.readout.classList.toggle("in", ok);
+    Object.assign(view, { active: true, cents, ok, idx: stringIdx, tgt: targetMidi });
+    if (instr()) highlight(stringIdx, ok);
   }
 
   // nothing is being played: show a dash rather than a note that isn't there
   function idle() {
     el.readout.classList.add("idle");
     el.readout.classList.remove("in");
-    setNote("–", "");
+    el.note.textContent = "–";
+    el.oct.textContent = "";
     el.hz.innerHTML = "";
     el.cents.textContent = "";
     el.sub.textContent = instr() && lock !== null ? "String " + (instr().base.length - lock) + " (locked)" : "";
-    view.active = false; view.idx = null; view.tgt = null; view.vel = 0;
-    view.lastIdx = undefined;
+    view.active = false; view.idx = null; view.tgt = null;
     if (instr()) highlight(-1, false);
   }
 
-  /* ---------- strobe stage ----------
-     A gauge (a ±range arc with the in-tune zone and a dot for the reading).
-     Chromatic mode adds a tuning fork whose sound waves fan out under the
-     arc; their dashes drift left when flat and right when sharp, faster the
-     further off the note is, and stand still when it's in tune, the way a
-     strobe tuner works. In instrument modes the same strobe turns on the
-     post of the string being tuned (on the headstock). */
+  /* ---------- stage ----------
+     A gauge (a ±range arc with the in-tune zone and a dot for the reading)
+     with the history scrolling down beneath it, like a chart recorder. In
+     instrument modes a strobe also turns on the headstock post of the string
+     being tuned. */
   const SPAN = (60 * Math.PI) / 180; // the gauge runs 60° either side of straight up
   const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   let colors = null;
@@ -557,29 +578,14 @@
     const cv = el.canvas, g = cv.getContext("2d"), W = cv.width, H = cv.height;
     if (!W || !H) return;
     if (!colors) readColors();
-    const dpr = window.devicePixelRatio || 1, c = cfg(), chrom = !instr(), K = colors;
+    const dpr = window.devicePixelRatio || 1, c = cfg(), K = colors;
     const dt = Math.min(0.1, Math.max(0, (now - (view.t || now)) / 1000));
     view.t = now;
-    if (view.active) {
-      for (let s = dt; s > 0; s -= 0.02) { // small steps keep the spring stable
-        const h = Math.min(0.02, s);
-        view.vel += (GLIDE * GLIDE * (view.cents - view.shown) - 2 * GLIDE * view.vel) * h;
-        view.shown += view.vel * h;
-      }
-      view.phase = (view.phase + dt * view.shown * STROBE) % 360;
-    }
-    // colours follow the eased reading too, so they don't flicker
-    view.ok = view.active && Math.abs(view.shown) <= c.inTune;
+    if (view.active) view.phase = (view.phase + dt * view.cents * STROBE) % 360;
     const col = !view.active ? K.muted : view.ok ? K.ok : K.amber;
-    if (view.active) updateReadout(now, c);
-    if (instr() && (view.idx !== view.lastIdx || view.ok !== view.lastOk)) {
-      view.lastIdx = view.idx; view.lastOk = view.ok;
-      highlight(view.active ? view.idx : -1, view.ok);
-    }
 
-    // geometry: the arc sits at the top; the history scrolls down beneath it,
-    // and in chromatic mode the fork stands under it with its sound waves
-    const R = chrom ? Math.min(W * 0.42, (H - 40 * dpr) / 1.85) : Math.min(W * 0.42, H * 0.62);
+    // geometry: the arc at the top, the history filling the space below it
+    const R = Math.min(W * 0.42, H * 0.42);
     const cx = W / 2, cy = R + 30 * dpr;
     const ang = (cents) => -Math.PI / 2 + Math.max(-1, Math.min(1, cents / c.range)) * SPAN;
     const A0 = -Math.PI / 2 - SPAN, A1 = -Math.PI / 2 + SPAN;
@@ -604,58 +610,44 @@
       g.fillText(t, cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
     });
 
-    if (chrom) drawWaves(g, now, cx, cy, R, dpr, col, A0, A1);
-
     // the reading
     if (view.active) {
-      const a = ang(view.shown), x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R;
+      const a = ang(view.cents), x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R;
       g.save();
       if (view.ok) { g.shadowColor = K.ok; g.shadowBlur = 14 * dpr; }
       g.fillStyle = col; g.beginPath(); g.arc(x, y, 7 * dpr, 0, Math.PI * 2); g.fill();
       g.restore();
     }
 
-    if (chrom) drawFork(g, now, cx, cy + 4 * dpr, R, dpr);
-    else placePostStrobe();
-  }
-
-  // the numbers under the note, from the eased reading, a few times a second
-  function updateReadout(now, c) {
-    if (now - view.text < 120) return;
-    view.text = now;
-    const f = mtof(view.tgt + view.shown / 100);
-    el.hz.innerHTML = '<span class="nw"><b>' + f.toFixed(c.decimals ? 2 : 1) + "</b> Hz</span>" +
-        (view.idx != null ? ' &nbsp;<span class="nw">target ' + mtof(view.tgt).toFixed(2) + " Hz</span>" : "");
-    el.cents.textContent = fmtCents(view.shown, c.decimals);
-    el.readout.classList.toggle("in", view.ok);
+    if (instr()) placePostStrobe();
   }
 
   /* history: like a chart recorder. The newest reading sits on the arc right
-     where the dot is, and the trace scrolls down from there and fades, over
-     a faint in-tune band and centre line. */
+     where the dot is, and the trace scrolls down from there and slowly fades,
+     over a faint in-tune band and centre line. */
   function drawHistory(g, now, cx, cy, R, dpr, c, H) {
     const clamp = (v) => Math.max(-1, Math.min(1, v / c.range));
     const xOf = (v) => cx + R * Math.sin(SPAN * clamp(v));
     const yArc = (v) => cy - R * Math.cos(SPAN * clamp(v));
     const speed = (HIST_SPEED * dpr) / 1000, maxAge = (H - (cy - R)) / speed;
-    if (view.active) view.hist.push({ t: now, c: view.shown, ok: view.ok, k: view.idx != null ? view.idx : view.tgt });
+    if (view.active) view.hist.push({ t: now, c: view.cents, ok: view.ok, k: view.idx != null ? view.idx : view.tgt });
     const h = view.hist;
     while (h.length && now - h[0].t > maxAge) h.shift();
 
     // in-tune band and centre line, under the arc
     const top = cy - R;
-    g.globalAlpha = 0.35; g.fillStyle = colors.okSoft;
+    g.globalAlpha = 0.4; g.fillStyle = colors.okSoft;
     g.fillRect(xOf(-c.inTune), top, xOf(c.inTune) - xOf(-c.inTune), H - top);
-    g.globalAlpha = 0.6; g.fillStyle = colors.line;
+    g.globalAlpha = 0.7; g.fillStyle = colors.line;
     g.fillRect(cx - 0.5 * dpr, top, dpr, H - top);
     g.globalAlpha = 1;
 
-    g.lineWidth = 2.5 * dpr; g.lineJoin = "round";
+    g.lineWidth = 3 * dpr; g.lineJoin = "round";
     for (let i = 1; i < h.length; i++) {
       const a = h[i - 1], b = h[i];
       if (b.t - a.t > 150 || a.k !== b.k) continue; // a pause, or another string or note: don't join them
       const age = (now - b.t) / maxAge;
-      g.globalAlpha = 0.85 * (1 - age);
+      g.globalAlpha = 1 - 0.75 * age;
       g.strokeStyle = b.ok ? colors.ok : colors.amber;
       g.beginPath();
       g.moveTo(xOf(a.c), yArc(a.c) + (now - a.t) * speed);
@@ -663,50 +655,6 @@
       g.stroke();
     }
     g.globalAlpha = 1;
-  }
-
-  function drawWaves(g, now, cx, cy, R, dpr, col, A0, A1) {
-    const a0 = A0 + 0.12, a1 = A1 - 0.12;
-    // sound fanning out from the fork while a note is heard
-    if (view.active && now - view.lastWave > 550) { view.waves.push(now); view.lastWave = now; }
-    view.waves = view.waves.filter((t) => now - t < 1600);
-    g.strokeStyle = col; g.lineWidth = 2 * dpr; g.setLineDash([]);
-    view.waves.forEach((t) => {
-      const p = (now - t) / 1600, r = R * (0.16 + 0.7 * p);
-      g.globalAlpha = 0.45 * Math.pow(1 - p, 1.5);
-      g.beginPath(); g.arc(cx, cy, r, a0, a1); g.stroke();
-    });
-    // the strobe bands: outer ones are more sensitive, like on a real strobe
-    g.lineWidth = 3 * dpr;
-    g.setLineDash([6 * dpr, 8 * dpr]);
-    for (let i = 0; i < 4; i++) {
-      const r = R * (0.3 + i * 0.15), m = 1 + i * 0.6;
-      g.globalAlpha = view.active ? 0.85 - i * 0.12 : 0.22;
-      g.lineDashOffset = -((view.phase * Math.PI) / 180) * m * r;
-      g.beginPath(); g.arc(cx, cy, r, a0, a1); g.stroke();
-    }
-    g.setLineDash([]); g.globalAlpha = 1;
-  }
-
-  function drawFork(g, now, cx, top, R, dpr) {
-    const gap = R * 0.085, w = R * 0.05, len = R * 0.42, stem = R * 0.3;
-    const vib = view.active ? Math.sin(now * 0.12) * w * 0.35 : 0; // the tines ring while a note sounds
-    const metal = g.createLinearGradient(cx - gap - w, 0, cx + gap + w, 0);
-    metal.addColorStop(0, "#8C939C"); metal.addColorStop(0.5, "#E3E7EC"); metal.addColorStop(1, "#8C939C");
-    g.save();
-    if (view.ok) { g.shadowColor = colors.ok; g.shadowBlur = 12 * dpr; }
-    g.strokeStyle = metal; g.lineWidth = w; g.lineCap = "round"; g.lineJoin = "round";
-    const base = top + len, r = gap + w / 2;
-    g.beginPath();
-    g.moveTo(cx - r - vib, top); g.lineTo(cx - r, base);
-    g.arc(cx, base, r, Math.PI, 0, true);
-    g.lineTo(cx + r + vib, top);
-    g.stroke();
-    g.lineWidth = w * 1.1;
-    g.beginPath(); g.moveTo(cx, base + r); g.lineTo(cx, base + r + stem); g.stroke();
-    g.fillStyle = metal;
-    g.beginPath(); g.arc(cx, base + r + stem, w * 0.95, 0, Math.PI * 2); g.fill();
-    g.restore();
   }
 
   // instrument modes: the strobe rings turn on the post of the string being tuned
@@ -733,7 +681,10 @@
     if (lock !== null) return lock;
     const n = instr().base.length;
     let best = 0, bd = Infinity;
-    for (let i = 0; i < n; i++) { const d = Math.abs(midi - target(i)); if (d < bd) { bd = d; best = i; } }
+    for (let i = 0; i < n; i++) {
+      const d = Math.abs(midi - target(i));
+      if (d < bd - 1e-6 || (Math.abs(d - bd) < 1e-6 && tuned[best] && !tuned[i])) { bd = d; best = i; }
+    }
     // hysteresis: stay on the current string unless another one is clearly closer
     if (lastKey !== null && lastKey !== best && lastKey < n && Math.abs(midi - target(lastKey)) <= bd + 0.35) return lastKey;
     return best;
@@ -766,11 +717,7 @@
 
       let key, tgt, idx = null;
       if (instr()) { idx = chooseString(med); key = idx; tgt = target(idx); }
-      else {
-        tgt = Math.round(med);
-        if (lastKey !== null && Math.abs(med - lastKey) < 0.6) tgt = lastKey; // 10 cents of hysteresis at the ±50 boundary
-        key = tgt;
-      }
+      else { tgt = Math.round(med); key = tgt; }
       const cents = (med - tgt) * 100;
 
       if (key !== lastKey || smooth === null) { smooth = cents; lastKey = key; inTuneSince = null; }
@@ -838,7 +785,6 @@
     if (ctx) ctx.close();
     ctx = stream = analyser = null;
     resetReading();
-    view.waves = [];
     clearHistory();
     drawStage(performance.now());
     el.cover.hidden = false;
@@ -852,15 +798,6 @@
     el.a4.value = v;
     save();
     resetReading();
-  }
-
-  /* ---------- settings and help: small panels under the controls ---------- */
-  const POPS = [[el.gear, el.setPop], [el.help, el.helpPop]];
-  function closePops() { POPS.forEach(([b, p]) => { p.hidden = true; b.setAttribute("aria-expanded", "false"); }); }
-  function togglePop(btn, panel) {
-    const open = panel.hidden;
-    closePops();
-    if (open) { panel.hidden = false; btn.setAttribute("aria-expanded", "true"); }
   }
 
   /* ---------- wiring ---------- */
@@ -881,9 +818,6 @@
   el.a4.addEventListener("change", () => setA4(el.a4.value));
   el.a4d.addEventListener("click", () => setA4(st.a4 - 1));
   el.a4u.addEventListener("click", () => setA4(st.a4 + 1));
-  POPS.forEach(([b, p]) => b.addEventListener("click", () => togglePop(b, p)));
-  document.addEventListener("click", (e) => { if (!e.target.closest(".tpop, .tbtn")) closePops(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePops(); });
   window.addEventListener("resize", resize);
   document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); });
   // follow the site's light/dark theme

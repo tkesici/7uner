@@ -16,13 +16,14 @@
 (function () {
     "use strict";
 
-    // v2: the click got twice as loud and starts with the knob in the middle
-    const KEY = "7uner.metronome.v2";
-    const st = { volume: 5, countIn: true };
+    // v2: the click got twice as loud and starts with the knob in the middle;
+    // v3: the count-in starts off (a v2 setting keeps only its volume)
+    const KEY = "7uner.metronome.v3";
+    const st = { volume: 5, countIn: false };
     try {
-        const o = JSON.parse(localStorage.getItem(KEY) || "null");
+        const o = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem("7uner.metronome.v2") || "null");
         if (o && o.volume >= 0 && o.volume <= 10) st.volume = +o.volume;
-        if (o && typeof o.countIn === "boolean") st.countIn = o.countIn;
+        if (o && localStorage.getItem(KEY) && typeof o.countIn === "boolean") st.countIn = o.countIn;
     } catch (e) {}
     const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
     // alphaTab's click (a short tick) is easily buried under the guitar, so

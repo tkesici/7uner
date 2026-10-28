@@ -1,42 +1,55 @@
 /* 7uner – Practice exercise catalogue: names, descriptions and tempos.
-   The notes live in practice/<id>.gp, written by tools/make-practice-files.js
-   (which also reads this file). Modes and scales are in A, two octaves from
-   the 5th fret; iv lists their intervals in semitones from the root and per
-   caps how many notes go on one string. sub is notes per beat, start the
+   The notes live in practice/, written by tools/make-practice-files.js
+   (which also reads this file): techniques in <id>.gp, scales and modes in
+   <id>-p<position>.gp. Techniques are sorted into groups. Modes and scales
+   are in A; iv lists their intervals in semitones from the root, and
+   positions() places them on the neck. sub is notes per beat, start the
    suggested tempo and step how far to raise it once an exercise is clean. */
 (function (root) {
     "use strict";
 
     const CATS = {
         tech: [
-            { id: "chrom", name: "Alternate picking – chromatic", sub: 4, start: 60, step: 8,
+            { id: "chrom", group: "Alternate picking", name: "Chromatic 1-2-3-4", sub: 4, start: 60, step: 8,
                 desc: "Sixteenth notes, changing pick direction on every note (down-up). One finger per fret, 1-2-3-4. The rhythm shouldn’t slip when you cross strings." },
-            { id: "trem", name: "Tremolo and palm muting", sub: 4, start: 80, step: 10,
-                desc: "Continuous down-up sixteenths on the low E string with palm muting (PM). Builds picking-hand consistency and stamina; play from the wrist with small motions." },
-            { id: "down", name: "Downpicking endurance", sub: 2, start: 120, step: 10,
-                desc: "Eighth notes with downstrokes only, palm muted. Keep the motion relaxed and the volume even; this is the stamina behind fast thrash rhythm playing." },
-            { id: "gallop", name: "Gallop rhythm", sub: 4, start: 90, step: 8,
-                desc: "An eighth followed by two sixteenths, palm muted: down, down-up. Lock the two short notes tightly to the click." },
-            { id: "pent", name: "A minor pentatonic – box 1", sub: 4, start: 72, step: 8,
-                desc: "The classic box at the 5th fret, up and down in sixteenths. Alternate picking." },
-            { id: "nps", name: "A natural minor – three notes per string", sub: 6, start: 54, step: 6,
-                desc: "Sextuplets: six notes per beat, so one string per beat. This is the foundation of fast solo runs." },
-            { id: "fing", name: "Finger independence 1-3-2-4", sub: 4, start: 64, step: 6,
-                desc: "Frets 5-7-6-8 on every string, then back down as 8-6-7-5. Keep each finger close to the fretboard and let the others rest lightly." },
-            { id: "leg", name: "Legato – hammer-ons and pull-offs", sub: 4, start: 72, step: 8,
-                desc: "Pick only the unmarked notes. h = hammer-on, p = pull-off. Your fretting hand should sound every note clearly on its own." },
-            { id: "trill", name: "Trill endurance", sub: 4, start: 80, step: 8,
-                desc: "Pick once, then keep the trill going with hammer-ons and pull-offs only. Stay even and keep both notes the same volume." },
-            { id: "skip", name: "Octave string skipping", sub: 4, start: 70, step: 8,
+            { id: "cross", group: "Alternate picking", name: "Two-string crossing", sub: 4, start: 72, step: 8,
+                desc: "Alternate picking between two strings: the pick goes round the outside of the pair on one note and between them on the next. Keep the motion small and the notes even." },
+            { id: "skip", group: "Alternate picking", name: "Octave string skipping", sub: 4, start: 70, step: 8,
                 desc: "Octave pairs that skip a string, a melodic line in the low and middle register. Mute the skipped string with the underside of your fretting finger." },
-            { id: "arp", name: "Arpeggios – Am F G E", sub: 6, start: 44, step: 6,
+            { id: "pent", group: "Alternate picking", name: "A minor pentatonic – box 1", sub: 4, start: 72, step: 8,
+                desc: "The classic box at the 5th fret, up and down in sixteenths. Alternate picking." },
+            { id: "seq3", group: "Alternate picking", name: "Pentatonic in threes", sub: 6, start: 50, step: 6,
+                desc: "Box 1 of A minor pentatonic as overlapping groups of three (1-2-3, 2-3-4, …), six notes a beat. Sequences like this turn a scale into licks." },
+            { id: "nps", group: "Alternate picking", name: "Three notes per string", sub: 6, start: 54, step: 6,
+                desc: "A natural minor in sextuplets: six notes per beat, so one string per beat. This is the foundation of fast solo runs." },
+            { id: "leg", group: "Legato", name: "Hammer-ons and pull-offs", sub: 4, start: 72, step: 8,
+                desc: "Pick only the unmarked notes. h = hammer-on, p = pull-off. Your fretting hand should sound every note clearly on its own." },
+            { id: "pullpent", group: "Legato", name: "Pentatonic legato", sub: 4, start: 70, step: 8,
+                desc: "Box 1 going up with one pick and a hammer-on per string, then down with a pick and a pull-off. Let the fretting hand do the work." },
+            { id: "trill", group: "Legato", name: "Trill endurance", sub: 4, start: 80, step: 8,
+                desc: "Pick once, then keep the trill going with hammer-ons and pull-offs only. Stay even and keep both notes the same volume." },
+            { id: "down", group: "Rhythm", name: "Downpicking endurance", sub: 2, start: 120, step: 10,
+                desc: "Eighth notes with downstrokes only, palm muted. Keep the motion relaxed and the volume even; this is the stamina behind fast thrash rhythm playing." },
+            { id: "gallop", group: "Rhythm", name: "Gallop", sub: 4, start: 90, step: 8,
+                desc: "An eighth followed by two sixteenths, palm muted: down, down-up. Lock the two short notes tightly to the click." },
+            { id: "revgallop", group: "Rhythm", name: "Reverse gallop", sub: 4, start: 90, step: 8,
+                desc: "Two sixteenths and then an eighth, palm muted: down-up, down. The opposite lilt to the gallop; hold the eighth for its full length." },
+            { id: "trem", group: "Rhythm", name: "Tremolo and palm muting", sub: 4, start: 80, step: 10,
+                desc: "Continuous down-up sixteenths on the low E string with palm muting (PM). Builds picking-hand consistency and stamina; play from the wrist with small motions." },
+            { id: "fing", group: "Finger independence", name: "1-3-2-4", sub: 4, start: 64, step: 6,
+                desc: "Frets 5-7-6-8 on every string, then back down as 8-6-7-5. Keep each finger close to the fretboard and let the others rest lightly." },
+            { id: "spider", group: "Finger independence", name: "Spider walk", sub: 4, start: 60, step: 6,
+                desc: "Fingers 1 and 3 on one string, 2 and 4 on the next, climbing across all six strings. Only two fingers move at a time, which teaches them to work on their own." },
+            { id: "arp", group: "Arpeggios and sweeps", name: "Am F G E arpeggios", sub: 6, start: 44, step: 6,
                 desc: "Three-string arpeggios in sextuplets. Sweep the pick across the strings in one motion or alternate pick; keep the notes from ringing into each other." },
-            { id: "sweep", name: "Sweep picking – five-string A minor", sub: 6, start: 40, step: 4,
+            { id: "sweep3", group: "Arpeggios and sweeps", name: "Three-string triad sweeps", sub: 6, start: 46, step: 4,
+                desc: "Am, C, G and E triads on the top three strings: sweep up, hammer-on and pull-off at the top, sweep back. A first step towards five-string sweeps." },
+            { id: "sweep", group: "Arpeggios and sweeps", name: "Five-string A minor sweep", sub: 6, start: 40, step: 4,
                 desc: "One down-sweep across five strings, a hammer-on at the top, then an up-sweep back. Roll the fretting fingers so only one note sounds at a time." }
         ],
         modes: [
-            { id: "ionian", name: "Ionian (major)", iv: [0, 2, 4, 5, 7, 9, 11], formula: "1 2 3 4 5 6 7", spell: "A B C♯ D E F♯ G♯",
-                desc: "The major scale: bright and settled. Use it over A major chords and in major keys." },
+            { id: "ionian", name: "Ionian", iv: [0, 2, 4, 5, 7, 9, 11], formula: "1 2 3 4 5 6 7", spell: "A B C♯ D E F♯ G♯",
+                desc: "Ionian is the major scale: bright and settled. Use it over A major chords and in major keys." },
             { id: "dorian", name: "Dorian", iv: [0, 2, 3, 5, 7, 9, 10], formula: "1 2 ♭3 4 5 6 ♭7", spell: "A B C D E F♯ G",
                 desc: "Minor with a major 6th, which makes it brighter than natural minor. A favourite for rock, funk and jazz solos over Am7 or an Am–D vamp." },
             { id: "phrygian", name: "Phrygian", iv: [0, 1, 3, 5, 7, 8, 10], formula: "1 ♭2 ♭3 4 5 ♭6 ♭7", spell: "A B♭ C D E F G",
@@ -45,8 +58,8 @@
                 desc: "Major with a raised 4th: dreamy and floating. Works over Amaj7 or an A–B vamp." },
             { id: "mixolydian", name: "Mixolydian", iv: [0, 2, 4, 5, 7, 9, 10], formula: "1 2 3 4 5 6 ♭7", spell: "A B C♯ D E F♯ G",
                 desc: "Major with a flat 7th: bluesy, classic-rock major. Use it over A7 or an A–G–D progression." },
-            { id: "aeolian", name: "Aeolian (natural minor)", iv: [0, 2, 3, 5, 7, 8, 10], formula: "1 2 ♭3 4 5 ♭6 ♭7", spell: "A B C D E F G",
-                desc: "The natural minor scale: sad and dramatic. The default for minor keys, over progressions like Am–F–G." },
+            { id: "aeolian", name: "Aeolian", iv: [0, 2, 3, 5, 7, 8, 10], formula: "1 2 ♭3 4 5 ♭6 ♭7", spell: "A B C D E F G",
+                desc: "Aeolian is the natural minor scale: sad and dramatic. The default for minor keys, over progressions like Am–F–G." },
             { id: "locrian", name: "Locrian", iv: [0, 1, 3, 5, 6, 8, 10], formula: "1 ♭2 ♭3 4 ♭5 ♭6 ♭7", spell: "A B♭ C D E♭ F G",
                 desc: "Flat 2nd and flat 5th: the most unstable mode. Rare as a key, but at home over Am7♭5 and in some dark metal riffs." }
         ],
@@ -75,10 +88,19 @@
     };
     ["modes", "scales"].forEach((c) => CATS[c].forEach((x) => { x.sub = 4; x.start = 70; x.step = 6; }));
 
+    /* Positions for the scales and modes, one per note of the scale: position
+       k starts on the scale's k-th note on the low E string (counting up from
+       the root at the 5th fret, and down an octave past the 14th) and covers
+       that fret and the three above it, plus one below for the stretch. The
+       generator plays the scale's notes inside each window. */
+    function positions(iv) {
+        return iv.map((d) => { const f = 5 + d > 14 ? d - 7 : 5 + d; return { lo: f - 1, hi: f + 3 }; });
+    }
+
     // a hash of practice/*.gp, added to their URLs so caches never serve an
     // old copy; kept up to date by tools/stamp-assets.js
-    const practiceFilesVersion = "e28a98be";
+    const practiceFilesVersion = "4917b8c3";
 
-    if (typeof module !== "undefined" && module.exports) module.exports = CATS;
-    else { root.practiceCatalogue = CATS; root.practiceFilesVersion = practiceFilesVersion; }
+    if (typeof module !== "undefined" && module.exports) { module.exports = CATS; Object.defineProperty(CATS, "positions", { value: positions }); }
+    else { root.practiceCatalogue = CATS; root.practiceFilesVersion = practiceFilesVersion; root.practicePositions = positions; }
 })(this);

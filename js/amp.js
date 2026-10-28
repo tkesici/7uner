@@ -1,6 +1,6 @@
 /* 7uner – amp
-   One amp for everything alphaTab plays (Practice and Tab Studio): a
-   distortion switch, gain and volume, set from the panel under the header.
+   One amp for everything alphaTab plays (Practice and Tab Studio): a drive
+   knob (0 is clean, turning it up adds distortion) and a volume knob.
 
    alphaTab plays through a ScriptProcessorNode that it connects to its audio
    context's speakers. That connection is redirected into an amp chain built
@@ -14,12 +14,13 @@
     "use strict";
 
     const KEY = "7uner.amp.v1";
-    const st = { drive: false, gain: 5, volume: 8 };
+    const st = { drive: 0, volume: 8 };
     try {
         const o = JSON.parse(localStorage.getItem(KEY) || "null");
         if (o) {
-            st.drive = !!o.drive;
-            if (o.gain >= 0 && o.gain <= 10) st.gain = +o.gain;
+            // earlier versions had a distortion switch and a gain knob
+            if (typeof o.drive === "boolean") st.drive = o.drive && o.gain >= 0 && o.gain <= 10 ? +o.gain : 0;
+            else if (o.drive >= 0 && o.drive <= 10) st.drive = +o.drive;
             if (o.volume >= 0 && o.volume <= 10) st.volume = +o.volume;
         }
     } catch (e) {}
@@ -27,7 +28,7 @@
 
     /* ---------- audio ---------- */
     const chains = new WeakMap(), live = [];
-    const preGain = () => 1 + Math.pow(st.gain / 10, 2) * 60;  // 1× to 61× into the clipper
+    const preGain = () => 1 + Math.pow(st.drive / 10, 2) * 60; // 1× to 61× into the clipper
     const volume = () => st.volume / 8;                          // 8 is unity
 
     let curve = null;
@@ -57,8 +58,8 @@
     function apply(c, now) {
         const t = c.ctx.currentTime, ramp = now ? 0 : 0.03;
         const set = (p, v) => { p.cancelScheduledValues(t); p.setTargetAtTime(v, t, ramp || 0.001); };
-        set(c.clean.gain, st.drive ? 0 : 1);
-        set(c.drive.gain, st.drive ? 0.32 : 0);
+        set(c.clean.gain, st.drive > 0 ? 0 : 1);
+        set(c.drive.gain, st.drive > 0 ? 0.32 : 0);
         set(c.pre.gain, preGain());
         set(c.out.gain, volume());
     }
@@ -83,14 +84,6 @@
     /* ---------- panel ---------- */
     const panel = document.getElementById("amp");
     if (!panel) return;
-    const sw = panel.querySelector("#ampDrive");
-
-    function showDrive() {
-        sw.setAttribute("aria-pressed", st.drive ? "true" : "false");
-        panel.classList.toggle("driven", st.drive);
-    }
-    sw.addEventListener("click", () => { st.drive = !st.drive; save(); showDrive(); applyAll(); });
-    showDrive();
 
     /* knobs: drag up or down, scroll, or use the arrow keys; 0 to 10 in tenths */
     panel.querySelectorAll(".knob").forEach((k) => {
