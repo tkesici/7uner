@@ -1,5 +1,6 @@
 /* 7uner – draws the app icons and the social preview image as PNG, from the
-   same shapes as favicon.svg (an amber 7 on a dark tile). Plain Node, no
+   same shapes as favicon.svg (an amber 7 in front of a fretboard with a
+   chord, on a dark tile). Plain Node, no
    dependencies. Run after changing the logo:
 
      node tools/make-icons.js
@@ -17,12 +18,12 @@ const path = require("path");
 const zlib = require("zlib");
 
 const OUT = path.join(__dirname, "..", "icons");
-const BG = "#151A21", PANEL = "#1E252E", AMBER = "#F2B33D", INK = "#E8ECF1", LINE = "#4A5563", OK = "#5ED18F", OK_SOFT = "#173A27";
+const BG = "#151A21", PANEL = "#1E252E", MUTED = "#97A2B0", AMBER = "#F2B33D", INK = "#E8ECF1", LINE = "#4A5563", OK = "#5ED18F", OK_SOFT = "#173A27";
 
 /* ---------- drawing ----------
    Shapes are painted in order with 4×4 supersampling for smooth edges:
-   rrect (rounded rectangle), circle, and stroke (a list of segments with
-   round caps and joins, like an SVG stroke). */
+   rrect (rounded rectangle), circle, poly (a filled polygon) and stroke (a
+   list of segments with round caps and joins, like an SVG stroke). */
 const hex = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
 
 function segDist(px, py, [x1, y1, x2, y2]) {
@@ -41,6 +42,16 @@ function shapeTest(s) {
     };
   }
   if (s.type === "circle") return (x, y) => (x - s.cx) * (x - s.cx) + (y - s.cy) * (y - s.cy) <= s.r * s.r;
+  if (s.type === "poly") {
+    return (x, y) => {
+      let inside = false;
+      for (let i = 0, j = s.pts.length - 1; i < s.pts.length; j = i++) {
+        const [xi, yi] = s.pts[i], [xj, yj] = s.pts[j];
+        if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+      }
+      return inside;
+    };
+  }
   const h = s.w / 2;
   return (x, y) => s.segs.some((g) => segDist(x, y, g) <= h);
 }
@@ -48,6 +59,10 @@ function shapeTest(s) {
 function bbox(s) {
   if (s.type === "rrect") return [s.x, s.y, s.x + s.w, s.y + s.h];
   if (s.type === "circle") return [s.cx - s.r, s.cy - s.r, s.cx + s.r, s.cy + s.r];
+  if (s.type === "poly") {
+    const xs = s.pts.map((p) => p[0]), ys = s.pts.map((p) => p[1]);
+    return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+  }
   const xs = s.segs.flatMap((g) => [g[0], g[2]]), ys = s.segs.flatMap((g) => [g[1], g[3]]);
   return [Math.min(...xs) - s.w, Math.min(...ys) - s.w, Math.max(...xs) + s.w, Math.max(...ys) + s.w];
 }
@@ -98,17 +113,34 @@ function png(W, H, rgba) {
 }
 
 /* ---------- the logo ---------- */
-// favicon.svg's 7 in its 64×64 box: M18 16 h28 L30 50, stroke 8
-function seven(x, y, size, color) {
-  const k = size / 64, P = [[18, 16], [46, 16], [30, 50]].map(([a, b]) => [x + a * k, y + b * k]);
-  return { type: "stroke", w: 8 * k, color, segs: [[...P[0], ...P[1]], [...P[1], ...P[2]]] };
+/* favicon.svg's drawing in its 64×64 box, placed at x, y and scaled to size:
+   a fretboard in perspective with a chord on it, and in front a 7 cut like
+   Barlow Condensed's (square ends) with a gap of the tile's colour round it */
+function logo(x, y, size) {
+  const k = size / 64, P = (a, b) => [x + a * k, y + b * k], out = [];
+  out.push({ type: "poly", color: PANEL, pts: [P(20, 6), P(44, 6), P(54, 60), P(10, 60)] });
+  for (let i = 0; i < 6; i++) out.push({ type: "stroke", w: 1.3 * k, color: LINE, segs: [[...P(22 + 4 * i, 6), ...P(13 + 7.6 * i, 60)]] });
+  [[18, 1.2], [32, 1.6], [48, 2]].forEach(([fy, w]) => {
+    const f = (fy - 6) / 54;
+    out.push({ type: "stroke", w: w * k, color: MUTED, segs: [[...P(20 - 10 * f, fy), ...P(44 + 10 * f, fy)]] });
+  });
+  out.push({ type: "circle", ...xy(P(33.5, 25)), r: 3.4 * k, color: MUTED }, { type: "circle", ...xy(P(25, 40)), r: 4 * k, color: MUTED });
+  // the 7's tail: a band of the given width from the bar down, with square ends
+  const tail = (w) => {
+    const A = [42.2, 15], B = [29.2, 55], len = Math.hypot(B[0] - A[0], B[1] - A[1]), nx = (B[1] - A[1]) / len * (w / 2), ny = -(B[0] - A[0]) / len * (w / 2);
+    return [P(A[0] + nx, A[1] + ny), P(B[0] + nx, B[1] + ny), P(B[0] - nx, B[1] - ny), P(A[0] - nx, A[1] - ny)];
+  };
+  out.push({ type: "rrect", x: x + 16 * k, y: y + 8 * k, w: 33.1 * k, h: 13.5 * k, r: 2.5 * k, color: BG },
+    { type: "poly", color: BG, pts: tail(13.5) },
+    { type: "poly", color: AMBER, pts: tail(8.6) },
+    { type: "poly", color: AMBER, pts: [P(18.5, 10.5), P(46.6, 10.5), P(46.6, 19), P(18.5, 19)] });
+  return out;
 }
-// a tile with the 7; full = square, no rounded corners (maskable, apple-touch-icon)
+const xy = ([cx, cy]) => ({ cx, cy });
+// a tile with the logo; full = square, no rounded corners (maskable, apple-touch-icon)
 function icon(S, full, scale) {
-  const sh = [{ type: "rrect", x: 0, y: 0, w: S, h: S, r: full ? 0 : (14 / 64) * S, color: BG }];
   const L = S * scale;
-  sh.push(seven((S - L) / 2, (S - L) / 2, L, AMBER));
-  return sh;
+  return [{ type: "rrect", x: 0, y: 0, w: S, h: S, r: full ? 0 : (14 / 64) * S, color: BG }, ...logo((S - L) / 2, (S - L) / 2, L)];
 }
 
 // arcs as short segments; angles in radians, y down (as on a canvas)
@@ -162,8 +194,9 @@ function gauge(cx, cy, R) {
 function social() {
   const W = 1200, H = 630;
   return [{ type: "rrect", x: 0, y: 0, w: W, h: H, r: 0, color: BG },
-    { type: "rrect", x: 96, y: 165, w: 300, h: 300, r: 66, color: PANEL },
-    seven(96 + 30, 165 + 30, 240, AMBER),
+    { type: "rrect", x: 93, y: 162, w: 306, h: 306, r: 69, color: LINE },
+    { type: "rrect", x: 96, y: 165, w: 300, h: 300, r: 66, color: BG },
+    ...logo(96, 165, 300),
     ...wordmark(480, 330, 112, 26),
     ...gauge(800, 720, 250)];
 }
