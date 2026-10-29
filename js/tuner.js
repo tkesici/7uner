@@ -19,6 +19,10 @@
      rowsR, when the right side's pegs sit differently from the left side's.
      Extended-range guitars and basses (guitar7, guitar12, bass5, ...) are
      variants of their mode, picked with the string-count dial (COUNTS). */
+  // the violin and the cello share one head drawing (scrollHead), the violin 10% smaller;
+  // their pegs sit at y 118 and 178 on the left and 136 and 196 on the right, before scaling
+  const CELLO_K = 1.1, VIOLIN_K = CELLO_K * 0.9;
+  const scrollRows = (k, y) => [248 - (248 - y) * k, 60 * k];
   const GUITAR_CFG = { inTune: 2, range: 50, minF: 38, maxF: 1400, windowSec: 0.17, clarity: 0.7, median: 7, onsetSkip: 5, decimals: 1 };
   const BASS_CFG = { inTune: 2, range: 50, minF: 25, maxF: 600, windowSec: 0.22, clarity: 0.7, median: 7, onsetSkip: 6, decimals: 1 };
   const INSTR = {
@@ -99,7 +103,7 @@
     },
     ukulele: {
       label: "Ukulele", base: [67, 60, 64, 69], offMin: -12, offMax: 5,
-      left: [1, 0], right: [2, 3], rows: [130, 60],
+      left: [1, 0], right: [2, 3], rows: [112, 69],
       cfg: { inTune: 2, range: 50, minF: 110, maxF: 1600, windowSec: 0.1, clarity: 0.7, median: 7, onsetSkip: 4, decimals: 1 },
       presets: [
         ["Standard", [0, 0, 0, 0]],
@@ -109,7 +113,7 @@
     },
     violin: {
       label: "Violin", base: [55, 62, 69, 76], offMin: -5, offMax: 3,
-      left: [0, 1], right: [3, 2], rows: [156, 46.8], // the pegs of a head drawn at 0.78 (see scrollHead)
+      left: [1, 0], right: [2, 3], rows: scrollRows(VIOLIN_K, 118), rowsR: scrollRows(VIOLIN_K, 136), // D and G on the left, A and E on the right
       cfg: { inTune: 2, range: 50, minF: 130, maxF: 3000, windowSec: 0.1, clarity: 0.7, median: 7, onsetSkip: 2, decimals: 1 },
       presets: [
         ["Standard", [0, 0, 0, 0]],
@@ -120,7 +124,7 @@
     },
     cello: {
       label: "Cello", base: [36, 43, 50, 57], offMin: -5, offMax: 3,
-      left: [0, 1], right: [3, 2], rows: [115.8, 67.2], // drawn at 1.12
+      left: [1, 0], right: [2, 3], rows: scrollRows(CELLO_K, 118), rowsR: scrollRows(CELLO_K, 136), // G and C on the left, D and A on the right
       cfg: { inTune: 2, range: 50, minF: 55, maxF: 1500, windowSec: 0.17, clarity: 0.7, median: 7, onsetSkip: 3, decimals: 1 },
       presets: [["Standard", [0, 0, 0, 0]]]
     }
@@ -194,19 +198,24 @@
       '<defs>' +
       '<linearGradient id="hsBlack" x1="0" x2="1"><stop offset="0" stop-color="#17191D"/><stop offset=".5" stop-color="#2E3238"/><stop offset="1" stop-color="#17191D"/></linearGradient>' +
       '<linearGradient id="hsGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F7E08A"/><stop offset=".55" stop-color="#D4AF37"/><stop offset="1" stop-color="#A97C1E"/></linearGradient>' +
-      '<linearGradient id="hsWhite" x1="0" x2="1"><stop offset="0" stop-color="#E4E6EA"/><stop offset=".5" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4E6EA"/></linearGradient>' +
-      '<linearGradient id="hsMahogany" x1="0" x2="1"><stop offset="0" stop-color="#5A2E16"/><stop offset=".5" stop-color="#8A4E28"/><stop offset="1" stop-color="#5A2E16"/></linearGradient>' +
-      '<linearGradient id="hsVarnish" x1="0" x2="1"><stop offset="0" stop-color="#6E2A0C"/><stop offset=".5" stop-color="#B85A1F"/><stop offset="1" stop-color="#6E2A0C"/></linearGradient>' +
-      '<linearGradient id="hsRosewood" x1="0" x2="1"><stop offset="0" stop-color="#3A2315"/><stop offset=".5" stop-color="#5C3B24"/><stop offset="1" stop-color="#3A2315"/></linearGradient>' +
+      // violin (V) and cello (C) varnish: the pegbox's cheeks, and the scroll lit from the upper left
+      '<linearGradient id="hsVarnishV" x1="0" x2="1"><stop offset="0" stop-color="#4A1806"/><stop offset=".2" stop-color="#8E3A12"/><stop offset=".45" stop-color="#C2692B"/><stop offset=".6" stop-color="#A44D1C"/><stop offset="1" stop-color="#4A1806"/></linearGradient>' +
+      '<linearGradient id="hsVarnishC" x1="0" x2="1"><stop offset="0" stop-color="#2C0F04"/><stop offset=".2" stop-color="#5E240C"/><stop offset=".45" stop-color="#8A4019"/><stop offset=".6" stop-color="#6E3010"/><stop offset="1" stop-color="#2C0F04"/></linearGradient>' +
+      '<radialGradient id="hsScrollV" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#E39A55"/><stop offset=".35" stop-color="#B05A22"/><stop offset=".75" stop-color="#6E2A0C"/><stop offset="1" stop-color="#3E1405"/></radialGradient>' +
+      '<radialGradient id="hsScrollC" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#A8612E"/><stop offset=".35" stop-color="#763412"/><stop offset=".75" stop-color="#4A1B07"/><stop offset="1" stop-color="#280C03"/></radialGradient>' +
+      '<linearGradient id="hsHollow" x1="0" x2="1"><stop offset="0" stop-color="#0D0502"/><stop offset=".5" stop-color="#2A1309"/><stop offset="1" stop-color="#0D0502"/></linearGradient>' +
+      '<radialGradient id="hsPegHead" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#4A4A50"/><stop offset=".4" stop-color="#1C1C20"/><stop offset="1" stop-color="#050506"/></radialGradient>' +
       '<linearGradient id="hsEbony" x1="0" x2="1"><stop offset="0" stop-color="#0E0E10"/><stop offset=".5" stop-color="#26262A"/><stop offset="1" stop-color="#0E0E10"/></linearGradient>' +
+      // fretboards: dark rosewood on the guitars, a lighter brown on the bass
+      '<linearGradient id="hsBoardDark" x1="0" x2="1"><stop offset="0" stop-color="#21130B"/><stop offset=".5" stop-color="#3A2416"/><stop offset="1" stop-color="#21130B"/></linearGradient>' +
+      '<linearGradient id="hsBoardLight" x1="0" x2="1"><stop offset="0" stop-color="#4A2D1A"/><stop offset=".5" stop-color="#6E4629"/><stop offset="1" stop-color="#4A2D1A"/></linearGradient>' +
+      '<linearGradient id="hsIvory" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFDF6"/><stop offset=".6" stop-color="#EDE7D8"/><stop offset="1" stop-color="#D3CAB5"/></linearGradient>' +
       '<linearGradient id="hsChrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4F5F7"/><stop offset=".45" stop-color="#C3C7CD"/><stop offset=".55" stop-color="#9DA2AA"/><stop offset="1" stop-color="#E2E4E8"/></linearGradient>' +
       '<radialGradient id="hsBrassPost" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#FFF3B8"/><stop offset=".5" stop-color="#D9B44A"/><stop offset="1" stop-color="#8A6A1A"/></radialGradient>' +
       '<radialGradient id="hsChromePost" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#C9CDD3"/><stop offset="1" stop-color="#6E747C"/></radialGradient>' +
       '<linearGradient id="hsGloss" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".16"/><stop offset=".45" stop-color="#FFFFFF" stop-opacity=".03"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>' +
       '<linearGradient id="hsWalnut" x1="0" x2="1"><stop offset="0" stop-color="#24120A"/><stop offset=".5" stop-color="#4E2B17"/><stop offset="1" stop-color="#24120A"/></linearGradient>' +
       '<linearGradient id="hsCover" x1="0" x2="1"><stop offset="0" stop-color="#D9DADC"/><stop offset=".5" stop-color="#FAFAF8"/><stop offset="1" stop-color="#D9DADC"/></linearGradient>' +
-      '<radialGradient id="hsAbalone" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#9FE7DC"/><stop offset=".45" stop-color="#3FA79B"/><stop offset=".8" stop-color="#2B5E8A"/><stop offset="1" stop-color="#1B3F4E"/></radialGradient>' +
-      '<linearGradient id="hsMaple" x1="0" x2="1"><stop offset="0" stop-color="#8A5A2B"/><stop offset=".5" stop-color="#C08A50"/><stop offset="1" stop-color="#8A5A2B"/></linearGradient>' +
       '<linearGradient id="hsPearl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7F4EC"/><stop offset=".5" stop-color="#DCE3E6"/><stop offset="1" stop-color="#EFE8DA"/></linearGradient>' +
       '</defs>';
 
@@ -227,23 +236,27 @@
     // 2+3 and 3+3 posts
     bass5: () => luthierHead("rick", { posts: [[72, 168], [72, 108], [128, 108], [128, 146], [128, 184]], gauge: [4.6, 4.2, 3.5, 2.8, 2.2], small: true }),
     bass6: () => luthierHead("rick", { posts: [[72, 184], [72, 144], [72, 104], [128, 108], [128, 146], [128, 184]], gauge: [4.6, 4.2, 3.5, 2.8, 2.2, 1.8], wide: 1.05, small: true }),
-    ukulele: () => luthierHead("uke", { posts: [[78, 190], [78, 130], [122, 130], [122, 190]], gauge: [1.5, 1.9, 1.7, 1.4] }),
-    violin: () => scrollHead([1.7, 1.4, 1.2, 1], 0.78),
-    cello: () => scrollHead([2.6, 2.2, 1.8, 1.5], 1.12)
+    ukulele: () => luthierHead("uke", { posts: [[77, 181], [77, 112], [123, 112], [123, 181]], gauge: [1.5, 1.9, 1.7, 1.4] }),
+    violin: () => scrollHead([1.7, 1.4, 1.2, 1], VIOLIN_K, "V"),
+    cello: () => scrollHead([2.6, 2.2, 1.8, 1.5], CELLO_K, "C")
   };
 
   /* Fretted headstocks share one way of drawing, so the instruments look
-     like a family: a wooden face with cream binding (cream, a fine dark
-     line, cream) and a gloss, gold tuners and posts, the 7uner logo in a
-     space of its own above the posts, a bound ebony fretboard with a pearl
-     block and a bone nut. The looks differ in outline, wood and hardware:
-     esp    guitar, after the ESP Eclipse: black face, horns at the outer
-            corners and a point in the middle, tulip tuners, bell truss cover
-     rick   bass, after the Rickenbacker 4003: a hooked top with a notch
-            and a point at the top right, dark brown wood, no binding,
-            chrome cloverleaf keys, slotted chrome posts and a white truss
-            cover between them that carries the logo
-     uke    ukulele: a small crown in maple with small tulip tuners
+     like a family: a face with its tuners and posts, the 7uner logo in a
+     space of its own, a fretboard with an inlay and a bone nut. The looks
+     differ in outline, face, hardware and fretboard:
+     esp    guitar, after the ESP Eclipse: black face with cream binding
+            (cream, a fine dark line, cream), horns at the outer corners and
+            a point in the middle, gold tulip tuners, a bell truss cover, a
+            bound dark rosewood fretboard with a pearl block
+     rick   bass, after the Rickenbacker 4003: a hooked top with a notch and
+            a point at the top right, dark brown wood, no binding, chrome
+            cloverleaf keys and slotted chrome posts, a white truss cover with
+            the logo running up it, a bound fretboard in a lighter brown with
+            a triangle inlay
+     uke    ukulele: a plain paddle of clear acrylic, so whatever is behind it
+            shows through, as do the open gears screwed to its back; ivory
+            oval buttons, black bushings, a plain black fretboard with a dot
      wide spreads a look sideways for more strings; edge(y) is where the
      face's left side is at height y (edgeR the right side's, when the head
      isn't symmetrical), so the tuners sit just outside it. */
@@ -252,6 +265,7 @@
       shape: (X) => "M" + X(60) + " 248 L" + X(37) + " 32 Q" + X(35) + " 18 " + X(42) + " 15 C" + X(58) + " 34 " + X(88) + " 46 100 30 C" + X(112) + " 46 " + X(142) + " 34 " + X(158) + " 15 Q" + X(165) + " 18 " + X(163) + " 32 L" + X(140) + " 248 Z",
       edge: (y) => 60 - ((248 - y) * 23) / 216,
       face: "hsBlack", tuner: "tulip", post: "gold", truss: true, neck: [64, 136],
+      board: { wood: "hsBoardDark", grain: true, bound: true, inlay: "block" },
       logo: [62, 20], logoSmall: [66, 17], font: "Georgia, 'Times New Roman', serif"
     },
     rick: {
@@ -266,15 +280,34 @@
         return 170 * (1 - a) * (1 - a) + 288 * a * (1 - a) + 141 * a * a;
       },
       cover: (X) => "M" + X(82) + " 70 Q" + X(96) + " 52 " + X(120) + " 56 L" + X(109) + " 238 L" + X(95) + " 238 Z",
-      face: "hsWalnut", binding: false, edgeStroke: "#120803", tuner: "clover", metal: "chrome", post: "chrome", neck: [62, 138],
-      logo: [83, 10], logoSmall: [83, 10], logoX: 101.5, logoFill: "#111", font: "Georgia, 'Times New Roman', serif"
+      face: "hsWalnut", binding: false, edgeStroke: "#120803", tuner: "clover", post: "chrome", neck: [62, 138],
+      board: { wood: "hsBoardLight", grain: true, bound: true, inlay: "triangle" },
+      // the logo runs up the truss cover: logo gives its middle and size, logoX where its baseline sits
+      logoAlong: true, logo: [136, 22], logoSmall: [136, 22], logoX: 104.2, logoFill: "#111", font: "Georgia, 'Times New Roman', serif"
     },
     uke: {
-      shape: (X) => "M" + X(70) + " 248 L" + X(66) + " 170 Q" + X(65) + " 156 " + X(58) + " 150 L" + X(54) + " 124 Q" + X(52) + " 104 " + X(66) + " 96 Q" + X(78) + " 90 " + X(84) + " 82 Q" + X(88) + " 66 100 62 Q" + X(112) + " 66 " + X(116) + " 82 Q" + X(122) + " 90 " + X(134) + " 96 Q" + X(148) + " 104 " + X(146) + " 124 L" + X(142) + " 150 Q" + X(135) + " 156 " + X(134) + " 170 L" + X(130) + " 248 Z",
-      edge: (y) => (y <= 124 ? 54 : y <= 150 ? 54 + ((y - 124) * 4) / 26 : 58 + ((y - 150) * 12) / 98),
-      face: "hsMaple", tuner: "tulip", post: "gold", crest: true, neck: [70, 130], tunerScale: 0.8, logoFill: "#3A1F0C", // gold would vanish on maple
-      logo: [114, 13], logoSmall: [114, 13], font: "Georgia, 'Times New Roman', serif"
+      shape: (X) => "M" + X(70) + " 248 L" + X(54) + " 73 Q" + X(53) + " 57 " + X(68) + " 55 Q100 46 " + X(132) + " 55 Q" + X(147) + " 57 " + X(146) + " 73 L" + X(130) + " 248 Z",
+      edge: (y) => 70 - ((248 - y) * 16) / 175,
+      clear: true, tuner: "button", post: "bushing", neck: [70, 130], tunerScale: 0.98,
+      board: { wood: "hsEbony", grain: false, bound: false, inlay: "dot" },
+      logo: [85, 15], logoSmall: [85, 15], logoFill: "var(--clear-logo)", font: "Georgia, 'Times New Roman', serif"
     }
+  };
+
+  // a faint grain along a fretboard between x a and b: thin wavy lines, mostly dark, a few light
+  function grain(a, b) {
+    return '<g fill="none" stroke-linecap="round">' + [0.11, 0.24, 0.37, 0.52, 0.66, 0.79, 0.9].map((f, j) => {
+      const x = a + (b - a) * f, s = j % 2 ? 1 : -1, light = j % 3 === 1;
+      return '<path d="M' + x + " 252 Q" + (x + s * 1.2) + " 272 " + (x - s * 0.4) + " 290 T" + (x + s * 0.7) + ' 322" stroke="' + (light ? "#FFF" : "#000") +
+        '" stroke-opacity="' + (light ? 0.05 : 0.26) + '" stroke-width="' + (j % 2 ? 0.6 : 0.9) + '"/>';
+    }).join("") + "</g>";
+  }
+
+  // fretboard inlays just past the first fret, between x a and b
+  const INLAYS = {
+    block: (a, b) => '<path d="M' + (a + 10) + " 304 L" + (b - 10) + " 304 L" + (b - 14) + " 322 L" + (a + 14) + ' 322 Z" fill="url(#hsPearl)" opacity=".9"/>',
+    triangle: (a, b) => '<path d="M' + (a + 9) + " 304 L" + (b - 9) + " 304 L" + (a + 9) + ' 322 Z" fill="url(#hsPearl)" opacity=".9"/>',
+    dot: (a, b) => '<circle cx="' + (a + b) / 2 + '" cy="313" r="3.4" fill="url(#hsPearl)"/>'
   };
 
   function luthierHead(name, o) {
@@ -287,17 +320,26 @@
       ? o.posts.map((p, i) => { const course = Math.floor(i / 2), step = (hi - lo) / 5; return lo + course * step + (i % 2 ? 4.4 : 0) - 2.2 + (course === 5 ? -2.2 : 0); })
       : o.posts.map((p, i) => lo + ((hi - lo) * i) / (n - 1));
     const ts = (L.tunerScale || 1) * (o.tiny ? 0.7 : o.small ? 0.85 : 1);
-    const r = (L.post === "chrome" ? 7.5 : 6.5) * (o.tiny ? 0.85 : 1);
-    const chrome = L.metal === "chrome";
-    let tuners = "", strs = "", posts = "";
+    const r = ({ chrome: 7.5, bushing: 5.6 }[L.post] || 6.5) * (o.tiny ? 0.85 : 1);
+    // back: hardware on the back of the head, which only a clear head shows
+    let back = "", tuners = "", strs = "", posts = "";
+    // on a clear head the chrome gets an outline, so it still shows on a light page
+    const outline = L.clear ? ' style="stroke:var(--clear-metal)" stroke-width=".6"' : "";
     o.posts.forEach(([x, y], i) => {
       const left = x < 100, e = edgeX(y, left), d = left ? -1 : 1, b0 = e + d * 6 * ts;
-      tuners += '<rect x="' + Math.min(e, b0) + '" y="' + (y - 2.5 * ts) + '" width="' + 6 * ts + '" height="' + 5 * ts + '" fill="url(#' + (chrome ? "hsChrome" : "hsGold") + ')"/>';
+      tuners += '<rect x="' + Math.min(e, b0) + '" y="' + (y - 2.5 * ts) + '" width="' + 6 * ts + '" height="' + 5 * ts + '" fill="url(#' + (L.tuner === "tulip" ? "hsGold" : "hsChrome") + ')"' + outline + "/>";
       if (L.tuner === "clover") {
         // a cloverleaf key: three lobes round a hub, outlined underneath so the lobes read as one piece
         const c = b0 + d * 15 * ts, lobes = [[b0 + d * 5 * ts, y, 3.6], [c, y, 6.4], [c, y - 7.5 * ts, 6.6], [c, y + 7.5 * ts, 6.6], [c + d * 7.5 * ts, y, 6.6]];
         const dots = (grow, fill) => lobes.map(([cx, cy, rr]) => '<circle cx="' + cx + '" cy="' + cy + '" r="' + (rr * ts + grow) + '" fill="' + fill + '"/>').join("");
         tuners += dots(0.9, "#4A4F56") + dots(0, "url(#hsChromePost)");
+      } else if (L.tuner === "button") {
+        // an oval button on a chrome shaft, which runs into an open gear on a plate screwed to the back
+        tuners += '<ellipse cx="' + (b0 + d * 10 * ts) + '" cy="' + y + '" rx="' + 10 * ts + '" ry="' + 6.4 * ts + '" fill="url(#hsIvory)" stroke="#A89F8A" stroke-width=".7"/>' +
+            '<circle cx="' + b0 + '" cy="' + y + '" r="' + 2.6 * ts + '" fill="url(#hsChromePost)"/>';
+        back += '<rect x="' + Math.min(e, x) + '" y="' + (y - 1.8) + '" width="' + Math.abs(x - e) + '" height="3.6" fill="url(#hsChrome)"' + outline + "/>" +
+            '<rect x="' + (x - 9.5) + '" y="' + (y - 13) + '" width="19" height="26" rx="3" fill="url(#hsChrome)"' + outline + "/>" +
+            '<circle cx="' + x + '" cy="' + y + '" r="7.8" fill="none" stroke="url(#hsGold)" stroke-width="2.4" stroke-dasharray="1.3 1"/>';
       } else {
         // a tulip key, flaring away from the headstock
         const key = "M" + b0 + " " + (y - 4 * ts) + " L" + (b0 + d * 8.4 * ts) + " " + (y - 10 * ts) + " Q" + (b0 + d * 24 * ts) + " " + (y - 11 * ts) + " " + (b0 + d * 24 * ts) + " " + y +
@@ -310,58 +352,108 @@
             // a domed chrome post with a slot across it
             ? '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#hsChromePost)" stroke="#3E434A" stroke-width=".9"/>' +
               '<path d="M' + (x - r * 0.7) + " " + (y + r * 0.25) + " L" + (x + r * 0.7) + " " + (y - r * 0.25) + '" stroke="#3E434A" stroke-width="1.5" stroke-linecap="round"/>'
-            : '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#hsBrassPost)" stroke="#6E5212" stroke-width=".8"/>' +
-              '<circle cx="' + x + '" cy="' + y + '" r="' + r * 0.38 + '" fill="#C9A13C" stroke="#6E5212" stroke-width=".6"/>');
+            : L.post === "bushing"
+              // a black bushing in a gold ring, with the post's hole in the middle
+              ? '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#141416" stroke="url(#hsGold)" stroke-width="1.3"/>' +
+                '<circle cx="' + x + '" cy="' + y + '" r="' + r * 0.34 + '" fill="#3A3A40"/>'
+              : '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#hsBrassPost)" stroke="#6E5212" stroke-width=".8"/>' +
+                '<circle cx="' + x + '" cy="' + y + '" r="' + r * 0.38 + '" fill="#C9A13C" stroke="#6E5212" stroke-width=".6"/>');
     });
+    // the face: clear acrylic with a bright rim, its back edge seen through it and two glints;
+    // or wood, plain or with cream binding
+    const face = L.clear
+      ? '<path d="' + shape + '" style="fill:var(--clear-fill);stroke:var(--clear-rim)" stroke-width="1.4" stroke-linejoin="round"/>' +
+        '<path d="' + shape + '" transform="translate(1.4 1.8)" fill="none" style="stroke:var(--clear-rim)" stroke-opacity=".45" stroke-width=".7" stroke-linejoin="round"/>' +
+        '<clipPath id="hsClipClear"><path d="' + shape + '"/></clipPath>' +
+        '<g clip-path="url(#hsClipClear)" style="fill:var(--clear-shine)"><path d="M20 196 L120 40 L132 40 L32 196 Z"/><path d="M52 262 L150 108 L155 108 L57 262 Z"/></g>'
+      : L.binding === false
+        ? '<path d="' + shape + '" fill="url(#' + L.face + ')" stroke="' + L.edgeStroke + '" stroke-width="1.6" stroke-linejoin="round"/>'
+        : '<path d="' + shape + '" fill="url(#' + L.face + ')" stroke="#EDE3C8" stroke-width="5" stroke-linejoin="round"/>' +
+          '<path d="' + shape + '" fill="none" stroke="#0B0B0C" stroke-width="1.4" stroke-linejoin="round"/>';
     // a white truss cover with a black edge, under the strings
     const cover = L.cover ? '<path d="' + L.cover(X) + '" fill="url(#hsCover)" stroke="#111" stroke-width="1.6" stroke-linejoin="round"/>' : "";
-    // a carved crest at the top of a crowned head
-    const crest = L.crest ? '<path d="M' + 92 + " " + (name === "uke" ? 76 : 30) + " Q100 " + (name === "uke" ? 66 : 18) + " 108 " + (name === "uke" ? 76 : 30) + '" fill="none" stroke="url(#hsGold)" stroke-width="1.6"/>' +
-        '<circle cx="100" cy="' + (name === "uke" ? 76 : 32) + '" r="' + (name === "uke" ? 2.4 : 4) + '" fill="url(#hsAbalone)" stroke="url(#hsGold)" stroke-width="1"/>' : "";
+    // the logo; on the bass it runs up the truss cover, as on a Rickenbacker
     const [ly, ls] = o.small || o.tiny ? L.logoSmall : L.logo;
-    const neck = [X(L.neck[0]), X(L.neck[1])];
-    return '<svg class="headstock" viewBox="0 0 200 320" aria-hidden="true">' + DEFS + tuners +
-        (L.binding === false
-          ? '<path d="' + shape + '" fill="url(#' + L.face + ')" stroke="' + L.edgeStroke + '" stroke-width="1.6" stroke-linejoin="round"/>'
-          : '<path d="' + shape + '" fill="url(#' + L.face + ')" stroke="#EDE3C8" stroke-width="5" stroke-linejoin="round"/>' +
-            '<path d="' + shape + '" fill="none" stroke="#0B0B0C" stroke-width="1.4" stroke-linejoin="round"/>') +
-        '<path d="' + shape + '" fill="url(#hsGloss)"/>' + crest + cover +
-        '<text x="' + X(L.logoX || 100) + '" y="' + ly + '" text-anchor="middle" fill="' + (L.logoFill || "url(#hsGold)") + '" font-family="' + L.font.replace(/'/g, "&#39;") + '" font-style="italic" font-weight="700" font-size="' + ls + '">7uner</text>' +
+    const type = 'text-anchor="middle" font-family="' + L.font.replace(/'/g, "&#39;") + '" font-style="italic" font-weight="700" font-size="' + ls + '" style="fill:' + (L.logoFill || "url(#hsGold)") + '"';
+    const logo = L.logoAlong
+      ? '<text transform="translate(' + X(L.logoX) + " " + ly + ') rotate(-90)" ' + type + ">7uner</text>"
+      : '<text x="' + X(L.logoX || 100) + '" y="' + ly + '" ' + type + ">7uner</text>";
+    // the fretboard with its grain, binding, first fret and inlay, then the nut; under a clear
+    // head both get a faint edge, so the plain black board doesn't melt into a dark page
+    const n0 = X(L.neck[0]), n1 = X(L.neck[1]), B = L.board;
+    const board = '<rect x="' + n0 + '" y="252" width="' + (n1 - n0) + '" height="70" fill="url(#' + B.wood + ')"' + (L.clear ? ' style="stroke:var(--clear-board)"' : "") + "/>" + (B.grain ? grain(n0, n1) : "") +
+        (B.bound ? '<rect x="' + (n0 - 2) + '" y="252" width="2.5" height="70" fill="#EDE3C8"/><rect x="' + (n1 - 0.5) + '" y="252" width="2.5" height="70" fill="#EDE3C8"/>' : "") +
+        '<rect x="' + n0 + '" y="294" width="' + (n1 - n0) + '" height="2.5" fill="url(#hsChrome)"/>' + INLAYS[B.inlay](n0, n1) +
+        '<rect x="' + (n0 - 3) + '" y="245" width="' + (n1 - n0 + 6) + '" height="8" rx="2" fill="#F3EEDF"' + (L.clear ? ' style="stroke:var(--clear-rim)" stroke-width=".8"' : "") + "/>";
+    return '<svg class="headstock' + (L.clear ? " clear" : "") + '" viewBox="0 0 200 320" aria-hidden="true">' + DEFS + back + tuners + face +
+        '<path d="' + shape + '" fill="url(#hsGloss)"/>' + cover + logo +
         (L.truss ? '<path d="M89 238 L92 210 Q100 199 108 210 L111 238 Z" fill="#0B0B0C" stroke="#EDE3C8" stroke-width="1.4"/><circle cx="100" cy="210" r="1.6" fill="url(#hsGold)"/>' : "") +
-        '<rect x="' + neck[0] + '" y="252" width="' + (neck[1] - neck[0]) + '" height="70" fill="#141416"/>' +
-        '<rect x="' + (neck[0] - 2) + '" y="252" width="2.5" height="70" fill="#EDE3C8"/><rect x="' + (neck[1] - 0.5) + '" y="252" width="2.5" height="70" fill="#EDE3C8"/>' +
-        '<rect x="' + neck[0] + '" y="294" width="' + (neck[1] - neck[0]) + '" height="2.5" fill="url(#hsChrome)"/>' +
-        '<path d="M' + (neck[0] + 10) + " 304 L" + (neck[1] - 10) + " 304 L" + (neck[1] - 14) + " 322 L" + (neck[0] + 14) + ' 322 Z" fill="url(#hsPearl)" opacity=".9"/>' +
-        '<rect x="' + (neck[0] - 3) + '" y="245" width="' + (neck[1] - neck[0] + 6) + '" height="8" rx="2" fill="#F3EEDF"/>' +
-        strs + posts + "</svg>";
+        board + strs + posts + "</svg>";
   }
 
-  // scroll, pegbox and side-mounted pegs (violin, cello); k sets the size,
-  // growing from the nut, so the cello's head is clearly bigger than the violin's
-  function scrollHead(gauge, k) {
+  /* Violin and cello: scroll, pegbox and pegs in varnished maple with ebony
+     fittings, one drawing at two sizes (k grows it from the nut) in two
+     shades of varnish (tone "V" a warm orange-brown, "C" darker). The pegs
+     sit as on the real instruments: string index 1 (violin D, cello G)
+     nearest the scroll on the left with index 0 (G, C) below it, index 2
+     (A, D) on the right with index 3 (E, A) below that (INSTR's left/right
+     and rows follow). */
+  function scrollHead(gauge, k, tone) {
     const M = (x, y) => [100 + (x - 100) * k, 248 - (248 - y) * k];
-    const ends = [[90, 130], [95, 190], [105, 190], [110, 130]].map(([x, y]) => M(x, y)), nut = [88, 96, 104, 112].map((x) => M(x, 249)[0]);
-    let strs = "", pegs = "";
+    const edge = tone === "C" ? "#1E0902" : "#2E0F03";
+    // each string winds onto its peg at its end, and leaves through its slot in the nut
+    const ends = [[92, 178], [96, 118], [104, 136], [108, 196]].map(([x, y]) => M(x, y)), nut = [88, 96, 104, 112].map((x) => M(x, 249)[0]);
+
+    // a peg with its head on the left at height y: the head with a pearl eye, a bone ring at its
+    // collar, the shaft across the hollow and its tip through the far cheek
+    const peg = (y) => {
+      const wall = 80 + ((y - 98) * 4) / 150, hollow = 86 + ((y - 104) * 3) / 136;
+      return '<path d="M60 ' + (y - 4.2) + " L" + wall + " " + (y - 3) + " L" + wall + " " + (y + 3) + " L60 " + (y + 4.2) + ' Z" fill="url(#hsPegHead)"/>' +
+          '<rect x="61" y="' + (y - 4.8) + '" width="2.6" height="9.6" rx="1" fill="#D8CDB8"/>' +
+          '<ellipse cx="46" cy="' + y + '" rx="15" ry="10.5" fill="url(#hsPegHead)" stroke="#000" stroke-width=".8"/>' +
+          '<circle cx="43" cy="' + y + '" r="3.4" fill="none" stroke="#D8CDB8" stroke-width=".7"/><circle cx="43" cy="' + y + '" r="1.8" fill="url(#hsPearl)"/>' +
+          '<path d="M' + hollow + " " + (y - 2.8) + " L" + (200 - hollow) + " " + (y - 2.1) + " L" + (200 - hollow) + " " + (y + 2.1) + " L" + hollow + " " + (y + 2.8) + ' Z" fill="#17100D"/>' +
+          '<path d="M' + hollow + " " + (y - 1.6) + " L" + (200 - hollow) + " " + (y - 1.2) + '" stroke="#FFF" stroke-opacity=".12" stroke-width=".8"/>' +
+          '<rect x="' + (200 - wall) + '" y="' + (y - 2) + '" width="4" height="4" rx="1.5" fill="#17100D" stroke="#000" stroke-width=".5"/>';
+    };
+    // two pegs on each side, the right-hand ones mirrored
+    const pegs = peg(118) + peg(178) + '<g transform="matrix(-1 0 0 1 200 0)">' + peg(136) + peg(196) + "</g>";
+
+    // the volute: a groove spiralling in from the throat to the eye
+    let spiral = "";
+    for (let j = 0; j <= 96; j++) {
+      const t = (j / 96) * 2.6 * 2 * Math.PI, rr = 23 * Math.exp(-0.1152 * t), a = Math.PI / 2 + t;
+      spiral += (j ? " L" : "M") + (100 + rr * Math.cos(a)).toFixed(2) + " " + (58 + rr * Math.sin(a)).toFixed(2);
+    }
+    const box = "M84 248 L80 98 Q80 82 92 80 L108 80 Q120 82 120 98 L116 248 Z";
+    const body =
+        // the scroll, with a faint flame in the maple and its chamfers blacked
+        '<circle cx="100" cy="58" r="26" fill="url(#hsScroll' + tone + ')" stroke="' + edge + '" stroke-width="1.6"/>' +
+        '<clipPath id="hsClipScroll"><circle cx="100" cy="58" r="26"/></clipPath>' +
+        '<g clip-path="url(#hsClipScroll)" fill="none" stroke="#FFE2B8" stroke-opacity=".1" stroke-width="2.2">' +
+          [38, 47, 56, 65, 74].map((y) => '<path d="M70 ' + y + " Q100 " + (y - 6) + " 130 " + (y + 2) + '"/>').join("") + "</g>" +
+        '<path d="' + spiral + '" fill="none" stroke="' + edge + '" stroke-width="2" stroke-linecap="round"/>' +
+        '<path d="' + spiral + '" transform="translate(.9 .9)" fill="none" stroke="#FFE2B8" stroke-opacity=".22" stroke-width=".9"/>' +
+        '<circle cx="100" cy="58" r="3.4" fill="url(#hsScroll' + tone + ')" stroke="' + edge + '" stroke-width="1.2"/>' +
+        '<circle cx="100" cy="58" r="26" fill="url(#hsGloss)"/>' +
+        // the pegbox: varnished cheeks round a dark hollow, lit along the left cheek
+        '<path d="' + box + '" fill="url(#hsVarnish' + tone + ')" stroke="' + edge + '" stroke-width="1.6"/>' +
+        '<path d="M89 240 L86 104 L114 104 L111 240 Z" fill="url(#hsHollow)" stroke="#FFD9A8" stroke-opacity=".18" stroke-width=".8"/>' +
+        '<path d="M82.4 104 L85.6 238" stroke="#FFF" stroke-opacity=".22" stroke-width="1.1" stroke-linecap="round"/>' +
+        '<path d="' + box + '" fill="url(#hsGloss)"/>' + pegs;
+
+    let strs = "";
     ends.forEach(([x, y], i) => {
+      // a few turns round the peg, the string to the nut, and the point the strobe rings sit on
+      for (let j = 0; j < 3; j++) {
+        strs += '<path d="M' + (x - 2.4 * k) + " " + (y - 2.6 * k + j * 1.9 * k) + " L" + (x + 2.4 * k) + " " + (y - 1.4 * k + j * 1.9 * k) + '" stroke="#A7ADB5" stroke-width="' + gauge[i] * 0.7 + '"/>';
+      }
       strs += '<path class="gstr" data-i="' + i + '" stroke-width="' + gauge[i] + '" d="M' + x + " " + y + " L" + nut[i] + " 249 L" + nut[i] + ' 320"/>' +
-          '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + 4 * k + '" fill="none"/>'; // where the string meets its peg
-    });
-    [130, 190].forEach((y) => {
-      pegs += '<rect x="58" y="' + (y - 3) + '" width="84" height="6" rx="3" fill="#1B1411"/>' +
-          '<ellipse cx="44" cy="' + y + '" rx="15" ry="11" fill="url(#hsEbony)" stroke="#000" stroke-width="1"/>' +
-          '<circle cx="62" cy="' + y + '" r="5" fill="#2A221E" stroke="#000" stroke-width="1"/>' +
-          '<ellipse cx="156" cy="' + y + '" rx="15" ry="11" fill="url(#hsEbony)" stroke="#000" stroke-width="1"/>' +
-          '<circle cx="138" cy="' + y + '" r="5" fill="#2A221E" stroke="#000" stroke-width="1"/>';
+          '<circle class="gpost" data-i="' + i + '" cx="' + x + '" cy="' + y + '" r="' + 4 * k + '" fill="none"/>';
     });
     const fb = [100 - 14 * k, 28 * k];
     return '<svg class="headstock" viewBox="0 0 200 320" aria-hidden="true">' + DEFS +
-        '<g transform="matrix(' + k + " 0 0 " + k + " " + 100 * (1 - k) + " " + 248 * (1 - k) + ')">' +
-        '<circle cx="100" cy="58" r="26" fill="url(#hsVarnish)" stroke="#3A1505" stroke-width="1.5"/>' +
-        '<path d="M100 58 m-4 0 a4 4 0 1 1 8 0 a8 8 0 1 1 -16 0 a12 12 0 1 1 24 0 a16 16 0 1 1 -32 0" fill="none" stroke="#3A1505" stroke-width="2"/>' +
-        '<path d="M84 248 L80 98 Q80 82 92 80 L108 80 Q120 82 120 98 L116 248 Z" fill="url(#hsVarnish)" stroke="#3A1505" stroke-width="1.5"/>' +
-        '<path d="M89 240 L86 104 L114 104 L111 240 Z" fill="#2A1208"/>' +
-        '<path d="M84 248 L80 98 Q80 82 92 80 L108 80 Q120 82 120 98 L116 248 Z" fill="url(#hsGloss)"/>' +
-        '<circle cx="100" cy="58" r="26" fill="url(#hsGloss)"/>' + pegs + "</g>" +
+        '<g transform="matrix(' + k + " 0 0 " + k + " " + 100 * (1 - k) + " " + 248 * (1 - k) + ')">' + body + "</g>" +
         '<rect x="' + fb[0] + '" y="252" width="' + fb[1] + '" height="70" fill="url(#hsEbony)" stroke="#55555C" stroke-width="1"/>' +
         '<rect x="' + (fb[0] - 2) + '" y="245" width="' + (fb[1] + 4) + '" height="7" rx="2" fill="#1B1B1E" stroke="#000" stroke-width="1"/>' +
         strs + "</svg>";
