@@ -22,7 +22,7 @@ const BG = "#151A21", PANEL = "#1E252E", MUTED = "#97A2B0", AMBER = "#F2B33D", I
 
 /* ---------- drawing ----------
    Shapes are painted in order with 4×4 supersampling for smooth edges:
-   rrect (rounded rectangle), circle, poly (a filled polygon) and stroke (a
+   rrect (rounded rectangle), circle, ring (part of a ring), poly (a filled polygon) and stroke (a
    list of segments with round caps and joins, like an SVG stroke). A shape
    takes a color, or paint(x, y) returning [r, g, b] (0..1) for a gradient,
    and may have clip(x, y), a test that limits where it is painted. */
@@ -44,6 +44,15 @@ function shapeTest(s) {
     };
   }
   if (s.type === "circle") return (x, y) => (x - s.cx) * (x - s.cx) + (y - s.cy) * (y - s.cy) <= s.r * s.r;
+  if (s.type === "ring") {
+    // part of a ring, from angle a0 to a1 (radians, y down), with square ends
+    return (x, y) => {
+      const dx = x - s.cx, dy = y - s.cy, d = Math.hypot(dx, dy);
+      if (d < s.r0 || d > s.r1) return false;
+      const a = (Math.atan2(dy, dx) + 2 * Math.PI) % (2 * Math.PI), a0 = (s.a0 + 2 * Math.PI) % (2 * Math.PI);
+      return (a - a0 + 2 * Math.PI) % (2 * Math.PI) <= s.a1 - s.a0;
+    };
+  }
   if (s.type === "poly") {
     return (x, y) => {
       let inside = false;
@@ -61,6 +70,7 @@ function shapeTest(s) {
 function bbox(s) {
   if (s.type === "rrect") return [s.x, s.y, s.x + s.w, s.y + s.h];
   if (s.type === "circle") return [s.cx - s.r, s.cy - s.r, s.cx + s.r, s.cy + s.r];
+  if (s.type === "ring") return [s.cx - s.r1, s.cy - s.r1, s.cx + s.r1, s.cy + s.r1];
   if (s.type === "poly") {
     const xs = s.pts.map((p) => p[0]), ys = s.pts.map((p) => p[1]);
     return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
@@ -214,25 +224,33 @@ function arc(cx, cy, r, a0, a1) {
   return segs;
 }
 
-/* the wordmark "7uner", drawn with strokes: x is the left edge, base the
-   baseline, h the x-height; letters are as wide as the x-height is tall */
-function wordmark(x, base, h, w) {
-  const r = h * 0.4, top = base - h, cap = base - h * 1.45, gap = h * 0.32, L = h * 0.8, out = [];
-  // 7
-  out.push({ type: "stroke", w, color: AMBER, segs: [[x, cap, x + L, cap], [x + L, cap, x + L * 0.38, base]] });
-  x += L + gap;
-  // u
-  out.push({ type: "stroke", w, color: INK, segs: [[x, top, x, base - r], ...arc(x + r, base - r, r, Math.PI, 0), [x + 2 * r, top, x + 2 * r, base]] });
-  x += 2 * r + gap;
-  // n
-  out.push({ type: "stroke", w, color: INK, segs: [[x, base, x, top], ...arc(x + r, top + r, r, Math.PI, 2 * Math.PI), [x + 2 * r, top + r, x + 2 * r, base]] });
-  x += 2 * r + gap;
-  // e
-  const ey = top + h / 2, er = h / 2;
-  out.push({ type: "stroke", w, color: INK, segs: [[x, ey, x + 2 * er, ey], ...arc(x + er, ey, er, 0, -2 * Math.PI + 0.75)] });
-  x += 2 * er + gap;
-  // r
-  out.push({ type: "stroke", w, color: INK, segs: [[x, base, x, top], ...arc(x + r, top + r, r, Math.PI, 1.72 * Math.PI)] });
+/* the wordmark "7uner" in the logo's style, after Barlow Condensed Bold:
+   the logo's 7 with square ends, and condensed letters built from flat
+   stems and ring segments with square ends. x is the left edge, base the
+   baseline, h the x-height and s the stem width. Stems reach a pixel into
+   the rings so no seam shows where they meet. */
+function wordmark(x, base, h, s) {
+  const top = base - h, cap = base - h * 1.45, gap = h * 0.2, lw = h * 0.7, R = lw / 2, PI = Math.PI, out = [];
+  const bar = (x0, y0, w, hh) => out.push({ type: "rrect", x: x0, y: y0, w, h: hh, r: 0, color: INK });
+  const ring = (cx, cy, r, a0, a1) => out.push({ type: "ring", cx, cy, r0: r - s, r1: r, a0, a1, color: INK });
+  // 7: the logo's outline, scaled up to the cap height
+  const sh = base - cap, sw = (sh * 28.1) / 45.8;
+  out.push({ type: "poly", color: AMBER, pts: SEVEN.map(([a, b]) => [x + ((a - 18.5) * sw) / 28.1, cap + ((b - 10.5) * sh) / 45.8]) });
+  x += sw + gap * 1.3;
+  // u: two stems and a bowl, the right stem down to the baseline
+  bar(x, top, s, h - R + 1); ring(x + R, base - R, R, 0, PI); bar(x + lw - s, top, s, h);
+  x += lw + gap;
+  // n: the u upside down, the left stem full height
+  bar(x, top, s, h); ring(x + R, top + R, R, PI, 2 * PI); bar(x + lw - s, top + R - 1, s, h - R + 1);
+  x += lw + gap;
+  // e: a stadium with a bar across, open at the lower right
+  const ey = top + h * 0.46, eb = s * 0.8;
+  ring(x + R, top + R, R, PI, 2 * PI); bar(x, top + R - 1, s, h - 2 * R + 2); ring(x + R, base - R, R, 0.42, PI);
+  bar(x + lw - s, top + R - 1, s, ey + eb - top - R + 1); bar(x, ey, lw, eb);
+  x += lw + gap;
+  // r: a stem and an arm curling to the right, cut square
+  const ar = lw * 0.44;
+  bar(x, top, s, h); ring(x + ar, top + ar, ar, PI, 1.82 * PI);
   return out;
 }
 
@@ -256,7 +274,7 @@ function social() {
   const W = 1200, H = 630;
   return [{ type: "rrect", x: 0, y: 0, w: W, h: H, r: 0, color: BG },
     ...logo(96, 165, 300),
-    ...wordmark(480, 330, 112, 26),
+    ...wordmark(480, 330, 112, 27),
     ...gauge(800, 720, 250)];
 }
 
