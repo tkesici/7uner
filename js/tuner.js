@@ -129,7 +129,9 @@
       presets: [["Standard", [0, 0, 0, 0]]]
     }
   };
-  const MODES = ["chromatic", "guitar", "bass", "ukulele", "violin", "cello"];
+  const MODES = ["chromatic", "guitar", "bass", "ukulele", "violin", "cello", "voice"];
+  // Voice isn't a tuner mode but voice.js's own view, picked from the same row
+  const modeLabel = (m) => (INSTR[m] ? INSTR[m].label : m === "voice" ? "Voice" : "Chromatic");
   // string counts on offer; the first is the mode's own INSTR entry, the others are mode + count
   const COUNTS = { guitar: [6, 7, 8, 12], bass: [4, 5, 6] };
 
@@ -139,6 +141,7 @@
     bass: '<path d="M16 1v16M14 2.2h4M14 4.8h4"/><path d="M16 17c-2.4 0-3.4-1.6-5-1-1.3.5-.6 2.6-1 4.5-.6 2.6-1.5 3.6-1.5 5.5 0 2.6 2.7 4 7.5 4s7.5-1.4 7.5-4c0-1.9-.9-2.9-1.5-5.5-.4-1.9.3-4-1-4.5-1.6-.6-2.6 1-5 1z"/><path d="M13 22.5h6M13.5 26.5h5"/>',
     ukulele: '<path d="M16 5v9M14.5 5h3"/><path d="M16 14c-2.5 0-4.1 1.3-4.1 3.2 0 1.1.7 1.7.7 2.4 0 .7-1.4 1.3-1.4 3.2 0 2.7 2.1 4.8 4.8 4.8s4.8-2.1 4.8-4.8c0-1.9-1.4-2.5-1.4-3.2 0-.7.7-1.3.7-2.4 0-1.9-1.6-3.2-4.1-3.2z"/><circle cx="16" cy="21.6" r="1.4"/>',
     violin: '<circle cx="16" cy="3.2" r="1.4"/><path d="M16 4.6V11"/><path d="M16 11c-2.8 0-4.3 1.2-4.3 3 0 1.1.9 1.6.9 2.4 0 .8-1.6 1.3-1.6 3.4 0 3.4 2.3 6.2 5 6.2s5-2.8 5-6.2c0-2.1-1.6-2.6-1.6-3.4 0-.8.9-1.3.9-2.4 0-1.8-1.5-3-4.3-3z"/><path d="M13.7 18.4c.6.8-.6 2.4 0 3.2M18.3 18.4c-.6.8.6 2.4 0 3.2"/><path d="M4.5 29.5 27.5 8.5"/>',
+    voice: '<rect x="12" y="2.5" width="8" height="15" rx="4"/><path d="M7.5 13.5a8.5 8.5 0 0 0 17 0"/><path d="M16 22v6.5M11.5 28.5h9"/>',
     cello: '<circle cx="16" cy="2.6" r="1.3"/><path d="M16 3.9V9"/><path d="M16 9c-3.1 0-4.8 1.3-4.8 3.3 0 1.2 1 1.8 1 2.6 0 .9-1.8 1.5-1.8 3.8 0 3.8 2.6 6.9 5.6 6.9s5.6-3.1 5.6-6.9c0-2.3-1.8-2.9-1.8-3.8 0-.8 1-1.4 1-2.6 0-2-1.7-3.3-4.8-3.3z"/><path d="M13.4 17.2c.7.9-.7 2.7 0 3.6M18.6 17.2c-.7.9.7 2.7 0 3.6"/><path d="M16 25.6V30.5"/>'
   };
 
@@ -593,9 +596,9 @@
   /* ---------- mode picker ---------- */
   function buildModes() {
     el.modes.innerHTML = MODES.map((m) =>
-        '<button role="radio" data-mode="' + m + '" aria-checked="false" title="' + (INSTR[m] ? INSTR[m].label : "Chromatic") + '">' +
+        '<button role="radio" data-mode="' + m + '" aria-checked="false" title="' + modeLabel(m) + '">' +
         '<svg viewBox="0 0 32 32" aria-hidden="true">' + ICONS[m] + "</svg>" +
-        '<span class="vh">' + (INSTR[m] ? INSTR[m].label : "Chromatic") + "</span></button>").join("");
+        '<span class="vh">' + modeLabel(m) + "</span></button>").join("");
     el.modes.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
     el.modes.addEventListener("keydown", (e) => {
       const d = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
@@ -670,6 +673,13 @@
     el.autoRow.hidden = !instr();
     togglePick(false);
     el.root.classList.toggle("mode-instrument", !!instr());
+    // Voice takes over the page; the microphone stays on across the switch if it was on
+    const voice = st.mode === "voice", hearing = running || (window.voice && window.voice.isRunning());
+    el.root.classList.toggle("mode-voice", voice);
+    if (window.voice) {
+      if (voice) { stop(); window.voice.show(hearing); }
+      else { window.voice.hide(); if (hearing) start(); }
+    }
     buildInstrument();
     resetReading(); // also clears the last reading, so nothing from the previous mode stays on screen
     clearHistory();
@@ -978,5 +988,5 @@
 
   applyMode();
 
-  window.tuner = { start, stop, resize, isRunning: () => running, icons: ICONS };
+  window.tuner = { start, stop, resize, isRunning: () => running, icons: ICONS, a4: () => st.a4 };
 })();

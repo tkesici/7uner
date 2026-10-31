@@ -31,9 +31,11 @@
       else a.removeAttribute("aria-current");
     });
     if (p !== "tuner" && window.tuner && window.tuner.isRunning()) window.tuner.stop();
+    if (p !== "tuner" && window.voice) window.voice.stop();
     if (p !== "practice" && window.practice) window.practice.pause();
     if (p !== "tab-studio" && window.tabStudio) window.tabStudio.pause();
     if (p === "tuner" && window.tuner) window.tuner.resize();
+    if (p === "tuner" && window.voice) window.voice.resize();
     if (p === "practice" && window.practice) window.practice.show();
     if (p === "tab-studio" && window.tabStudio) window.tabStudio.show();
     // one amp (amp.js) and metronome (metronome.js) for Practice and Tab Studio,

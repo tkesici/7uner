@@ -165,6 +165,28 @@ button{cursor:pointer}
 .tstage canvas{position:absolute;top:0;left:0;display:block;width:100%;height:100%;pointer-events:none}
 .tuner.mode-instrument .tstage{height:200px} /* ARC_H in tuner.js */
 .tuner .guitar{position:relative;z-index:1}
+/* Voice (voice.js): a pitch trail over a staff, then cards for the exercises, your range and a song's key */
+.tuner.mode-voice>.readout,.tuner.mode-voice>.tstage{display:none}
+.vstage{position:relative;margin:.4rem auto 0;height:clamp(280px,44vh,420px);border:1px solid color-mix(in srgb,var(--line) 60%,transparent);border-radius:12px;background:var(--panel)}
+.vstage canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+.vmsg{font-family:"Barlow Condensed",sans-serif;font-size:1.25rem;font-weight:600}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1rem;margin-top:.8rem;text-align:left}
+.vcard{background:var(--panel);border:1px solid color-mix(in srgb,var(--line) 60%,transparent);border-radius:12px;padding:1rem 1.1rem}
+.vcard h2{margin:0 0 .6rem;font-family:"Barlow Condensed",sans-serif;font-size:1.35rem}
+.vcard .hint{margin:.3rem 0 .7rem;line-height:1.45}
+.vex{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:.4rem 1.4rem;align-content:start}
+.vex .exlist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.vex h2{grid-column:1/-1}
+.vexrun h3{margin:.2rem 0 .3rem;font-family:"Barlow Condensed",sans-serif;font-size:1.2rem}
+.vexrun p{margin:0 0 .8rem;line-height:1.45}
+.vrange{margin:0;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:1.5rem;color:var(--amber)}
+.vbtns{display:flex;gap:.5rem}
+.vsong{display:flex;flex-wrap:wrap;gap:.5rem 1rem}
+.vadvice{margin:.8rem 0 0;line-height:1.5}
+.vtips ul{margin:0;padding-left:1.1rem;line-height:1.5;color:var(--muted);font-size:.92rem}
+.vtips li+li{margin-top:.3rem}
+@media (max-width:640px){.vex{grid-template-columns:1fr}}
+@media (max-width:420px){.vex .exlist{grid-template-columns:1fr}}
 .cover{position:absolute;inset:0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;background:color-mix(in srgb,var(--bg) 70%,transparent);padding:1rem}
 .cover p{max-width:36ch;color:var(--muted);font-size:.92rem}
 

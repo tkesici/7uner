@@ -27,7 +27,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=1455625c">
+  <link rel="stylesheet" href="css/style.css?v=3b677381">
 </head>
 <body>
 <noscript><p class="noscript">7uner needs JavaScript: the tuner, the exercises and the tab player all run in your browser. Please turn JavaScript on, or open the page in another browser.</p></noscript>
@@ -78,6 +78,61 @@
         </div>
       </div>
       <p class="allin" id="tAllIn" hidden>✓ All strings in tune</p>
+    </div>
+
+    <!-- Voice (voice.js): the microphone mode, for singing -->
+    <div class="voice" id="vRoot" hidden>
+      <div class="readout idle" id="vReadout">
+        <div class="tsub" id="vSub"></div>
+        <div class="note"><span id="vNote">–</span><sub id="vOct"></sub></div>
+        <div class="hz"><span id="vHz"></span>&nbsp;&nbsp;<span id="vCents"></span></div>
+      </div>
+      <div class="vstage">
+        <canvas id="vTrail" aria-hidden="true"></canvas>
+        <div class="cover" id="vCover">
+          <button class="go" id="vStart">Turn on microphone</button>
+          <p class="hint" id="vStatus">Sing a note and watch it draw a line across the staff. Audio is processed only in your browser and is never sent anywhere.</p>
+        </div>
+      </div>
+      <p class="msg vmsg" id="vMsg" aria-live="polite"></p>
+
+      <div class="vgrid">
+        <section class="vcard vex">
+          <h2>Exercises</h2>
+          <ol class="exlist" id="vList"></ol>
+          <div class="vexrun">
+            <h3 id="vExTitle"></h3>
+            <p id="vExDesc"></p>
+            <button class="go" id="vGo">Start</button>
+            <p class="hint">Each round plays the notes to you (the dashed bars), then you sing them back (the filled ones). Headphones keep the guide out of the microphone.</p>
+          </div>
+        </section>
+        <section class="vcard">
+          <h2>Your range</h2>
+          <p class="vrange" id="vRange"></p>
+          <p class="hint" id="vType"></p>
+          <div class="vbtns"><button class="btn primary" id="vFind"></button><button class="btn" id="vCancel" hidden>Cancel</button></div>
+        </section>
+        <section class="vcard">
+          <h2>A song in your key</h2>
+          <p class="hint">Hum along with the record and read the song’s lowest and highest sung notes off the trail.</p>
+          <div class="vsong">
+            <label class="sel">Lowest <select id="vSongLo"></select></label>
+            <label class="sel">Highest <select id="vSongHi"></select></label>
+          </div>
+          <p class="vadvice" id="vAdvice" aria-live="polite"></p>
+        </section>
+        <section class="vcard vtips">
+          <h2>Before you sing</h2>
+          <ul>
+            <li>Warm up for five minutes: hum, lip trills (“brrr”), and slow sirens from low to high.</li>
+            <li>Breathe low, into your belly, and let the air out evenly; your shoulders stay down.</li>
+            <li>Fifteen to twenty minutes a day beats an hour once a week. Drink water.</li>
+            <li>Stop if your throat hurts or your voice goes hoarse. Leave rasp and screams until your clean voice is steady, and learn them from a teacher.</li>
+            <li>Record yourself: you sound different from outside your head, and the recording is the honest one.</li>
+          </ul>
+        </section>
+      </div>
     </div>
 
   </div>
@@ -269,7 +324,7 @@
     <div class="brow" id="tAutoRow"><span class="blab">Auto-detect string</span><button class="switch" id="tAuto" role="switch" aria-checked="true" aria-label="Auto-detect string"><span></span></button></div>
   </div>
   <div class="bubble" id="cInfo" role="dialog" aria-label="Help" hidden>
-    <p data-help="tuner">Turn on the microphone and play a note: the dot shows how far off it is, and its trail scrolls down behind the instrument. Tap a string’s note to lock the tuner to it and hear it (tap again to let go); ▲ ▼ beside it retune it by a semitone. The picker under the headstock sets the number of strings and the tuning.</p>
+    <p data-help="tuner">Turn on the microphone and play a note: the dot shows how far off it is, and its trail scrolls down behind the instrument. Tap a string’s note to lock the tuner to it and hear it (tap again to let go); ▲ ▼ beside it retune it by a semitone. The picker under the headstock sets the number of strings and the tuning. The microphone icon opens Voice, for singing: your pitch as a line, your range, and exercises in it.</p>
     <p data-help="practice">Pick an exercise and press Play, or the space bar. Set the tempo on the metronome by sliding its weight or with − and +; its knob sets the click (0 silences it) and its COUNT switch counts in a bar. Scales and modes come in positions along the neck. Rhythm is a course from counting sixteenths to odd and mixed meters; the tab shows each pick stroke, and the metronome clicks the bar’s own beats.</p>
     <p data-help="tab-studio">Add a Guitar Pro (3–8) or MusicXML file; it stays in this browser. Drag across bars to loop them, and slow down with the speed slider. Edit mode changes the tab and saves a copy.</p>
     <p class="bsmall">Private by design: the microphone is processed only in your browser, files stay on this device, and there’s no account, ads or analytics. Tabs by <a href="https://alphatab.net" rel="noopener">alphaTab</a> (MPL-2.0).</p>
@@ -279,13 +334,14 @@
 </div>
 
 <script src="js/pitch.js?v=36c33db7"></script>
-<script src="js/tuner.js?v=d99f4a2b"></script>
+<script src="js/voice.js?v=03dd7f52"></script>
+<script src="js/tuner.js?v=9b64dcda"></script>
 <script src="js/amp.js?v=27f64277"></script>
 <script src="js/metronome.js?v=7480cb06"></script>
 <script src="js/alphatab.js?v=ea58a266"></script>
 <script src="js/exercises.js?v=c3737bc3"></script>
 <script src="js/practice.js?v=78b58b7b"></script>
 <script src="js/tab-studio.js?v=68955429"></script>
-<script src="js/app.js?v=d3dd4f65"></script>
+<script src="js/app.js?v=945dc653"></script>
 </body>
 </html>
