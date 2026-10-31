@@ -160,6 +160,8 @@
     hz: $("tHz"), cents: $("tCents"), panel: $("tGuitar"), allIn: $("tAllIn"),
     preset: $("tPreset"), auto: $("tAuto"), autoRow: $("tAutoRow"), pegsL: $("pegsL"), pegsR: $("pegsR"), head: $("tHead"),
     pick: $("tPick"), pickLab: $("tPickLab"), pickPop: $("tPickPop"), stage: $("tStage"),
+    countBox: $("tCountBox"), countBtn: $("tCountBtn"), countLab: $("tCountLab"), countPop: $("tCountPop"),
+    pitchBtn: $("tPitchBtn"), pitchLab: $("tPitchLab"), pitchPop: $("tPitchPop"), a4b: $("a4b"), a4bd: $("a4bDown"), a4bu: $("a4bUp"),
     canvas: $("tStrobe"), cover: $("tCover"), start: $("tStart"), status: $("tStatus"),
     a4: $("a4"), a4d: $("a4Down"), a4u: $("a4Up"),
     count: $("tCount")
@@ -613,16 +615,18 @@
     });
   }
 
-  /* ---------- strings and tuning ----------
-     One quiet button under the headstock ("6 strings · Standard") opens a
-     bubble with the number of strings (guitar and bass) and the tunings. */
+  /* ---------- strings, tuning and pitch ----------
+     Three small buttons under the headstock, each opening a bubble: the
+     number of strings (guitar and bass; a 6 over a fretboard), the tuning,
+     and the reference pitch. */
   const presetIndex = () => { const o = offs(); return instr().presets.findIndex((p) => p[1].every((v, j) => v === o[j])); };
   function renderPick() {
     const I = instr();
     if (!I) return;
     const k = presetIndex(), counts = COUNTS[st.mode];
-    el.pickLab.innerHTML = (counts ? "<b>" + st.strings[st.mode] + '</b><span class="tsep"></span>' : "") + (k >= 0 ? I.presets[k][0] : "Custom");
-    el.count.hidden = !counts;
+    el.pickLab.textContent = k >= 0 ? I.presets[k][0] : "Custom";
+    el.countBox.hidden = !counts;
+    el.countLab.textContent = counts ? st.strings[st.mode] : "";
     el.count.innerHTML = counts ? counts.map((n) => {
       const on = n === st.strings[st.mode];
       return '<button role="radio" data-n="' + n + '" aria-checked="' + on + '" tabindex="' + (on ? 0 : -1) + '" aria-label="' + n + ' strings">' + n + "</button>";
@@ -648,10 +652,18 @@
     const b = el.preset.querySelector('[data-k="' + k + '"]');
     if (b) b.focus();
   }
-  const togglePick = (open) => { el.pickPop.hidden = !open; el.pick.setAttribute("aria-expanded", open ? "true" : "false"); };
-  el.pick.addEventListener("click", () => togglePick(el.pickPop.hidden));
-  document.addEventListener("click", (e) => { if (!el.pickPop.hidden && !e.target.closest(".tset")) togglePick(false); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !el.pickPop.hidden) { togglePick(false); el.pick.focus(); } });
+  // one bubble open at a time; a click outside or Escape closes it
+  const POPS = [[el.countBtn, el.countPop], [el.pick, el.pickPop], [el.pitchBtn, el.pitchPop]];
+  function togglePick(btn) {
+    POPS.forEach(([b, p]) => { const open = b === btn && p.hidden; p.hidden = !open; b.setAttribute("aria-expanded", open ? "true" : "false"); });
+  }
+  POPS.forEach(([b]) => b.addEventListener("click", () => togglePick(b)));
+  document.addEventListener("click", (e) => { if (!e.target.closest(".tsetbox")) togglePick(null); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    const open = POPS.find(([, p]) => !p.hidden);
+    if (open) { togglePick(null); open[0].focus(); }
+  });
   el.count.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setCount(+b.dataset.n); });
   el.preset.addEventListener("click", (e) => { const b = e.target.closest("button[data-k]"); if (b) setPreset(+b.dataset.k); });
   // arrow keys move within each radio group
@@ -674,7 +686,7 @@
     });
     el.panel.hidden = !instr();
     el.autoRow.hidden = !instr();
-    togglePick(false);
+    togglePick(null);
     el.root.classList.toggle("mode-instrument", !!instr());
     buildInstrument();
     resetReading(); // also clears the last reading, so nothing from the previous mode stays on screen
@@ -686,34 +698,36 @@
   /* ---------- readout ---------- */
   function fmtCents(c, dec) {
     const v = Math.abs(c) < Math.pow(10, -dec) / 2 ? 0 : c;
-    return (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toFixed(dec) + "<small> cents</small>";
+    return (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toFixed(dec) + "<small>¢</small>";
   }
 
   /* What the stage draws: the latest reading, shown as it is heard (the
      detector already steadies it a little with a median and a short
      average, so it doesn't shake). */
   const view = { active: false, held: false, cents: 0, ok: false, idx: null, tgt: null, phase: 0, t: 0, hist: [] };
+  let lastHeard = 69; // shown, faded, when nothing is playing: A4 at first, then the last note heard
 
   function show(freq, targetMidi, cents, stringIdx) {
     const c = cfg(), ok = Math.abs(cents) <= c.inTune;
     el.note.textContent = noteName(targetMidi);
     el.oct.textContent = octave(targetMidi);
-    el.hz.innerHTML = "<b>" + freq.toFixed(c.decimals ? 2 : 1) + "</b> Hz" +
-        (stringIdx != null ? '<span class="tgt">target ' + mtof(targetMidi).toFixed(2) + "</span>" : "");
-    el.cents.innerHTML = fmtCents(cents, c.decimals);
+    // beyond the bars, a number of cents means little: say which way to turn
+    el.cents.innerHTML = Math.abs(cents) > c.range ? (cents < 0 ? "Tune up ↑" : "Tune down ↓") : fmtCents(cents, c.decimals);
+    el.hz.textContent = freq.toFixed(c.decimals ? 2 : 1) + " Hz";
+    lastHeard = targetMidi;
     el.readout.classList.remove("idle", "held");
     el.readout.classList.toggle("in", ok);
     Object.assign(view, { active: true, held: false, cents, ok, idx: stringIdx, tgt: targetMidi });
     if (instr()) highlight(stringIdx, ok);
   }
 
-  // nothing is being played: show a dash rather than a note that isn't there
+  // nothing is being played: the last note heard (A4 at first), faded, with its frequency
   function idle() {
     el.readout.classList.add("idle");
     el.readout.classList.remove("in", "held");
-    el.note.textContent = "–";
-    el.oct.textContent = "";
-    el.hz.innerHTML = "";
+    el.note.textContent = noteName(lastHeard);
+    el.oct.textContent = octave(lastHeard);
+    el.hz.textContent = mtof(lastHeard).toFixed(cfg().decimals ? 2 : 1) + " Hz";
     el.cents.textContent = "";
     view.active = false; view.held = false; view.idx = null; view.tgt = null;
     if (instr()) highlight(-1, false);
@@ -974,14 +988,16 @@
   function setA4(v) {
     v = Math.max(415, Math.min(466, Math.round(+v || 440)));
     st.a4 = v;
-    el.a4.value = v;
+    el.a4.value = el.a4b.value = v;
+    el.pitchLab.textContent = v;
     save();
     resetReading();
   }
 
   /* ---------- wiring ---------- */
   buildModes();
-  el.a4.value = st.a4;
+  el.a4.value = el.a4b.value = st.a4;
+  el.pitchLab.textContent = st.a4;
 
   // auto-detect, in the settings bubble: off locks to the string last heard (or the lowest)
   el.auto.addEventListener("click", () => {
@@ -993,6 +1009,9 @@
   el.a4.addEventListener("change", () => setA4(el.a4.value));
   el.a4d.addEventListener("click", () => setA4(st.a4 - 1));
   el.a4u.addEventListener("click", () => setA4(st.a4 + 1));
+  el.a4b.addEventListener("change", () => setA4(el.a4b.value));
+  el.a4bd.addEventListener("click", () => setA4(st.a4 - 1));
+  el.a4bu.addEventListener("click", () => setA4(st.a4 + 1));
   window.addEventListener("resize", resize);
   document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); });
   // follow the site's light/dark theme

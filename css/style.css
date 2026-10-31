@@ -162,18 +162,18 @@ button{cursor:pointer}
 /* the tuner's readout sits on the stage: the note between the bars, the cents and the frequencies under it */
 .tstage .readout{position:absolute;top:.4rem;left:0;right:0;pointer-events:none}
 .tstage .note{font-size:clamp(3.6rem,13vw,4.8rem)}
-.tcents{height:1.5rem;margin-top:.45rem;font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:700;font-size:1.1rem;color:var(--amber);font-variant-numeric:tabular-nums}
-.tcents small{font-weight:500;font-size:.75em;color:var(--muted)}
+.tline{display:flex;justify-content:center;align-items:baseline;gap:.9rem;height:1.6rem;margin-top:.5rem;white-space:nowrap;font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.tcents{font-weight:700;font-size:1.15rem;color:var(--amber)}
+.tcents:empty{display:none}
+.tcents small{margin-left:.08em;font-weight:500;font-size:.8em}
 .readout.in .tcents{color:var(--ok)}
-.thz{height:1.2rem;white-space:nowrap;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
-.thz b{color:var(--ink);font-weight:500}
-.thz .tgt::before{content:"";display:inline-block;width:1px;height:.8em;margin:0 .6rem;background:var(--line);vertical-align:-.05em}
+.thz{font-size:.85rem;color:var(--muted)}
 
 /* strobe stage (tuner.js): a canvas, with the microphone button over it until it's on */
 .tstage{position:relative;margin:.2rem auto .4rem;height:clamp(320px,50vh,460px)}
 .tstage .cover{z-index:1}
 .tstage canvas{position:absolute;top:0;left:0;display:block;width:100%;height:100%;pointer-events:none}
-.tuner.mode-instrument .tstage{height:134px}
+.tuner.mode-instrument .tstage{height:118px}
 .tuner .guitar{position:relative;z-index:1}
 /* Voice (voice.js): a pitch trail over a staff, then cards for the exercises, your range and a song's key */
 .voice{text-align:center;padding-bottom:3rem}
@@ -201,18 +201,28 @@ button{cursor:pointer}
 .cover p{max-width:36ch;color:var(--muted);font-size:.92rem}
 
 /* strings and tuning: one quiet button under the headstock, opening a bubble */
-.tset{position:relative;display:flex;justify-content:center;margin:.7rem 0 0}
-.tpick{display:inline-flex;align-items:center;gap:.55rem;border:1px solid var(--line);border-radius:999px;background:var(--panel);padding:.6rem 1.1rem;font-weight:700;font-size:1.05rem;color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none;transition:border-color .15s}
-.tpick:hover,.tpick[aria-expanded="true"]{border-color:var(--amber)}
-.tpick b{color:var(--amber)}
-.tpick .tsep{width:1px;height:1.1em;background:var(--line);margin:0 .1rem}
-.tpick svg{width:1.05rem;height:1.05rem;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.tpick .tpick-ico{width:1.2rem;height:1.2rem;color:var(--muted);stroke-width:1.6}
-.tpickpop button{user-select:none;-webkit-user-select:none}
-.tpickpop{position:absolute;top:calc(100% + .45rem);left:50%;width:17rem;margin-left:-8.5rem;z-index:5}
-.tpickpop::after{content:"";position:absolute;top:-6px;left:50%;width:10px;height:10px;margin-left:-5px;background:var(--panel);border-left:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
-.tstrings{display:flex;justify-content:center;gap:.3rem;padding-bottom:.6rem;margin-bottom:.4rem;border-bottom:1px solid var(--line)}
-.tstrings[hidden]{display:none}
+/* under the headstock: the number of strings and the reference pitch in small round buttons, the tuning between them */
+.tset{display:flex;justify-content:center;align-items:center;gap:.5rem;margin:.7rem 0 0}
+.tsetbox{position:relative}
+.tsetbox[hidden]{display:none}
+.tpick,.tround{border:1px solid var(--line);background:var(--panel);color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none;transition:border-color .15s}
+.tpick:hover,.tpick[aria-expanded="true"],.tround:hover,.tround[aria-expanded="true"]{border-color:var(--amber)}
+.tpick{display:inline-flex;align-items:center;gap:.4rem;height:2.75rem;border-radius:999px;padding:0 .9rem 0 1.1rem;font-weight:700;font-size:1rem}
+.tpick svg{width:1rem;height:1rem;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tround{position:relative;display:grid;place-items:center;width:2.75rem;height:2.75rem;border-radius:50%;padding:0}
+.tround>*{grid-area:1/1}
+/* the number of strings, written over a faint fretboard */
+.tcount svg{width:2.1rem;height:2.1rem;fill:none;stroke:var(--muted);stroke-width:1.3;stroke-linecap:round;opacity:.4}
+.tcount b{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.4rem;color:var(--amber);text-shadow:0 0 4px var(--panel),0 0 2px var(--panel)}
+.tpitch{line-height:1}
+.tpitch b{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:.82rem;margin-top:-.55rem}
+.tpitch small{font-family:"JetBrains Mono",monospace;font-size:.6rem;color:var(--muted);margin-top:.85rem}
+.tsetpop button{user-select:none;-webkit-user-select:none}
+.tsetpop{position:absolute;top:calc(100% + .45rem);left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 2rem);z-index:5;display:flex;flex-direction:column;align-items:center;gap:.5rem}
+.tsetpop[hidden]{display:none}
+.tsetpop::after{content:"";position:absolute;top:-6px;left:50%;width:10px;height:10px;margin-left:-5px;background:var(--panel);border-left:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
+.tpickpop{width:17rem;align-items:stretch}
+.tstrings{display:flex;justify-content:center;gap:.3rem}
 .tstrings button{min-width:2.4rem;height:2.1rem;border:1px solid var(--line);border-radius:8px;background:none;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:.9rem;color:var(--muted);padding:0 .4rem}
 .tstrings button:hover{color:var(--ink);border-color:var(--ink)}
 .tstrings button[aria-checked="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
