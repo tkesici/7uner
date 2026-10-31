@@ -335,6 +335,7 @@ button{cursor:pointer}
 .tabs::-webkit-scrollbar{display:none}
 .tabs button{background:none;border:0;padding:.7rem 1rem;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.15rem;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--amber)}
+@media (max-width:400px){.tabs button{padding:.7rem .75rem}} /* four tabs fit a phone */
 .test-main{padding:1.6rem 1.1rem 4rem}
 
 .speed{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:1.4rem;align-items:start}

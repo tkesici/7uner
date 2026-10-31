@@ -1,6 +1,6 @@
 /* 7uner – Practice
-   A catalogue of exercises in three groups: techniques (sorted into
-   folders), modes and scales (js/exercises.js). Each exercise is a Guitar
+   A catalogue of exercises in four groups: techniques and a rhythm course
+   (both sorted into folders), modes and scales (js/exercises.js). Each exercise is a Guitar
    Pro file in practice/, written by tools/make-practice-files.js; scales and
    modes have one per position on the neck. alphaTab draws the file and
    plays it in a loop. The sound goes through the amp (amp.js). The tempo is set on
@@ -115,14 +115,17 @@
         el.title.textContent = ex.title || (ex.formula ? "A " + ex.name : ex.name);
         el.desc.textContent = ex.desc;
         el.facts.innerHTML = "";
-        if (ex.formula) {
-            [["Formula", ex.formula], ["Notes", ex.spell]].forEach(([k, v]) => {
+        // scales and modes show their formula and notes; rhythm exercises their meter and how to count it
+        const meter = ex.count ? [...new Set((ex.bars || [[4, 4]]).map(([n, d]) => n + "/" + d))].join(" + ") : null;
+        const facts = ex.formula ? [["Formula", ex.formula], ["Notes", ex.spell]] : ex.count ? [["Time", meter], ["Count", ex.count]] : [];
+        if (facts.length) {
+            facts.forEach(([k, v]) => {
                 const dt = document.createElement("dt"), dd = document.createElement("dd");
                 dt.textContent = k; dd.textContent = v;
                 el.facts.appendChild(dt); el.facts.appendChild(dd);
             });
         }
-        el.facts.hidden = !ex.formula;
+        el.facts.hidden = !facts.length;
         tempo = S.bpm[ex.id] || ex.start;
         setMsg("");
         renderPos();

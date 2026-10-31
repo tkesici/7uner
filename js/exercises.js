@@ -86,6 +86,59 @@
                 desc: "Only whole steps, so there is no home note: dreamy and unresolved. Fits augmented chords." }
         ]
     };
+    /* Rhythm: a course from counting the pulse to the odd and mixed meters,
+       displaced accents and polymeters of progressive metal. All palm-muted
+       chugs on the low E (x), with open, accented notes (X) marking where
+       each group starts. Tempos are in quarter notes, also in x/8 and x/16
+       meters. bars lists the meters (repeated in turn; 4/4 when there is
+       none), count is how to say the bar out loud, and pick "alt" or "down"
+       puts the pick strokes in the tab. */
+    CATS.rhythm = [
+        { id: "pulse", group: "1 · Counting the pulse", name: "Quarters, eighths, sixteenths", sub: 4, start: 60, step: 6, pick: "alt", count: "1 e & a 2 e & a 3 e & a 4 e & a",
+            desc: "Count the sixteenths out loud the whole time, even while you play quarters. Your picking hand moves down-up on every sixteenth and only touches the string where a note is: down on the beat and on ‘&’, up on ‘e’ and ‘a’." },
+        { id: "accents", group: "1 · Counting the pulse", name: "Moving the accent", sub: 4, start: 60, step: 6, pick: "alt", count: "1 e & a 2 e & a 3 e & a 4 e & a",
+            desc: "Steady sixteenths, palm muted; the open, accented note lands on 1, then ‘e’, then ‘&’, then ‘a’. Say the syllable of the accent louder. The accents on ‘e’ and ‘a’ are upstrokes: don’t switch to a downstroke to hit them harder." },
+        { id: "triplets", group: "1 · Counting the pulse", name: "Triplets: 1-trip-let", sub: 3, start: 60, step: 6, pick: "alt", count: "1 trip let 2 trip let 3 trip let 4 trip let",
+            desc: "Three notes per beat. With alternate picking every other beat starts with an upstroke, which is what makes triplets feel slippery. Then move the accent to ‘trip’ and ‘let’: the triplet feel behind many slow, heavy grooves." },
+        { id: "ghosts", group: "2 · Rests and syncopation", name: "Rests with a moving hand", sub: 4, start: 64, step: 6, pick: "alt", count: "1 e & a 2 e & a 3 e & a 4 e & a",
+            desc: "The core of tight metal rhythm: your picking hand never stops. On a rest it still swings down or up, just missing the strings. The pick strokes in the tab show which way each note goes; if a note comes out the wrong way, you’ve lost the grid." },
+        { id: "offbeats", group: "2 · Rests and syncopation", name: "Off-beat sixteenths", sub: 4, start: 56, step: 6, pick: "alt", count: "1 e & a 2 e & a 3 e & a 4 e & a",
+            desc: "Notes only on ‘&’, then only on ‘e’, then only on ‘a’, then on both. Tap your foot on the beats, where nothing is played. The ‘e’ and ‘a’ notes are always upstrokes." },
+        { id: "displace", group: "2 · Rests and syncopation", name: "Shifting a riff by a sixteenth", sub: 4, start: 60, step: 6, pick: "alt", count: "1 e & a 2 e & a 3 e & a 4 e & a",
+            desc: "One small figure (accent, two chugs, a rest) starts on 1, then a sixteenth later each bar. This metric displacement is a favourite trick of modern metal: the riff stays the same but sits differently against the beat. Keep counting from 1." },
+        { id: "stabs", group: "2 · Rests and syncopation", name: "Chugs and stabs", sub: 4, start: 64, step: 6, pick: "alt", count: "1 e & a 2 e & a 3 e & a 4 e & a",
+            desc: "Palm-muted chugs answered by open, accented stabs on the first fret, and a held note on the A string: the push-and-pull of a Gojira-style groove. Let the held note ring for its full length and come in again exactly on time." },
+        { id: "tresillo", group: "3 · Threes and fives over four", name: "3 + 3 + 2", sub: 2, start: 90, step: 8, pick: "down", count: "1 & 2 | & 3 & | 4 &",
+            desc: "Eight eighth notes grouped 3 + 3 + 2. The accents fall on 1, the ‘&’ of 2 and 4, against the steady beat. Downpick everything, then play only the accents." },
+        { id: "threes", group: "3 · Threes and fives over four", name: "Groups of three in sixteenths", sub: 4, start: 56, step: 6, pick: "alt", count: "1 e & a … (accent every third)",
+            desc: "Accent every third sixteenth. The accent moves through the beat (1, ‘a’, ‘&’, ‘e’…) and comes back to 1 after three bars. Keep counting the bar, not the group: that is how you hear a polymeter like this against the drums." },
+        { id: "fives", group: "3 · Threes and fives over four", name: "Groups of five in sixteenths", sub: 4, start: 56, step: 6, pick: "alt", count: "1 e & a … (a new group every fifth)",
+            desc: "A five-sixteenth figure repeated against 4/4: it takes five bars to come round to 1 again. Riffs built like this sound lopsided while the drums stay in plain 4/4. Count both: the group (1-2-3-4-5) in your head and the bar with your foot." },
+        { id: "qtriplets", group: "3 · Threes and fives over four", name: "Quarter-note triplets", sub: 3, start: 64, step: 6, pick: "alt", count: "1 trip let 2 trip let 3 trip let 4 trip let",
+            desc: "Quarter notes, then quarter-note triplets (three notes across two beats), then half-note triplets. Count the eighth-note triplets all the way through: the quarter-note triplet is every other ‘trip-let’ syllable." },
+        { id: "sevens", group: "3 · Threes and fives over four", name: "Groups of seven over four", sub: 4, start: 52, step: 4, pick: "alt", count: "1 e & a … (a new group every seventh)",
+            desc: "A seven-sixteenth figure against 4/4, coming back to 1 after seven bars. The hardest of the polymeters here: keep the sixteenths perfectly even and let the accents fall where they fall." },
+        { id: "five4", group: "4 · Odd meters", name: "5/4", sub: 2, start: 90, step: 8, pick: "down", bars: [[5, 4]], count: "1 & 2 & 3 & | 4 & 5 &",
+            desc: "Five beats in a bar, felt as 3 + 2. Count all five out loud and accent 1 and 4. Once it feels natural, try counting it as 1 2 3 1 2." },
+        { id: "seven8", group: "4 · Odd meters", name: "7/8 as 2 + 2 + 3", sub: 2, start: 100, step: 8, pick: "down", bars: [[7, 8]], count: "1 2 | 1 2 | 1 2 3",
+            desc: "Seven eighth notes: two short groups and a long one. Count ‘1 2, 1 2, 1 2 3’ rather than up to seven; the accents are where you say 1. The metronome clicks every eighth note here." },
+        { id: "seven8groups", group: "4 · Odd meters", name: "7/8: three ways to group it", sub: 2, start: 100, step: 8, pick: "down", bars: [[7, 8]], count: "2+2+3 | 3+2+2 | 2+3+2",
+            desc: "The same seven eighths grouped 2 + 2 + 3, 3 + 2 + 2 and 2 + 3 + 2. Progressive bands often switch grouping inside a riff; feel where the long group is." },
+        { id: "five8", group: "4 · Odd meters", name: "5/8", sub: 2, start: 100, step: 8, pick: "down", bars: [[5, 8]], count: "1 2 3 | 1 2",
+            desc: "A short, limping bar: 3 + 2, then 2 + 3 at the end. Count ‘1 2 3 1 2’ and keep the eighth notes exactly even." },
+        { id: "nine8", group: "4 · Odd meters", name: "9/8 as 2 + 2 + 2 + 3", sub: 2, start: 100, step: 8, pick: "down", bars: [[9, 8]], count: "1 2 | 1 2 | 1 2 | 1 2 3",
+            desc: "Nine eighths in three short groups and one long one. The long group at the end gives the bar its lurch, a feel heard all over progressive rock and metal." },
+        { id: "fiveseven", group: "5 · Mixed meters", name: "5/8 then 7/8", sub: 4, start: 70, step: 6, pick: "alt", bars: [[5, 8], [7, 8]], count: "5/8: 1 & 2 & 3 & 4 & 5 & | 7/8: 1 & 2 & … 7 &",
+            desc: "Alternating 5/8 and 7/8 bars in sixteenths, with rests. Together they make 12 eighths, so the pair feels like one long, uneven bar: a common way progressive bands build riffs. Keep the picking hand moving through the rests." },
+        { id: "countdown", group: "5 · Mixed meters", name: "Counting down: 9/8, 8/8, 7/8", sub: 2, start: 100, step: 8, pick: "down", bars: [[9, 8], [8, 8], [7, 8]], count: "3+3+3 | 3+3+2 | 2+2+3",
+            desc: "Each bar is one eighth shorter than the one before. Shrinking and growing bars like these are a hallmark of Tool’s songwriting; here they’re built from groups of 3 and 2 so you can count them." },
+        { id: "thirteen", group: "5 · Mixed meters", name: "13/16 as 4 + 4 + 5", sub: 4, start: 64, step: 6, pick: "alt", bars: [[13, 16]], count: "1 e & a | 1 e & a | 1 e & a 5",
+            desc: "A 4/4 bar short of three sixteenths, felt as 4 + 4 + 5. Each bar starts with a downstroke, so the odd sixteenth at the end gives two downstrokes in a row across the bar line." },
+        { id: "shifting", group: "5 · Mixed meters", name: "6/8, 7/8, 5/8, 6/8", sub: 4, start: 64, step: 6, pick: "alt", bars: [[6, 8], [7, 8], [5, 8], [6, 8]], count: "6: 1 2 3 4 5 6 | 7: 1 … 7 | 5: 1 … 5",
+            desc: "The meter changes every bar. Count the eighths of each bar from 1; read the next bar’s length before you get there, the way you would in a long progressive song." },
+        { id: "finale", group: "5 · Mixed meters", name: "Putting it together", sub: 4, start: 60, step: 4, pick: "alt", bars: [[7, 8], [7, 8], [4, 4], [5, 8]], count: "7/8 | 7/8 | 4/4 in threes | 5/8",
+            desc: "Everything at once: syncopated chugs and stabs in 7/8, a held note, a bar of 4/4 in groups of three, and a 5/8 bar to turn it round. When this loops cleanly at speed, the riffs you’ve been learning by ear will start to make sense on paper too." }
+    ];
     ["modes", "scales"].forEach((c) => CATS[c].forEach((x) => { x.sub = 4; x.start = 70; x.step = 6; }));
 
     /* Positions for the scales and modes, one per note of the scale: position
@@ -99,7 +152,7 @@
 
     // a hash of practice/*.gp, added to their URLs so caches never serve an
     // old copy; kept up to date by tools/stamp-assets.js
-    const practiceFilesVersion = "4917b8c3";
+    const practiceFilesVersion = "1cfe8643";
 
     if (typeof module !== "undefined" && module.exports) { module.exports = CATS; Object.defineProperty(CATS, "positions", { value: positions }); }
     else { root.practiceCatalogue = CATS; root.practiceFilesVersion = practiceFilesVersion; root.practicePositions = positions; }
