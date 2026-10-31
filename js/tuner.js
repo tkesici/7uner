@@ -146,7 +146,10 @@
   };
 
   const TICK_MS = 20;        // ~50 readings per second
-  const SILENCE_TICKS = 25;  // ~500 ms without a pitch before going idle
+  const SILENCE_TICKS = 25;  // ~500 ms without a pitch before the reading is held
+  // while a note is being followed, a quieter and less clear signal still counts if it stays
+  // within this many semitones of it, so a fading string or a held note doesn't drop out
+  const SUSTAIN = { minRms: 0.0008, clarity: 0.15, near: 0.5 };
   const HOLD_MS = 600;       // how long a string must stay in tune to get a tick
   const STROBE = 3;          // strobe speed: degrees per second for each cent off
   const HIST_SPEED = 40;     // the history trace scrolls down this many pixels a second
@@ -696,7 +699,7 @@
   /* What the stage draws: the latest reading, shown as it is heard (the
      detector already steadies it a little with a median and a short
      average, so it doesn't shake). */
-  const view = { active: false, cents: 0, ok: false, idx: null, tgt: null, phase: 0, t: 0, hist: [] };
+  const view = { active: false, held: false, cents: 0, ok: false, idx: null, tgt: null, phase: 0, t: 0, hist: [] };
 
   function show(freq, targetMidi, cents, stringIdx) {
     const c = cfg(), ok = Math.abs(cents) <= c.inTune;
@@ -706,22 +709,22 @@
         (stringIdx != null ? ' &nbsp;<span class="nw tgt">target ' + mtof(targetMidi).toFixed(2) + " Hz</span>" : "");
     el.cents.textContent = fmtCents(cents, c.decimals);
     el.sub.textContent = stringIdx != null ? "String " + (instr().base.length - stringIdx) + (lock !== null ? " (locked)" : "") : "";
-    el.readout.classList.remove("idle");
+    el.readout.classList.remove("idle", "held");
     el.readout.classList.toggle("in", ok);
-    Object.assign(view, { active: true, cents, ok, idx: stringIdx, tgt: targetMidi });
+    Object.assign(view, { active: true, held: false, cents, ok, idx: stringIdx, tgt: targetMidi });
     if (instr()) highlight(stringIdx, ok);
   }
 
   // nothing is being played: show a dash rather than a note that isn't there
   function idle() {
     el.readout.classList.add("idle");
-    el.readout.classList.remove("in");
+    el.readout.classList.remove("in", "held");
     el.note.textContent = "–";
     el.oct.textContent = "";
     el.hz.innerHTML = "";
     el.cents.textContent = "";
     el.sub.textContent = instr() && lock !== null ? "String " + (instr().base.length - lock) + " (locked)" : "";
-    view.active = false; view.idx = null; view.tgt = null;
+    view.active = false; view.held = false; view.idx = null; view.tgt = null;
     if (instr()) highlight(-1, false);
   }
 
@@ -758,7 +761,7 @@
     const dt = Math.min(0.1, Math.max(0, (now - (view.t || now)) / 1000));
     view.t = now;
     if (view.active) view.phase = (view.phase + dt * view.cents * STROBE) % 360;
-    const col = !view.active ? K.muted : view.ok ? K.ok : K.amber;
+    const col = !view.active && !view.held ? K.muted : view.ok ? K.ok : K.amber;
 
     // geometry: the arc at the top, the history filling the space below it
     // the arc is the same size in every mode, sized to fit ARC_H and the
@@ -789,12 +792,15 @@
     });
 
     // the reading
-    if (view.active) {
+    // the reading, or the last one, fainter, once the note has stopped
+    if (view.active || view.held) {
+      if (view.held) g.globalAlpha = 0.5;
       const a = ang(view.cents), x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R;
       g.save();
       if (view.ok) { g.shadowColor = K.ok; g.shadowBlur = 14 * dpr; }
       g.fillStyle = col; g.beginPath(); g.arc(x, y, 7 * dpr, 0, Math.PI * 2); g.fill();
       g.restore();
+      g.globalAlpha = 1;
     }
 
     if (instr()) placePostStrobe();
@@ -843,7 +849,19 @@
   let ctx = null, stream = null, analyser = null, buf = null, raf = 0, lastTick = 0, running = false;
   let recent = [], smooth = null, lastKey = null, silent = 0, prevRms = 0, skip = 0, inTuneSince = null;
 
+  // a mode's settings with the lower level gate, for following a note (made once per mode)
+  const quietCfg = new WeakMap();
+  const quiet = (c) => { if (!quietCfg.has(c)) quietCfg.set(c, Object.assign({}, c, { minRms: SUSTAIN.minRms })); return quietCfg.get(c); };
   function resetReading() { recent = []; smooth = null; lastKey = null; inTuneSince = null; idle(); }
+  // the note has stopped: keep its reading on screen, faded, until the next one
+  // (resetReading clears it, for a new mode, string or tuning)
+  function hold() {
+    recent = []; smooth = null; lastKey = null; inTuneSince = null;
+    if (!view.active) return;
+    view.active = false; view.held = true;
+    el.readout.classList.add("held");
+    if (instr()) highlight(-1, false);
+  }
   const clearHistory = () => { view.hist = []; };
 
   function chooseString(midi) {
@@ -868,18 +886,18 @@
 
   function listen(now) {
     if (now < muteUntil) { prevRms = 0; skip = 0; return; }
-    const c = cfg();
+    const c = cfg(), following = recent.length > 0, last = following ? median(recent) : 0;
     analyser.getFloatTimeDomainData(buf);
-    const r = detect(buf, ctx.sampleRate, c);
+    const r = detect(buf, ctx.sampleRate, following ? quiet(c) : c);
 
     // the first moments of a pluck ring sharp; ignore them
     if (r.rms > 0.01 && r.rms > prevRms * 1.8) { skip = c.onsetSkip; recent = []; }
     prevRms = r.rms;
     if (skip > 0) { skip--; return; }
 
-    if (r.f > 0 && r.clarity >= c.clarity) {
+    const midiF = r.f > 0 ? 69 + 12 * Math.log2(r.f / st.a4) : 0;
+    if (r.f > 0 && (r.clarity >= c.clarity || (following && r.clarity >= c.clarity - SUSTAIN.clarity && Math.abs(midiF - last) <= SUSTAIN.near))) {
       silent = 0;
-      const midiF = 69 + 12 * Math.log2(r.f / st.a4);
       recent.push(midiF);
       if (recent.length > c.median) recent.shift();
       const med = median(recent);
@@ -906,7 +924,7 @@
       }
     } else {
       silent++;
-      if (silent > SILENCE_TICKS) { if (lastKey !== null || smooth !== null || view.active) resetReading(); }
+      if (silent > SILENCE_TICKS && (lastKey !== null || smooth !== null || view.active)) hold();
     }
   }
 

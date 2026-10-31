@@ -5,15 +5,15 @@
    The ?v= hashes and the cache name are written by tools/stamp-assets.js. */
 "use strict";
 
-const CACHE = "7uner-f09d4093";
+const CACHE = "7uner-6f5eae70";
 // the Practice exercise files, listed in js/exercises.js: techniques, and
 // the first position of each scale and mode (the others are cached when used)
 importScripts("js/exercises.js?v=c3737bc3");
 const PRACTICE = Object.keys(self.practiceCatalogue).flatMap((c) => self.practiceCatalogue[c].map((x) => (x.iv ? x.id + "-p1" : x.id)))
     .map((id) => "practice/" + id + ".gp?v=" + self.practiceFilesVersion);
 const SHELL = [
-  "./", "index.html", "css/style.css?v=3b677381", "favicon.svg", "icons/icon-192.png", "icons/apple-touch-icon.png", "manifest.webmanifest",
-  "js/tuner.js?v=9b64dcda", "js/voice.js?v=03dd7f52", "js/pitch.js?v=36c33db7", "js/amp.js?v=27f64277", "js/metronome.js?v=7480cb06", "js/alphatab.js?v=ea58a266", "js/exercises.js?v=c3737bc3", "js/practice.js?v=78b58b7b", "js/tab-studio.js?v=68955429", "js/app.js?v=945dc653"
+  "./", "index.html", "css/style.css?v=4fad3fc3", "favicon.svg", "icons/icon-192.png", "icons/apple-touch-icon.png", "manifest.webmanifest",
+  "js/tuner.js?v=da4e16c0", "js/voice.js?v=ae041ef0", "js/pitch.js?v=fbeaf40e", "js/amp.js?v=27f64277", "js/metronome.js?v=7480cb06", "js/alphatab.js?v=ea58a266", "js/exercises.js?v=c3737bc3", "js/practice.js?v=78b58b7b", "js/tab-studio.js?v=68955429", "js/app.js?v=945dc653"
 ].concat(PRACTICE);
 const CDN = ["https://cdn.jsdelivr.net", "https://fonts.googleapis.com", "https://fonts.gstatic.com"];
 

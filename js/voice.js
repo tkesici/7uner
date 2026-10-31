@@ -14,8 +14,11 @@
 
   // a short window and light smoothing: a voice glides and wavers, and the trail should show it
   const CFG = { minF: 65, maxF: 1400, windowSec: 0.04, clarity: 0.8, median: 5 };
+  // while a note is being followed, a quieter and less clear signal still counts if it stays
+  // within a semitone of it, so a held note doesn't drop out as you run short of breath
+  const QUIET = Object.assign({}, CFG, { minRms: 0.0008 }), SUSTAIN = { clarity: 0.2, near: 1 };
   const TICK_MS = 20;
-  const SILENCE_TICKS = 8;  // ~160 ms without a pitch ends a line of the trail
+  const SILENCE_TICKS = 8;  // ~160 ms without a pitch ends a line of the trail; the last note stays on screen, faded
   const PX_PER_S = 110;     // the trail scrolls left this many CSS pixels a second
   const NOW_AT = 0.38;      // where "now" sits across the stage; the exercise's notes come from the right
   const TOLERANCE = 40;     // cents from the target that count as on pitch
@@ -116,6 +119,7 @@
   /* ---------- state ---------- */
   let ctx = null, stream = null, analyser = null, buf = null, raf = 0, lastTick = 0, running = false;
   let recent = [], silent = 0, current = null; // current: the latest reading { m (fractional MIDI), f }
+  let live = false;                             // false once the note has stopped and current is only held
   let trail = [];                               // { t, m, ok } in AudioContext seconds
   let run = null;                               // the exercise being sung: { ex, plan, start, hit, total, rounds[] }
   let finder = null;                            // the range finder: { lo, hi, hold[] }
@@ -125,7 +129,7 @@
   function show() {
     const tgt = activeNote(), sing = tgt && tgt.sing;
     if (!current) {
-      el.readout.classList.add("idle"); el.readout.classList.remove("in");
+      el.readout.classList.add("idle"); el.readout.classList.remove("in", "held");
       el.note.textContent = sing ? noteName(tgt.m) : "–";
       el.oct.textContent = sing ? octave(tgt.m) : "";
       el.hz.innerHTML = ""; el.cents.textContent = "";
@@ -133,11 +137,12 @@
     }
     const near = Math.round(current.m), c = (current.m - near) * 100;
     el.readout.classList.remove("idle");
+    el.readout.classList.toggle("held", !live);
     el.note.textContent = noteName(near);
     el.oct.textContent = octave(near);
     el.hz.innerHTML = '<span class="nw"><b>' + current.f.toFixed(1) + "</b> Hz</span>";
     el.cents.textContent = (c >= 0.5 ? "+" : c <= -0.5 ? "−" : "±") + Math.abs(c).toFixed(0) + " cents";
-    el.readout.classList.toggle("in", sing ? offBy(current.m, tgt.m) <= TOLERANCE : Math.abs(c) <= 10);
+    el.readout.classList.toggle("in", live && (sing ? offBy(current.m, tgt.m) <= TOLERANCE : Math.abs(c) <= 10));
   }
   // cents from the target, an octave either way counting as the same note (a man and a woman singing the same melody)
   function offBy(m, target) {
@@ -241,8 +246,10 @@
     }
     g.globalAlpha = 1;
     if (current) {
-      g.fillStyle = trail.length && trail[trail.length - 1].ok === true ? K.ok : K.amber;
+      g.globalAlpha = live ? 1 : 0.5;
+      g.fillStyle = live && trail.length && trail[trail.length - 1].ok === true ? K.ok : K.amber;
       g.beginPath(); g.arc(nowX, y(Math.max(lo - 0.5, Math.min(hi + 0.5, current.m))), 5.5 * dpr, 0, Math.PI * 2); g.fill();
+      g.globalAlpha = 1;
     }
   }
 
@@ -261,27 +268,28 @@
 
   function listen() {
     analyser.getFloatTimeDomainData(buf);
-    const r = detect(buf, ctx.sampleRate, CFG), t = now();
-    const tgt = activeNote();
-    if (r.f > 0 && r.clarity >= CFG.clarity) {
-      silent = 0;
-      recent.push(69 + 12 * Math.log2(r.f / a4()));
+    const following = live && recent.length > 0, last = following ? median(recent) : 0;
+    const r = detect(buf, ctx.sampleRate, following ? QUIET : CFG), t = now();
+    const tgt = activeNote(), m0 = r.f > 0 ? 69 + 12 * Math.log2(r.f / a4()) : 0;
+    if (r.f > 0 && (r.clarity >= CFG.clarity || (following && r.clarity >= CFG.clarity - SUSTAIN.clarity && Math.abs(m0 - last) <= SUSTAIN.near))) {
+      silent = 0; live = true;
+      recent.push(m0);
       if (recent.length > CFG.median) recent.shift();
       const m = median(recent);
       current = { m, f: mtof(m) };
-    } else if (++silent > SILENCE_TICKS) { current = null; recent = []; }
+    } else if (++silent > SILENCE_TICKS) { live = false; recent = []; }
 
     let ok = null;
     if (tgt && tgt.sing) {
-      ok = current ? offBy(current.m, tgt.m) <= TOLERANCE : false;
+      ok = live && current ? offBy(current.m, tgt.m) <= TOLERANCE : false;
       // score from a moment into each note, so the time it takes to find it isn't held against you
       if (t - run.start - tgt.t0 > 0.15) {
         run.total++; run.rounds[tgt.round].total++;
         if (ok) { run.hit++; run.rounds[tgt.round].hit++; }
       }
     }
-    if (current) trail.push({ t, m: current.m, ok });
-    if (finder && current) findRange(t);
+    if (live) trail.push({ t, m: current.m, ok });
+    if (finder && live) findRange(t);
     if (run) progress(t);
     show();
   }
@@ -478,7 +486,7 @@
     if (stream) stream.getTracks().forEach((t) => t.stop());
     if (ctx) ctx.close();
     ctx = stream = analyser = null;
-    current = null; recent = []; trail = [];
+    current = null; live = false; recent = []; trail = [];
     show(); draw();
     el.cover.hidden = false;
     el.status.textContent = "The microphone turns off when you leave Voice.";

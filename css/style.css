@@ -151,6 +151,7 @@ button{cursor:pointer}
 .tuner{max-width:880px;margin:0 auto;padding:1rem 1.1rem 3rem;text-align:center}
 .readout{transition:opacity .2s}
 .readout.idle{opacity:.45}
+.readout.held{opacity:.6} /* the last note, kept on screen after it stops */
 .note{height:.88em;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:clamp(5.2rem,20vw,8rem);line-height:.88;color:var(--amber);font-variant-numeric:tabular-nums}
 .note sub{font-size:.36em;vertical-align:baseline;margin-left:.04em;color:var(--muted)}
 .readout.in .note{color:var(--ok)}

@@ -4,7 +4,8 @@
    computed with an FFT autocorrelation, so long analysis windows stay cheap,
    and the peak is refined with parabolic interpolation.
    detect(samples, sampleRate, cfg) reads the last windowLen() samples;
-   cfg needs minF, maxF and windowSec. */
+   cfg needs minF, maxF and windowSec; minRms, if given, lowers the level
+   below which it doesn't look for a pitch (for following a note as it fades). */
 (function () {
   "use strict";
 
@@ -58,7 +59,7 @@
     let energy = 0;
     for (let i = 0; i < N; i++) { const v = x[off + i] - mean; s[i] = v; energy += v * v; }
     const rms = Math.sqrt(energy / N);
-    if (rms < 0.0025) return { f: -1, rms, clarity: 0 };
+    if (rms < (c.minRms || 0.0025)) return { f: -1, rms, clarity: 0 };
 
     // autocorrelation r(tau) via FFT (zero-padded to 2N, so it is linear, not circular)
     const re = B.re, im = B.im, M = 2 * N;
