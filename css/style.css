@@ -159,15 +159,24 @@ button{cursor:pointer}
 .hz{height:1.6rem;white-space:nowrap;overflow:hidden;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:1.05rem;color:var(--muted);margin-top:.4rem}
 .hz b{color:var(--ink);font-weight:700}
 .nw{white-space:nowrap}
-@media (max-width:520px){.hz .tgt{display:none}}
+/* the tuner's readout sits on the stage: the note between the bars, the cents and the frequencies under it */
+.tstage .readout{position:absolute;top:.4rem;left:0;right:0;pointer-events:none}
+.tstage .note{font-size:clamp(3.6rem,13vw,4.8rem)}
+.tcents{height:1.5rem;margin-top:.45rem;font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:700;font-size:1.1rem;color:var(--amber);font-variant-numeric:tabular-nums}
+.tcents small{font-weight:500;font-size:.75em;color:var(--muted)}
+.readout.in .tcents{color:var(--ok)}
+.thz{height:1.2rem;white-space:nowrap;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.thz b{color:var(--ink);font-weight:500}
+.thz .tgt::before{content:"";display:inline-block;width:1px;height:.8em;margin:0 .6rem;background:var(--line);vertical-align:-.05em}
 
 /* strobe stage (tuner.js): a canvas, with the microphone button over it until it's on */
 .tstage{position:relative;margin:.2rem auto .4rem;height:clamp(320px,50vh,460px)}
+.tstage .cover{z-index:1}
 .tstage canvas{position:absolute;top:0;left:0;display:block;width:100%;height:100%;pointer-events:none}
-.tuner.mode-instrument .tstage{height:200px} /* ARC_H in tuner.js */
+.tuner.mode-instrument .tstage{height:134px}
 .tuner .guitar{position:relative;z-index:1}
 /* Voice (voice.js): a pitch trail over a staff, then cards for the exercises, your range and a song's key */
-.tuner.mode-voice>.readout,.tuner.mode-voice>.tstage{display:none}
+.voice{text-align:center;padding-bottom:3rem}
 .vstage{position:relative;margin:.4rem auto 0;height:clamp(280px,44vh,420px);border:1px solid color-mix(in srgb,var(--line) 60%,transparent);border-radius:12px;background:var(--panel)}
 .vstage canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
 .vmsg{font-family:"Barlow Condensed",sans-serif;font-size:1.25rem;font-weight:600}
@@ -196,6 +205,7 @@ button{cursor:pointer}
 .tpick{display:inline-flex;align-items:center;gap:.55rem;border:1px solid var(--line);border-radius:999px;background:var(--panel);padding:.6rem 1.1rem;font-weight:700;font-size:1.05rem;color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none;transition:border-color .15s}
 .tpick:hover,.tpick[aria-expanded="true"]{border-color:var(--amber)}
 .tpick b{color:var(--amber)}
+.tpick .tsep{width:1px;height:1.1em;background:var(--line);margin:0 .1rem}
 .tpick svg{width:1.05rem;height:1.05rem;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tpick .tpick-ico{width:1.2rem;height:1.2rem;color:var(--muted);stroke-width:1.6}
 .tpickpop button{user-select:none;-webkit-user-select:none}

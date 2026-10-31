@@ -1,4 +1,5 @@
-/* 7uner – chromatic and instrument tuner (guitar, bass, ukulele, violin, cello)
+/* 7uner – chromatic and instrument tuner (guitar, bass, ukulele, violin, cello);
+   its icons are shared with Practice's picker, which also has Voice
    Pitch detection (McLeod Pitch Method) lives in pitch.js; the display is a
    gauge with a scrolling history under it, plus turning strobe rings on the
    headstock post of the string being tuned (instrument modes).
@@ -129,9 +130,8 @@
       presets: [["Standard", [0, 0, 0, 0]]]
     }
   };
-  const MODES = ["chromatic", "guitar", "bass", "ukulele", "violin", "cello", "voice"];
-  // Voice isn't a tuner mode but voice.js's own view, picked from the same row
-  const modeLabel = (m) => (INSTR[m] ? INSTR[m].label : m === "voice" ? "Voice" : "Chromatic");
+  const MODES = ["chromatic", "guitar", "bass", "ukulele", "violin", "cello"];
+  const modeLabel = (m) => (INSTR[m] ? INSTR[m].label : "Chromatic");
   // string counts on offer; the first is the mode's own INSTR entry, the others are mode + count
   const COUNTS = { guitar: [6, 7, 8, 12], bass: [4, 5, 6] };
 
@@ -156,7 +156,7 @@
 
   const $ = (id) => document.getElementById(id);
   const el = {
-    root: $("tRoot"), modes: $("tModes"), readout: $("tReadout"), sub: $("tSub"), note: $("tNote"), oct: $("tOct"),
+    root: $("tRoot"), modes: $("tModes"), readout: $("tReadout"), noteBox: $("tNoteBox"), note: $("tNote"), oct: $("tOct"),
     hz: $("tHz"), cents: $("tCents"), panel: $("tGuitar"), allIn: $("tAllIn"),
     preset: $("tPreset"), auto: $("tAuto"), autoRow: $("tAutoRow"), pegsL: $("pegsL"), pegsR: $("pegsR"), head: $("tHead"),
     pick: $("tPick"), pickLab: $("tPickLab"), pickPop: $("tPickPop"), stage: $("tStage"),
@@ -621,7 +621,7 @@
     const I = instr();
     if (!I) return;
     const k = presetIndex(), counts = COUNTS[st.mode];
-    el.pickLab.innerHTML = (counts ? "<b>" + st.strings[st.mode] + "</b> strings · " : "") + (k >= 0 ? I.presets[k][0] : "Custom");
+    el.pickLab.innerHTML = (counts ? "<b>" + st.strings[st.mode] + '</b><span class="tsep"></span>' : "") + (k >= 0 ? I.presets[k][0] : "Custom");
     el.count.hidden = !counts;
     el.count.innerHTML = counts ? counts.map((n) => {
       const on = n === st.strings[st.mode];
@@ -676,13 +676,6 @@
     el.autoRow.hidden = !instr();
     togglePick(false);
     el.root.classList.toggle("mode-instrument", !!instr());
-    // Voice takes over the page; the microphone stays on across the switch if it was on
-    const voice = st.mode === "voice", hearing = running || (window.voice && window.voice.isRunning());
-    el.root.classList.toggle("mode-voice", voice);
-    if (window.voice) {
-      if (voice) { stop(); window.voice.show(hearing); }
-      else { window.voice.hide(); if (hearing) start(); }
-    }
     buildInstrument();
     resetReading(); // also clears the last reading, so nothing from the previous mode stays on screen
     clearHistory();
@@ -693,7 +686,7 @@
   /* ---------- readout ---------- */
   function fmtCents(c, dec) {
     const v = Math.abs(c) < Math.pow(10, -dec) / 2 ? 0 : c;
-    return (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toFixed(dec) + " cents";
+    return (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toFixed(dec) + "<small> cents</small>";
   }
 
   /* What the stage draws: the latest reading, shown as it is heard (the
@@ -705,10 +698,9 @@
     const c = cfg(), ok = Math.abs(cents) <= c.inTune;
     el.note.textContent = noteName(targetMidi);
     el.oct.textContent = octave(targetMidi);
-    el.hz.innerHTML = '<span class="nw"><b>' + freq.toFixed(c.decimals ? 2 : 1) + "</b> Hz</span>" +
-        (stringIdx != null ? ' &nbsp;<span class="nw tgt">target ' + mtof(targetMidi).toFixed(2) + " Hz</span>" : "");
-    el.cents.textContent = fmtCents(cents, c.decimals);
-    el.sub.textContent = stringIdx != null ? "String " + (instr().base.length - stringIdx) + (lock !== null ? " (locked)" : "") : "";
+    el.hz.innerHTML = "<b>" + freq.toFixed(c.decimals ? 2 : 1) + "</b> Hz" +
+        (stringIdx != null ? '<span class="tgt">target ' + mtof(targetMidi).toFixed(2) + "</span>" : "");
+    el.cents.innerHTML = fmtCents(cents, c.decimals);
     el.readout.classList.remove("idle", "held");
     el.readout.classList.toggle("in", ok);
     Object.assign(view, { active: true, held: false, cents, ok, idx: stringIdx, tgt: targetMidi });
@@ -723,21 +715,22 @@
     el.oct.textContent = "";
     el.hz.innerHTML = "";
     el.cents.textContent = "";
-    el.sub.textContent = instr() && lock !== null ? "String " + (instr().base.length - lock) + " (locked)" : "";
     view.active = false; view.held = false; view.idx = null; view.tgt = null;
     if (instr()) highlight(-1, false);
   }
 
   /* ---------- stage ----------
-     A gauge (a ±range arc with the in-tune zone and a dot for the reading)
-     with the history scrolling down beneath it, like a chart recorder. In
-     instrument modes a strobe also turns on the headstock post of the string
-     being tuned. */
-  const SPAN = (60 * Math.PI) / 180; // the gauge runs 60° either side of straight up
-  const ARC_H = 200;                  // CSS pixels for the arc and its labels (the stage's height in instrument modes)
+     The note sits between two straight bars, flat to the left and sharp to
+     the right; a reading lights the bar from the note out to a dot, and
+     when it's in tune the dot goes behind the note, which turns green. The
+     history scrolls down from under the readout, like a chart recorder. In
+     instrument modes a strobe also turns on the headstock post of the
+     string being tuned. */
   const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   let colors = null;
   const readColors = () => { colors = { ok: cssVar("--ok"), okSoft: cssVar("--ok-soft"), amber: cssVar("--amber"), line: cssVar("--line"), muted: cssVar("--muted"), ink: cssVar("--ink") }; };
+  // where the readout sits, in CSS pixels: the bars' height, the gap they leave for the note, and where the history starts
+  const geo = { barY: 40, gap: 150, histTop: 120 };
 
   // in instrument modes the canvas reaches down behind the instrument, so
   // the history scrolls on behind it
@@ -746,11 +739,24 @@
     el.canvas.style.height = instr() && !el.panel.hidden ? Math.max(el.stage.offsetHeight, el.panel.getBoundingClientRect().bottom - top) + "px" : "";
     const r = el.canvas.getBoundingClientRect();
     if (!r.width) return;
+    const nb = el.noteBox, size = parseFloat(getComputedStyle(nb).fontSize) || 72;
+    geo.barY = el.readout.offsetTop + nb.offsetTop + nb.offsetHeight / 2;
+    geo.gap = size * 1.8; // room for the widest name, C♯ and its octave
+    geo.histTop = el.readout.offsetTop + el.readout.offsetHeight + 6;
     const dpr = window.devicePixelRatio || 1;
     el.canvas.width = Math.round(r.width * dpr);
     el.canvas.height = Math.round(r.height * dpr);
     readColors();
     drawStage(performance.now());
+  }
+
+  // cents to x: within the in-tune zone it stays behind the note, beyond it it runs out along a bar
+  function scale(W, dpr, c) {
+    const cx = W / 2, half = (geo.gap * dpr) / 2, L = W / 2 - half - 6 * dpr;
+    return (v) => {
+      const a = Math.min(c.range, Math.abs(v)), s = Math.sign(v);
+      return cx + s * (a <= c.inTune ? (half * a) / c.inTune : half + (L * (a - c.inTune)) / (c.range - c.inTune));
+    };
   }
 
   function drawStage(now) {
@@ -761,58 +767,46 @@
     const dt = Math.min(0.1, Math.max(0, (now - (view.t || now)) / 1000));
     view.t = now;
     if (view.active) view.phase = (view.phase + dt * view.cents * STROBE) % 360;
-    const col = !view.active && !view.held ? K.muted : view.ok ? K.ok : K.amber;
-
-    // geometry: the arc at the top, the history filling the space below it
-    // the arc is the same size in every mode, sized to fit ARC_H and the
-    // width; below it the canvas goes on for the history
-    const R = Math.min((W - 80 * dpr) / 1.75, 2 * (ARC_H - 36) * dpr, 270 * dpr);
-    const cx = W / 2, cy = R + 24 * dpr;
-    const ang = (cents) => -Math.PI / 2 + Math.max(-1, Math.min(1, cents / c.range)) * SPAN;
-    const A0 = -Math.PI / 2 - SPAN, A1 = -Math.PI / 2 + SPAN;
+    const col = view.ok ? K.ok : K.amber;
+    const X = scale(W, dpr, c), y = geo.barY * dpr, cx = W / 2, half = (geo.gap * dpr) / 2;
     g.clearRect(0, 0, W, H);
     g.lineCap = "round";
-    drawHistory(g, now, cx, cy, R, dpr, c, H);
+    drawHistory(g, now, X, dpr, H);
 
-    // in-tune zone, scale, ticks and labels
-    g.lineWidth = 10 * dpr; g.strokeStyle = K.okSoft;
-    g.beginPath(); g.arc(cx, cy, R, ang(-c.inTune), ang(c.inTune)); g.stroke();
-    g.lineWidth = 1.5 * dpr; g.strokeStyle = K.line;
-    g.beginPath(); g.arc(cx, cy, R, A0, A1); g.stroke();
-    for (let k = -4; k <= 4; k++) {
-      const a = ang((k * c.range) / 4), len = (k === 0 ? 11 : k % 2 ? 4 : 7) * dpr;
-      g.strokeStyle = k === 0 ? K.muted : K.line;
-      g.beginPath(); g.moveTo(cx + Math.cos(a) * (R + 3 * dpr), cy + Math.sin(a) * (R + 3 * dpr));
-      g.lineTo(cx + Math.cos(a) * (R + 3 * dpr + len), cy + Math.sin(a) * (R + 3 * dpr + len)); g.stroke();
-    }
-    g.fillStyle = K.muted; g.font = 11 * dpr + "px 'JetBrains Mono', monospace"; g.textAlign = "center"; g.textBaseline = "middle";
-    [[-c.range, "−" + c.range], [0, "0"], [c.range, "+" + c.range]].forEach(([v, t]) => {
-      const a = ang(v), rr = R + 24 * dpr;
-      g.fillText(t, cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+    // the bars, a tick every quarter of the range under them, and the ends labelled
+    g.lineWidth = 3 * dpr; g.strokeStyle = K.line;
+    g.beginPath(); g.moveTo(X(-c.range), y); g.lineTo(cx - half, y); g.moveTo(cx + half, y); g.lineTo(X(c.range), y); g.stroke();
+    g.lineWidth = 1.5 * dpr;
+    for (let k = 1; k <= 4; k++) [-1, 1].forEach((s) => {
+      const x = X((s * k * c.range) / 4), len = (k === 4 ? 7 : k === 2 ? 5 : 3.5) * dpr;
+      g.beginPath(); g.moveTo(x, y + 4 * dpr); g.lineTo(x, y + 4 * dpr + len); g.stroke();
     });
+    // the bars' inner ends, by the note, mark the in-tune zone
+    g.lineWidth = 3 * dpr; g.strokeStyle = view.ok && (view.active || view.held) ? K.ok : K.okSoft;
+    g.beginPath(); g.moveTo(cx - half - 7 * dpr, y); g.lineTo(cx - half, y); g.moveTo(cx + half, y); g.lineTo(cx + half + 7 * dpr, y); g.stroke();
+    g.fillStyle = K.muted; g.font = 11 * dpr + "px 'JetBrains Mono', monospace"; g.textBaseline = "top";
+    g.textAlign = "left"; g.fillText("−" + c.range, X(-c.range) - 2 * dpr, y + 14 * dpr);
+    g.textAlign = "right"; g.fillText("+" + c.range, X(c.range) + 2 * dpr, y + 14 * dpr);
 
-    // the reading
-    // the reading, or the last one, fainter, once the note has stopped
-    if (view.active || view.held) {
-      if (view.held) g.globalAlpha = 0.5;
-      const a = ang(view.cents), x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R;
-      g.save();
-      if (view.ok) { g.shadowColor = K.ok; g.shadowBlur = 14 * dpr; }
+    // the reading, or the last one, fainter, once the note has stopped:
+    // the bar lit from the note out to a dot
+    if ((view.active || view.held) && Math.abs(view.cents) > c.inTune) {
+      const x = X(view.cents), s = Math.sign(view.cents);
+      g.globalAlpha = view.held ? 0.5 : 1;
+      g.strokeStyle = col; g.lineWidth = 3 * dpr;
+      g.beginPath(); g.moveTo(cx + s * half, y); g.lineTo(x, y); g.stroke();
       g.fillStyle = col; g.beginPath(); g.arc(x, y, 7 * dpr, 0, Math.PI * 2); g.fill();
-      g.restore();
       g.globalAlpha = 1;
     }
 
     if (instr()) placePostStrobe();
   }
 
-  /* history: like a chart recorder. The newest reading sits on the arc right
-     where the dot is, and the trace scrolls down from there and slowly fades. */
-  function drawHistory(g, now, cx, cy, R, dpr, c, H) {
-    const clamp = (v) => Math.max(-1, Math.min(1, v / c.range));
-    const xOf = (v) => cx + R * Math.sin(SPAN * clamp(v));
-    const yArc = (v) => cy - R * Math.cos(SPAN * clamp(v));
-    const speed = (HIST_SPEED * dpr) / 1000, maxAge = (H - (cy - R)) / speed;
+  /* history: like a chart recorder. The newest reading sits under the
+     readout, straight below the dot, and the trace scrolls down from there
+     and slowly fades. */
+  function drawHistory(g, now, X, dpr, H) {
+    const top = geo.histTop * dpr, speed = (HIST_SPEED * dpr) / 1000, maxAge = Math.max(1, H - top) / speed;
     if (view.active) view.hist.push({ t: now, c: view.cents, ok: view.ok, k: view.idx != null ? view.idx : view.tgt });
     const h = view.hist;
     while (h.length && now - h[0].t > maxAge) h.shift();
@@ -825,8 +819,8 @@
       g.globalAlpha = (1 - 0.75 * age) * (instr() ? 0.45 : 1); // fainter behind an instrument
       g.strokeStyle = b.ok ? colors.ok : colors.amber;
       g.beginPath();
-      g.moveTo(xOf(a.c), yArc(a.c) + (now - a.t) * speed);
-      g.lineTo(xOf(b.c), yArc(b.c) + (now - b.t) * speed);
+      g.moveTo(X(a.c), top + (now - a.t) * speed);
+      g.lineTo(X(b.c), top + (now - b.t) * speed);
       g.stroke();
     }
     g.globalAlpha = 1;
