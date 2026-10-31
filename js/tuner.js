@@ -199,7 +199,7 @@
   const noteName = (m) => NAMES[((m % 12) + 12) % 12];
   const octave = (m) => Math.floor(m / 12) - 1;
 
-  const { detect, windowLen, median } = window.pitch;
+  const { detect, windowLen, median, micGranted, wake } = window.pitch;
 
   /* ---------- headstocks ---------- */
   const DEFS =
@@ -937,7 +937,15 @@
   }
 
   /* ---------- microphone ---------- */
-  async function start() {
+  // one start at a time, whether from the button or by itself
+  let starting = null;
+  function start() { return starting || (starting = open().finally(() => { starting = null; })); }
+  // once the browser remembers the permission, the microphone comes on by itself when the tuner is on screen
+  async function autoStart() {
+    if (running || document.hidden || el.root.closest(".page").hidden) return;
+    if (await micGranted()) start();
+  }
+  async function open() {
     if (running) return;
     el.status.textContent = "Waiting for microphone permission…";
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -955,7 +963,7 @@
       return;
     }
     ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (ctx.state === "suspended") await ctx.resume();
+    wake(ctx);
     const src = ctx.createMediaStreamSource(stream);
     // remove rumble and DC below the lowest note, and hiss above the highest
     const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 20; hp.Q.value = 0.707;
@@ -967,6 +975,7 @@
     buf = new Float32Array(analyser.fftSize);
     running = true;
     el.cover.hidden = true;
+    el.root.classList.remove("off");
     resize();
     raf = requestAnimationFrame(loop);
   }
@@ -974,6 +983,7 @@
   function stop() {
     if (!running) return;
     running = false;
+    el.root.classList.add("off");
     cancelAnimationFrame(raf);
     if (stream) stream.getTracks().forEach((t) => t.stop());
     if (ctx) ctx.close();
@@ -982,7 +992,7 @@
     clearHistory();
     drawStage(performance.now());
     el.cover.hidden = false;
-    el.status.textContent = "The microphone turns off when you leave the tuner.";
+    el.status.textContent = "The microphone turns off when you leave the tuner. Audio stays in your browser.";
   }
 
   function setA4(v) {
@@ -1013,11 +1023,11 @@
   el.a4bd.addEventListener("click", () => setA4(st.a4 - 1));
   el.a4bu.addEventListener("click", () => setA4(st.a4 + 1));
   window.addEventListener("resize", resize);
-  document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); else autoStart(); });
   // follow the site's light/dark theme
   if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readColors(); drawStage(performance.now()); });
 
   applyMode();
 
-  window.tuner = { start, stop, resize, isRunning: () => running, icons: ICONS, a4: () => st.a4 };
+  window.tuner = { start, stop, autoStart, resize, isRunning: () => running, icons: ICONS, a4: () => st.a4 };
 })();

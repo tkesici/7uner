@@ -110,5 +110,19 @@
     return s[Math.floor(s.length / 2)];
   }
 
-  window.pitch = { detect, windowLen, median };
+  /* ---------- microphone ---------- */
+  // whether the browser already lets this site use the microphone, so it can be turned on without asking
+  async function micGranted() {
+    try { return (await navigator.permissions.query({ name: "microphone" })).state === "granted"; } catch (e) { return false; }
+  }
+  // an AudioContext made without a click (the microphone turned on by itself) may start
+  // suspended; it carries on at the first click or key press
+  function wake(ctx) {
+    if (ctx.state !== "suspended") return;
+    ctx.resume().catch(() => {});
+    const go = () => { ctx.resume().catch(() => {}); ["pointerdown", "keydown"].forEach((t) => window.removeEventListener(t, go, true)); };
+    ["pointerdown", "keydown"].forEach((t) => window.addEventListener(t, go, true));
+  }
+
+  window.pitch = { detect, windowLen, median, micGranted, wake };
 })();

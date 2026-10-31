@@ -74,7 +74,7 @@
   const a4 = () => (window.tuner && window.tuner.a4 ? window.tuner.a4() : 440);
   const mtof = (m) => a4() * Math.pow(2, (m - 69) / 12);
 
-  const { detect, windowLen, median } = window.pitch;
+  const { detect, windowLen, median, micGranted, wake } = window.pitch;
 
   /* ---------- the exercise as timed notes ---------- */
   // the roots that fit, and the notes in order: { t0, t1, m, sing } in seconds from the start
@@ -120,6 +120,7 @@
   let ctx = null, stream = null, analyser = null, buf = null, raf = 0, lastTick = 0, running = false;
   let recent = [], silent = 0, current = null; // current: the latest reading { m (fractional MIDI), f }
   let live = false;                             // false once the note has stopped and current is only held
+  let lastHeard = 69;                           // shown, faded, with the microphone off: A4 at first, then the last note sung
   let trail = [];                               // { t, m, ok } in AudioContext seconds
   let run = null;                               // the exercise being sung: { ex, plan, start, hit, total, rounds[] }
   let finder = null;                            // the range finder: { lo, hi, hold[] }
@@ -130,9 +131,10 @@
     const tgt = activeNote(), sing = tgt && tgt.sing;
     if (!current) {
       el.readout.classList.add("idle"); el.readout.classList.remove("in", "held");
-      el.note.textContent = sing ? noteName(tgt.m) : "–";
-      el.oct.textContent = sing ? octave(tgt.m) : "";
-      el.hz.innerHTML = ""; el.cents.textContent = "";
+      const m = sing ? tgt.m : lastHeard;
+      el.note.textContent = noteName(m);
+      el.oct.textContent = octave(m);
+      el.hz.innerHTML = sing ? "" : '<span class="nw">' + mtof(m).toFixed(1) + " Hz</span>"; el.cents.textContent = "";
       return;
     }
     const near = Math.round(current.m), c = (current.m - near) * 100;
@@ -277,6 +279,7 @@
       if (recent.length > CFG.median) recent.shift();
       const m = median(recent);
       current = { m, f: mtof(m) };
+      lastHeard = Math.round(m);
     } else if (++silent > SILENCE_TICKS) { live = false; recent = []; }
 
     let ok = null;
@@ -447,7 +450,15 @@
   [el.songLo, el.songHi].forEach((s, i) => s.addEventListener("change", () => { st.song[i] = +s.value; save(); renderAdvice(); }));
 
   /* ---------- microphone ---------- */
-  async function start() {
+  // one start at a time, whether from the button or by itself
+  let starting = null;
+  function start() { return starting || (starting = open().finally(() => { starting = null; })); }
+  // once the browser remembers the permission, the microphone comes on by itself when Voice is on screen
+  async function autoStart() {
+    if (running || !shown || document.hidden || el.root.closest(".page").hidden) return;
+    if (await micGranted()) start();
+  }
+  async function open() {
     if (running) return;
     el.status.textContent = "Waiting for microphone permission…";
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -463,7 +474,7 @@
       return;
     }
     ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (ctx.state === "suspended") await ctx.resume();
+    wake(ctx);
     const src = ctx.createMediaStreamSource(stream);
     const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 55; hp.Q.value = 0.707;
     const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 4000; lp.Q.value = 0.707;
@@ -473,6 +484,7 @@
     buf = new Float32Array(analyser.fftSize);
     running = true;
     el.cover.hidden = true;
+    el.root.classList.remove("off");
     resize();
     raf = requestAnimationFrame(loop);
   }
@@ -482,6 +494,7 @@
     stopExercise();
     if (finder) cancelFinder();
     running = false;
+    el.root.classList.add("off");
     cancelAnimationFrame(raf);
     if (stream) stream.getTracks().forEach((t) => t.stop());
     if (ctx) ctx.close();
@@ -495,14 +508,15 @@
   /* ---------- wiring ---------- */
   el.start.addEventListener("click", start);
   window.addEventListener("resize", () => { if (shown) resize(); });
-  document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); else autoStart(); });
   if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readColors(); draw(); });
   renderList();
   renderRange();
+  show();
 
-  // the tuner shows and hides Voice when its mode changes; listen: carry on with the microphone on
+  // Practice shows and hides Voice with its instrument picker
   window.voice = {
-    show(listen) { shown = true; el.root.hidden = false; resize(); if (listen) start(); },
+    show() { shown = true; el.root.hidden = false; resize(); autoStart(); },
     hide() { shown = false; el.root.hidden = true; stop(); },
     stop, resize: () => { if (shown) resize(); }, isRunning: () => running
   };

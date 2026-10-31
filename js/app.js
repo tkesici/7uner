@@ -34,7 +34,7 @@
     if (!window.voice) return;
     if (!voice) window.voice.hide();
     if (!open) return;
-    if (voice) { if (window.practice) window.practice.pause(); window.voice.show(false); }
+    if (voice) { if (window.practice) window.practice.pause(); window.voice.show(); }
     else if (window.practice) window.practice.show();
   }
   function setInstr(id) {
@@ -66,7 +66,7 @@
     if (p !== "practice" && window.voice) window.voice.stop();
     if (p !== "practice" && window.practice) window.practice.pause();
     if (p !== "tab-studio" && window.tabStudio) window.tabStudio.pause();
-    if (p === "tuner" && window.tuner) window.tuner.resize();
+    if (p === "tuner" && window.tuner) { window.tuner.resize(); window.tuner.autoStart(); }
     if (p === "practice") showInstr(true);
     if (p === "tab-studio" && window.tabStudio) window.tabStudio.show();
     // one amp (amp.js) and metronome (metronome.js) for Practice and Tab Studio,
