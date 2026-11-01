@@ -40,10 +40,10 @@
 
     function item(ex, i) {
         const li = document.createElement("li"), b = document.createElement("button");
-        b.innerHTML = '<span class="no"></span><span class="nm"></span><span class="st"></span>';
+        // just the number and the name; the tempo and formula are on the exercise itself
+        b.innerHTML = '<span class="no"></span><span class="nm"></span>';
         b.querySelector(".no").textContent = i + 1;
         b.querySelector(".nm").textContent = ex.name;
-        b.querySelector(".st").textContent = ex.formula ? ex.formula : (S.bpm[ex.id] ? "Last at " + S.bpm[ex.id] + " BPM" : "From " + ex.start + " BPM");
         if (ex === cur) b.setAttribute("aria-current", "true");
         b.addEventListener("click", () => { select(ex); if (window.matchMedia("(max-width: 820px)").matches) el.player.scrollIntoView({ behavior: "smooth", block: "start" }); });
         li.appendChild(b);
