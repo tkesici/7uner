@@ -15,7 +15,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="7uner">
   <meta property="og:title" content="7uner – online tuner, guitar practice and tab player">
-  <meta property="og:description" content="A free strobe tuner for guitar, bass, ukulele and violin, guitar practice exercises with a metronome, and a Guitar Pro tab player. Runs in your browser, works offline.">
+  <meta property="og:description" content="A free strobe tuner for guitar, bass, ukulele and violin, guitar practice exercises with a metronome, and a Guitar Pro tab player that scores your singing against a song’s vocal track. Runs in your browser, works offline.">
   <meta property="og:url" content="https://7uner.com/">
   <meta property="og:image" content="https://7uner.com/icons/social.png?v=4">
   <meta property="og:image:width" content="1200">
@@ -27,7 +27,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=112bc865">
+  <link rel="stylesheet" href="css/style.css?v=a84cf9ac">
 </head>
 <body>
 <noscript><p class="noscript">7uner needs JavaScript: the tuner, the exercises and the tab player all run in your browser. Please turn JavaScript on, or open the page in another browser.</p></noscript>
@@ -222,7 +222,7 @@
     <div class="wrap pagehead">
       <div class="ph-main">
         <h1>Tab Studio</h1>
-        <p class="lede">Open a Guitar Pro file to play it, slow it down and loop a passage, or switch on edit mode to change the tab and download it again.</p>
+        <p class="lede">Open a Guitar Pro file to play it, slow it down and loop a passage, sing along with its vocal track and see how close you are, or switch on edit mode to change the tab and download it again.</p>
       </div>
       <div class="amp-slot"></div>
     </div>
@@ -266,29 +266,36 @@
               <button id="cGo" class="go" disabled>Play</button>
               <button id="cStop" class="btn" disabled>Back to start</button>
             </div>
-            <div class="speedctl" role="group" aria-label="Playback speed">
-              <div class="speedtop">
-                <span class="speedval"><b id="cPct">100%</b> <span id="cBpm"></span></span>
-                <span class="speedpre">
-                  <button class="btn" data-cspeed="50">50%</button>
-                  <button class="btn" data-cspeed="75">75%</button>
-                  <button class="btn" data-cspeed="100">100%</button>
-                </span>
-              </div>
-              <input type="range" id="cSpeed" min="25" max="125" step="1" value="100" aria-label="Playback speed in percent">
+            <div class="speedkeys" role="group" aria-label="Playback speed">
+              <span class="sk-lab">SPEED</span>
+              <button data-cspeed="50" aria-pressed="false">50%</button>
+              <button data-cspeed="75" aria-pressed="false">75%</button>
+              <button data-cspeed="100" aria-pressed="false">100%</button>
             </div>
             <span class="ctime" id="cTime"></span>
           </div>
 
           <div class="optbar">
-            <label class="sel trackpick">Track <select id="cTrack" aria-label="Guitar track"></select></label>
-            <div class="chips">
-              <button class="chip" id="cClick" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 21 9.5 3h5l3 18z"/><path d="M5 21h14"/><path d="m12 16 5.5-9"/><circle cx="17.5" cy="7" r="1.3"/></svg><span>Metronome</span></button>
-              <button class="chip" id="cScore" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span>Notation</span></button>
-              <span class="chip info loopinfo" id="cLoopInfo" title="Drag across bars in the tab to loop them; click the tab to clear the loop."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg><span>Loop</span><span class="pill" id="cLoopPill">OFF</span></span>
+            <label class="sel trackpick">Track <select id="cTrack" aria-label="Track"></select></label>
+            <div class="chips" id="cSingChips" hidden>
+              <button class="chip" id="cSing" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5v4M8.5 21.5h7"/></svg><span>Sing</span></button>
+              <button class="chip" id="cVocMute" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 6 6m0-6-6 6"/></svg><span>Mute vocals</span></button>
             </div>
           </div>
           <p class="hint loophint">Drag across bars in the tab to loop them. Click anywhere in the tab to clear the loop.</p>
+
+          <div class="singbar" id="cSingBar" hidden>
+            <div class="sg-live">
+              <span class="sg-note">Song <b id="sgTarget">–</b></span>
+              <div class="sg-meter" aria-hidden="true"><span class="sg-zone"></span><span class="sg-mid"></span><span class="sg-dot" id="sgDot"></span></div>
+              <span class="sg-note">You <b id="sgYou">–</b> <span class="sg-cents" id="sgCents"></span></span>
+            </div>
+            <div class="sg-score">
+              <span>This pass <b id="sgNow">–</b></span>
+              <span>Last passes <span class="sg-passes" id="sgPasses">none yet</span></span>
+            </div>
+            <p class="hint" id="sgMsg" aria-live="polite"></p>
+          </div>
 
           <div class="tp-box vol">
             <h4>Volume</h4>
@@ -302,6 +309,11 @@
                 <button class="mute" data-mix="guitar" aria-pressed="false" aria-label="Mute guitar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="x" d="m16 9 6 6m0-6-6 6"/></svg></button>
                 <label for="v_guitar">Guitar</label>
                 <input type="range" id="v_guitar" min="0" max="100" value="100">
+              </div>
+              <div class="mix" id="mixVocals" hidden>
+                <button class="mute" data-mix="vocals" aria-pressed="false" aria-label="Mute vocals"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="x" d="m16 9 6 6m0-6-6 6"/></svg></button>
+                <label for="v_vocals">Vocals</label>
+                <input type="range" id="v_vocals" min="0" max="100" value="100">
               </div>
               <div class="mix">
                 <button class="mute" data-mix="backing" aria-pressed="false" aria-label="Mute backing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="x" d="m16 9 6 6m0-6-6 6"/></svg></button>
@@ -343,7 +355,7 @@
   <div class="bubble" id="cInfo" role="dialog" aria-label="Help" hidden>
     <p data-help="tuner">Turn on the microphone and play a note: the dot shows how far off it is, and its trail scrolls down behind the instrument. Tap a string’s note to lock the tuner to it and hear it (tap again to let go); ▲ ▼ beside it retune it by a semitone. The picker under the headstock sets the number of strings and the tuning.</p>
     <p data-help="practice">Pick an exercise and press Play, or the space bar. Set the tempo on the metronome by sliding its weight or with − and +; its knob sets the click (0 silences it) and its COUNT switch counts in a bar. Scales and modes come in positions along the neck. Rhythm is a course from counting sixteenths to odd and mixed meters; the tab shows each pick stroke, and the metronome clicks the bar’s own beats. Voice, the microphone, is for singing: your pitch as a line, your range, and exercises in it.</p>
-    <p data-help="tab-studio">Add a Guitar Pro (3–8) or MusicXML file; it stays in this browser. Drag across bars to loop them, and slow down with the speed slider. Edit mode changes the tab and saves a copy.</p>
+    <p data-help="tab-studio">Add a Guitar Pro (3–8) or MusicXML file; it stays in this browser. Drag across bars to loop them (a click clears the loop), and slow down with the 50%, 75% and 100% keys or the metronome’s weight; its knob sets the click. Pick a vocal track to see it as notation, and press Sing: the microphone follows your voice against the note being played, an octave either way counts, and each pass gets a score. Mute the vocals, or use headphones. Edit mode changes the tab and saves a copy.</p>
     <p class="bsmall">Private by design: the microphone is processed only in your browser, files stay on this device, and there’s no account, ads or analytics. Tabs by <a href="https://alphatab.net" rel="noopener">alphaTab</a> (MPL-2.0).</p>
   </div>
   <button class="cbtn" id="cGearBtn" aria-expanded="false" aria-controls="cSettings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.54 9.33L22.27 9.81L22.27 14.19L19.54 14.67L19.22 15.45L20.81 17.71L17.71 20.81L15.45 19.22L14.67 19.54L14.19 22.27L9.81 22.27L9.33 19.54L8.55 19.22L6.29 20.81L3.19 17.71L4.78 15.45L4.46 14.67L1.73 14.19L1.73 9.81L4.46 9.33L4.78 8.55L3.19 6.29L6.29 3.19L8.55 4.78L9.33 4.46L9.81 1.73L14.19 1.73L14.67 4.46L15.45 4.78L17.71 3.19L20.81 6.29L19.22 8.55Z"/><circle cx="12" cy="12" r="3.4"/></svg></button>
@@ -358,7 +370,7 @@
 <script src="js/alphatab.js?v=ea58a266"></script>
 <script src="js/exercises.js?v=c3737bc3"></script>
 <script src="js/practice.js?v=78b58b7b"></script>
-<script src="js/tab-studio.js?v=68955429"></script>
+<script src="js/tab-studio.js?v=b2c8cec3"></script>
 <script src="js/app.js?v=94279ae0"></script>
 </body>
 </html>

@@ -1,13 +1,14 @@
 /* 7uner – Tab studio
    Opens Guitar Pro (.gp, .gpx, .gp5, .gp4, .gp3) and MusicXML files, plays
    them with speed, loop and volume controls, and has an edit mode whose
-   result can be downloaded as a Guitar Pro 7 (.gp) file.
+   result can be downloaded as a Guitar Pro 7 (.gp) file. A vocal track is
+   shown as notation, and Sing compares your voice with it as it plays.
 
    Rendering, playback and file import/export use alphaTab
    (https://alphatab.net, MPL-2.0), loaded by alphatab.js when the first
    file is opened. Files are kept in this browser (IndexedDB)
-   and never uploaded anywhere. Only guitar tracks are shown and edited;
-   drums, bass and other instruments play as backing. */
+   and never uploaded anywhere. Only guitar and vocal tracks are shown, and
+   only guitar tracks edited; drums, bass and other instruments play as backing. */
 (function () {
     "use strict";
 
@@ -23,13 +24,14 @@
         list: $("tabList"), file: $("tabFile"), empty: $("tabEmpty"), player: $("tabPlayer"),
         title: $("cTitle"), meta: $("cMeta"), notice: $("cNotice"), status: $("cStatus"), time: $("cTime"),
         edit: $("cEdit"), editPill: $("cEditPill"), dirty: $("cDirty"), save: $("cSave"), download: $("cDownload"),
-        go: $("cGo"), stop: $("cStop"), pct: $("cPct"), bpm: $("cBpm"), speed: $("cSpeed"),
-        track: $("cTrack"), click: $("cClick"), notation: $("cScore"),
-        loopInfo: $("cLoopInfo"), loopPill: $("cLoopPill"),
+        go: $("cGo"), stop: $("cStop"), track: $("cTrack"),
+        singChips: $("cSingChips"), sing: $("cSing"), vocMute: $("cVocMute"), singBar: $("cSingBar"), mixVocals: $("mixVocals"),
+        sgTarget: $("sgTarget"), sgYou: $("sgYou"), sgCents: $("sgCents"), sgDot: $("sgDot"), sgNow: $("sgNow"), sgPasses: $("sgPasses"), sgMsg: $("sgMsg"),
         eBar: $("eBar"), ePos: $("ePos"), eFret: $("eFret"),
         wrap: $("cWrap"), score: $("cScoreEl")
     };
-    const vol = { master: $("v_master"), guitar: $("v_guitar"), backing: $("v_backing") };
+    const vol = { master: $("v_master"), guitar: $("v_guitar"), vocals: $("v_vocals"), backing: $("v_backing") };
+    const speedKeys = document.querySelectorAll("[data-cspeed]");
 
     const extOf = (name) => (name.split(".").pop() || "").toLowerCase();
     const baseName = (name) => name.replace(/\.[^.]+$/, "");
@@ -42,7 +44,7 @@
 
     /* ---------- preferences ---------- */
     const PKEY = "7uner.tabstudio.v1";
-    let prefs = { speed: 100, master: 100, guitar: 100, backing: 80, muted: {}, click: false };
+    let prefs = { speed: 100, master: 100, guitar: 100, vocals: 100, backing: 80, muted: {} };
     try { const o = JSON.parse(localStorage.getItem(PKEY) || "null"); if (o) prefs = Object.assign(prefs, o); } catch (e) {}
     const savePrefs = () => { try { localStorage.setItem(PKEY, JSON.stringify(prefs)); } catch (e) {} };
 
@@ -131,7 +133,8 @@
 
     /* ---------- alphaTab ---------- */
     let api = null, playing = false, ready = false;
-    let guitarTracks = [], trackIdx = 0;
+    // shown: the track on screen; guitarIdx: the guitar track the Guitar volume is for
+    let guitarTracks = [], vocalTracks = [], shown = null, guitarIdx = 0;
 
     function setStatus(text, isError) {
         el.status.textContent = text || "";
@@ -141,8 +144,7 @@
     function createApi() {
         el.score.innerHTML = "";
         const settings = window.at7.baseSettings(el.wrap);
-        settings.display.staveProfile = isOn(el.notation) ? "ScoreTab" : "Tab";
-        api = new (AT().AlphaTabApi)(el.score, settings);
+        api =new (AT().AlphaTabApi)(el.score, settings);
         window.at7.holdCursorDuringCountIn(api, el.score);
         ready = false; playing = false;
 
@@ -165,7 +167,9 @@
         api.playerPositionChanged.on((e) => {
             el.time.textContent = mmss(e.currentTime) + " / " + mmss(e.endTime);
             window.metronome.sync(metro, e.currentTick);
+            followPosition(e);
         });
+        api.playerFinished.on(passOver);
         api.playbackRangeHighlightChanged.on(onRangeHighlight);
         api.playbackRangeChanged.on((e) => setLoopState(!!(e && e.playbackRange)));
         api.renderStarted.on(() => { rendering = true; });
@@ -175,9 +179,13 @@
     }
 
     /* ---------- tracks ---------- */
+    // a vocal or melody line, by its name or its sound (choir aahs, voice oohs, synth voice, lead voice);
+    // Guitar Pro 3–5 gives every track strings, so this comes before counting them
+    const VOCAL = /\b(voc\w*|voice|vox|voz|sing\w*|melod\w*|choir)\b/i;
     function trackKind(t) {
         const st = t.staves[0], prog = t.playbackInfo ? t.playbackInfo.program : -1;
         if (st.isPercussion) return "drums";
+        if (VOCAL.test(t.name || "") || VOCAL.test(t.shortName || "") || [52, 53, 54, 85].includes(prog)) return "vocal";
         const strings = st.tuning ? st.tuning.length : 0;
         if ((prog >= 32 && prog <= 39) || (strings > 0 && strings < 6)) return "bass";
         if (strings >= 6) return "guitar";
@@ -190,30 +198,37 @@
         el.meta.textContent = (bits.length ? bits.join(", ") + ", " : "") + score.masterBars.length + " bars, " + Math.round(score.tempo) + " BPM";
 
         guitarTracks = score.tracks.filter((t) => trackKind(t) === "guitar");
+        vocalTracks = score.tracks.filter((t) => trackKind(t) === "vocal");
         const others = { drums: 0, bass: 0, other: 0 };
-        score.tracks.forEach((t) => { const k = trackKind(t); if (k !== "guitar") others[k]++; });
+        score.tracks.forEach((t) => { const k = trackKind(t); if (others[k] !== undefined) others[k]++; });
         const parts = [];
         if (others.drums) parts.push("drums");
         if (others.bass) parts.push("bass");
         if (others.other) parts.push(others.other === 1 ? "another instrument" : "other instruments");
-        if (!guitarTracks.length) {
+        if (!guitarTracks.length && !vocalTracks.length) {
             el.notice.hidden = false;
-            el.notice.textContent = "This file has no guitar tracks. 7uner supports guitar tabs only.";
+            el.notice.textContent = "This file has no guitar or vocal tracks. 7uner shows guitar tabs and vocal lines only.";
         } else if (parts.length) {
             el.notice.hidden = false;
-            el.notice.textContent = "This file also contains " + listJoin(parts) + ". 7uner supports guitar tracks only: those parts play along as backing (use the Backing volume) but can’t be shown or edited.";
+            el.notice.textContent = "This file also contains " + listJoin(parts) + ". 7uner shows guitar and vocal tracks only: those parts play along as backing (use the Backing volume) but can’t be shown or edited.";
         } else el.notice.hidden = true;
 
-        el.track.innerHTML = guitarTracks.map((t, i) => '<option value="' + i + '">' + escapeHtml(t.name || "Guitar " + (i + 1)) + " (" + t.staves[0].tuning.length + " strings)</option>").join("");
-        el.track.disabled = guitarTracks.length < 2;
-        trackIdx = 0;
+        const opt = (v, label) => '<option value="' + v + '">' + escapeHtml(label) + "</option>";
+        const gOpts = guitarTracks.map((t, i) => opt("g" + i, (t.name || "Guitar " + (i + 1)) + " (" + t.staves[0].tuning.length + " strings)")).join("");
+        const vOpts = vocalTracks.map((t, i) => opt("v" + i, t.name || "Vocals " + (i + 1))).join("");
+        el.track.innerHTML = gOpts && vOpts ? '<optgroup label="Guitar">' + gOpts + '</optgroup><optgroup label="Vocals, as notation">' + vOpts + "</optgroup>" : gOpts + vOpts;
+        el.track.disabled = guitarTracks.length + vocalTracks.length < 2;
+        el.singChips.hidden = !vocalTracks.length;
+        el.mixVocals.hidden = !vocalTracks.length;
+        guitarIdx = 0;
 
         loopBars = null; setLoopState(false); drawLoopMarks(null);
 
-        if (guitarTracks.length && score.tracks[0] !== guitarTracks[0]) api.renderTracks([guitarTracks[0]]);
-        applySpeed();
-        applyVolumes();
+        const first = guitarTracks[0] || vocalTracks[0] || null;
+        if (first) showTrack(first, first === score.tracks[0]);
+        setSpeed(speed);
         ed.beat = null; ed.undo = []; ed.redo = []; setDirty(false);
+        trackChanged();
 
         if (current && (current.title !== (score.title || "") || current.artist !== (score.artist || ""))) {
             current.title = score.title || ""; current.artist = score.artist || "";
@@ -221,60 +236,78 @@
         }
     }
     const listJoin = (a) => (a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]);
-    const curTrack = () => guitarTracks[trackIdx] || null;
+    const isVocal = (t) => vocalTracks.includes(t);
+    const curTrack = () => (shown && !isVocal(shown) ? shown : null); // the guitar track on screen, for edit mode
+
+    // a guitar track as tab, a vocal track as notation; now: alphaTab has already drawn it
+    function showTrack(t, now) {
+        shown = t;
+        const prof = isVocal(t) ? AT().StaveProfile.Score : AT().StaveProfile.Tab;
+        if (api.settings.display.staveProfile !== prof) { api.settings.display.staveProfile = prof; api.updateSettings(); now = false; }
+        if (!now) api.renderTracks([t]);
+    }
+    function trackChanged() {
+        if (ed.on && !curTrack()) setEdit(false);
+        el.edit.disabled = !curTrack();
+        const t = curTrack();
+        ed.beat = t ? t.staves[0].bars[0].voices[0].beats[0] : null;
+        ed.string = nStrings();
+        if (isOn(el.sing) && !isVocal(shown)) setSing(false);
+        resetSing();
+        applyVolumes(); updateEditBar();
+    }
 
     /* ---------- playback options ---------- */
-    function applySpeed() {
-        const pct = +el.speed.value;
-        el.pct.textContent = pct + "%";
-        const base = api && api.score ? api.score.tempo : 0;
-        el.bpm.textContent = base ? Math.round((base * pct) / 100) + " BPM" : "";
+    let speed = Math.max(25, Math.min(125, Math.round(+prefs.speed) || 100));
+    function setSpeed(pct) {
+        speed = pct;
+        speedKeys.forEach((b) => setOn(b, +b.dataset.cspeed === pct));
         if (api) api.playbackSpeed = pct / 100;
         prefs.speed = pct; savePrefs();
     }
     function applyPlayerOptions() {
-        prefs.click = isOn(el.click); savePrefs();
         if (!api) return;
         api.isLooping = loopOn;
-        api.metronomeVolume = prefs.click ? window.metronome.level() : 0;
-        api.countInVolume = window.metronome.countIn() ? window.metronome.level() : 0; // the metronome’s switch
+        // the metronome’s knob (0 silences the click) and count-in switch
+        api.metronomeVolume = window.metronome.level();
+        api.countInVolume = window.metronome.countIn() ? window.metronome.level() : 0;
     }
 
     /* the metronome (metronome.js) shows the playing tempo; sliding its
        weight sets the speed relative to the song’s own tempo */
     const baseTempo = () => (api && api.score ? api.score.tempo : 0);
     const metro = {
-        bpm: () => (baseTempo() ? (baseTempo() * +el.speed.value) / 100 : null),
-        setBpm(v) { el.speed.value = Math.max(25, Math.min(125, Math.round((v / baseTempo()) * 100))); applySpeed(); },
+        bpm: () => (baseTempo() ? (baseTempo() * speed) / 100 : null),
+        setBpm(v) { setSpeed(Math.max(25, Math.min(125, Math.round((v / baseTempo()) * 100)))); },
         get range() { return [Math.ceil(baseTempo() * 0.25), Math.floor(baseTempo() * 1.25)]; },
         playing: () => playing
     };
     function level(key) { return prefs.muted[key] ? 0 : prefs[key] / 100; }
     function applyVolumes() {
         document.querySelectorAll(".mute").forEach((b) => b.setAttribute("aria-pressed", prefs.muted[b.dataset.mix] ? "true" : "false"));
+        setOn(el.vocMute, !!prefs.muted.vocals);
         Object.keys(vol).forEach((k) => { vol[k].value = prefs[k]; vol[k].closest(".mix").classList.toggle("muted", !!prefs.muted[k]); });
         if (!api || !api.score) return;
         api.masterVolume = level("master");
-        const g = curTrack();
+        const g = guitarTracks[guitarIdx];
         if (g) api.changeTrackVolume([g], level("guitar"));
-        const rest = api.score.tracks.filter((t) => t !== g);
+        if (vocalTracks.length) api.changeTrackVolume(vocalTracks, level("vocals"));
+        const rest = api.score.tracks.filter((t) => t !== g && !isVocal(t));
         if (rest.length) api.changeTrackVolume(rest, level("backing"));
     }
 
     /* ---------- loop ----------
        Dragging across bars sets a playback range, which alphaTab loops; a click
-       in the tab clears it. The Loop chip only reports that state. */
+       in the tab clears it. */
     let loopBars = null, loopOn = false, rendering = false;
 
     function setLoopState(on) {
         loopOn = on;
-        el.loopInfo.classList.toggle("on", on);
-        el.loopPill.textContent = on ? "ON" : "OFF";
         if (api) api.isLooping = on;
         if (!on) { loopBars = null; drawLoopMarks(null); }
     }
     function beatsForBars(a, b) {
-        const t = curTrack();
+        const t = shown;
         if (!t) return null;
         const bars = t.staves[0].bars, first = bars[a - 1], last = bars[b - 1];
         if (!first || !last) return null;
@@ -333,15 +366,11 @@
         el.player.classList.toggle("editing", on);
         if (on) {
             if (api && playing) api.pause();
-            if (isOn(el.notation)) { setOn(el.notation, false); applyNotation(); }
-            el.notation.disabled = true;
             if (!ed.beat) {
                 const t = curTrack();
                 ed.beat = t.staves[0].bars[0].voices[0].beats[0];
                 ed.string = nStrings();
             }
-        } else {
-            el.notation.disabled = false;
         }
         drawCursor();
         updateEditBar();
@@ -386,6 +415,7 @@
             if (bt && bt.start !== bt.end) api.highlightPlaybackRange(bt.start, bt.end);
         }
         drawCursor();
+        drawMarks();
     }
 
     function stringFromY(beat, y) {
@@ -530,6 +560,180 @@
         drawCursor(); updateEditBar();
     }
 
+    /* ---------- sing ----------
+       With Sing on, the microphone listens while the song plays, and the pitch
+       heard is compared with the vocal note under the playback cursor: within
+       40 cents counts, an octave either way too, as in Voice's exercises. Rests
+       and the first moments of each note (finding it) aren't scored. A pass, the
+       song or the loop once through, scores the share of note time on pitch,
+       and each note is marked in the notation. Detection is pitch.js's, tuned
+       as in Voice (voice.js). */
+    const SING = { minF: 65, maxF: 1400, windowSec: 0.04, clarity: 0.8, median: 5 };
+    // a held note still counts when it gets quieter or less clear, as long as it stays within a semitone
+    const QUIET = Object.assign({}, SING, { minRms: 0.0008 }), SUSTAIN = { clarity: 0.2, near: 1 };
+    const TICK_MS = 20, SILENCE_TICKS = 8, TOLERANCE = 40, GRACE_MS = 80, MIN_PASS = 50, PASSES = 5;
+    const HINT = "Play the song and sing along. Within 40 cents of the vocal note counts, an octave up or down too. Mute the vocals, or use headphones, so the microphone hears only you.";
+    const NOTE_NAMES = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
+    const noteLabel = (m) => NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
+    const a4 = () => (window.tuner && window.tuner.a4 ? window.tuner.a4() : 440);
+    // cents from the target, folded to the nearest octave (−600 to 600)
+    const foldCents = (m, target) => ((((m - target) % 12) + 18) % 12 - 6) * 100;
+    const pct = (x) => Math.round((100 * x.hit) / x.total);
+    const { detect, windowLen, median, wake } = window.pitch;
+
+    // pass: this time through; notes: beat → { hit, total, pass, el }, the marks in the notation
+    const sg = { on: false, want: false, starting: false, ctx: null, stream: null, analyser: null, buf: null, raf: 0, lastTick: 0,
+        recent: [], silent: 0, live: false, m: 0, pos: { tick: 0, at: 0, rate: 0 },
+        pass: { hit: 0, total: 0 }, passNo: 0, passes: [], notes: new Map() };
+    const say = (text) => { el.sgMsg.textContent = text; };
+
+    // where alphaTab's player is: it reports as the audio plays, and listen() reckons on from there
+    function followPosition(e) {
+        const p = sg.pos;
+        if (e.currentTick < p.tick - 480) passOver(); // back to the loop's start, or a jump back
+        p.tick = e.currentTick; p.at = performance.now();
+        p.rate = (e.modifiedTempo * 960) / 60000; // ticks per millisecond at the playing speed
+    }
+    // the vocal note under the playback cursor: { beat, m, ms into it }, { beat, rest }, or null
+    function target() {
+        const p = sg.pos, age = performance.now() - p.at;
+        // no report for a while: not moving (a count-in, or the player waiting)
+        if (!playing || !shown || !isVocal(shown) || !api.tickCache || !p.rate || age > 300) return null;
+        const tick = p.tick + age * p.rate, r = api.tickCache.findBeat(new Set([shown.index]), tick);
+        if (!r || !r.beat) return null;
+        const b = r.beat;
+        if (b.isRest || !b.notes.length) return { beat: b, rest: true };
+        const top = b.notes.reduce((x, y) => (y.realValue > x.realValue ? y : x));
+        // a note tied over from the one before is already found
+        return { beat: b, m: top.realValue, ms: top.isTieDestination ? Infinity : (tick - r.start) / p.rate };
+    }
+
+    function loop(ts) {
+        sg.raf = requestAnimationFrame(loop);
+        if (ts - sg.lastTick >= TICK_MS) { sg.lastTick = ts; listen(); }
+    }
+    function listen() {
+        sg.analyser.getFloatTimeDomainData(sg.buf);
+        const following = sg.live && sg.recent.length > 0, last = following ? median(sg.recent) : 0;
+        const r = detect(sg.buf, sg.ctx.sampleRate, following ? QUIET : SING);
+        const m0 = r.f > 0 ? 69 + 12 * Math.log2(r.f / a4()) : 0;
+        if (r.f > 0 && (r.clarity >= SING.clarity || (following && r.clarity >= SING.clarity - SUSTAIN.clarity && Math.abs(m0 - last) <= SUSTAIN.near))) {
+            sg.silent = 0; sg.live = true;
+            sg.recent.push(m0);
+            if (sg.recent.length > SING.median) sg.recent.shift();
+            sg.m = median(sg.recent);
+        } else if (++sg.silent > SILENCE_TICKS) { sg.live = false; sg.recent = []; }
+
+        const tgt = target(), note = tgt && !tgt.rest ? tgt : null;
+        const off = note && sg.live ? foldCents(sg.m, note.m) : null;
+        if (note && note.ms >= GRACE_MS) {
+            let n = sg.notes.get(note.beat);
+            if (!n || n.pass !== sg.passNo) { n = Object.assign(n || {}, { hit: 0, total: 0, pass: sg.passNo }); sg.notes.set(note.beat, n); }
+            n.total++; sg.pass.total++;
+            if (off !== null && Math.abs(off) <= TOLERANCE) { n.hit++; sg.pass.hit++; }
+            drawMark(layer("singlayer"), note.beat, n);
+        }
+        showSing(tgt, off);
+    }
+
+    function showSing(tgt, off) {
+        el.sgTarget.textContent = !tgt ? "–" : tgt.rest ? "rest" : noteLabel(tgt.m);
+        el.sgYou.textContent = sg.on && sg.live ? noteLabel(Math.round(sg.m)) : "–";
+        el.sgCents.textContent = off === null ? "" : (off >= 0.5 ? "+" : off <= -0.5 ? "−" : "±") + Math.abs(off).toFixed(0) + " cents";
+        const ok = off !== null && Math.abs(off) <= TOLERANCE;
+        el.singBar.classList.toggle("ok", ok);
+        el.singBar.classList.toggle("near", off !== null && !ok);
+        el.sgDot.hidden = off === null;
+        if (off !== null) el.sgDot.style.left = (50 + Math.max(-100, Math.min(100, off)) / 2) + "%";
+        el.sgNow.textContent = sg.pass.total ? pct(sg.pass) + "%" : "–";
+    }
+
+    // a note's mark: green when most of it was on pitch, amber for some, red for little
+    function drawMark(l, beat, n) {
+        const bb = api && api.renderer.boundsLookup && api.renderer.boundsLookup.findBeat(beat);
+        if (!bb || !n.total) return;
+        const q = n.hit / n.total, vb = bb.visualBounds;
+        if (!n.el || n.el.parentNode !== l) { n.el = document.createElement("div"); l.appendChild(n.el); }
+        n.el.className = "sgmark " + (q >= 0.7 ? "ok" : q >= 0.3 ? "near" : "off");
+        n.el.title = Math.round(q * 100) + "% on pitch";
+        Object.assign(n.el.style, { left: vb.x - 4 + "px", top: vb.y - 4 + "px", width: vb.w + 8 + "px", height: vb.h + 8 + "px" });
+    }
+    function drawMarks() {
+        const l = layer("singlayer");
+        l.innerHTML = "";
+        sg.notes.forEach((n, beat) => drawMark(l, beat, n));
+    }
+
+    // the song or the loop has gone round: keep its score
+    function passOver() {
+        if (sg.pass.total >= MIN_PASS) { // at least a second of notes
+            sg.passes.unshift(pct(sg.pass));
+            sg.passes.length = Math.min(sg.passes.length, PASSES);
+            el.sgPasses.innerHTML = sg.passes.map((v, i) => (i ? v + "%" : "<b>" + v + "%</b>")).join(" · ");
+        }
+        sg.pass = { hit: 0, total: 0 }; sg.passNo++;
+        el.sgNow.textContent = "–";
+    }
+    function resetSing() {
+        sg.pass = { hit: 0, total: 0 }; sg.passes = []; sg.notes.clear();
+        el.sgPasses.textContent = "none yet";
+        drawMarks();
+        showSing(null, null);
+    }
+
+    async function openMic() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            say("This browser doesn’t support microphone access, or the page wasn’t opened over HTTPS.");
+            return false;
+        }
+        try {
+            sg.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+        } catch (e) {
+            say(e && e.name === "NotAllowedError"
+                ? "Microphone permission was denied. Allow the microphone in your browser’s site settings and try again."
+                : "Couldn’t access the microphone. Another app may be using it.");
+            return false;
+        }
+        const ctx = sg.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        wake(ctx);
+        const src = ctx.createMediaStreamSource(sg.stream);
+        const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 55; hp.Q.value = 0.707;
+        const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 4000; lp.Q.value = 0.707;
+        sg.analyser = ctx.createAnalyser();
+        sg.analyser.fftSize = windowLen(ctx.sampleRate, SING);
+        src.connect(hp).connect(lp).connect(sg.analyser);
+        sg.buf = new Float32Array(sg.analyser.fftSize);
+        sg.on = true;
+        sg.raf = requestAnimationFrame(loop);
+        return true;
+    }
+    function closeMic() {
+        if (!sg.on) return;
+        sg.on = false;
+        cancelAnimationFrame(sg.raf);
+        sg.stream.getTracks().forEach((t) => t.stop());
+        sg.ctx.close();
+        sg.ctx = sg.stream = sg.analyser = null;
+        sg.live = false; sg.recent = [];
+        showSing(null, null);
+    }
+
+    async function setSing(on) {
+        sg.want = on;
+        setOn(el.sing, on);
+        if (!on) { closeMic(); el.singBar.hidden = true; return; }
+        if (sg.on || sg.starting || !vocalTracks.length) return;
+        if (!isVocal(shown)) { el.track.value = "v0"; showTrack(vocalTracks[0]); trackChanged(); }
+        el.singBar.hidden = false;
+        say("Waiting for microphone permission…");
+        sg.starting = true;
+        const ok = await openMic();
+        sg.starting = false;
+        if (!ok) { sg.want = false; setOn(el.sing, false); return; } // the bar stays, with the reason
+        if (!sg.want) { closeMic(); return; }
+        say(HINT);
+    }
+
     /* ---------- save / download ---------- */
     function exportBytes() { return new (AT().exporter.Gp7Exporter)().export(api.score, api.settings); }
     function download() {
@@ -566,6 +770,7 @@
         el.empty.hidden = true; el.player.hidden = false;
         renderList();
         setEdit(false);
+        setSing(false);
         el.title.textContent = rec.title || baseName(rec.name);
         el.meta.textContent = ""; el.time.textContent = ""; el.notice.hidden = true;
         el.go.disabled = true; el.stop.disabled = true;
@@ -582,7 +787,7 @@
     }
 
     function close() {
-        pause();
+        leave();
         setDirty(false);
         current = null;
         el.player.hidden = true; el.empty.hidden = false;
@@ -590,17 +795,11 @@
     }
 
     function pause() { if (api && playing) api.pause(); }
-
-    function applyNotation() {
-        if (!api) return;
-        api.settings.display.staveProfile = isOn(el.notation) ? AT().StaveProfile.ScoreTab : AT().StaveProfile.Tab;
-        api.updateSettings();
-        api.render();
-    }
+    // leaving Tab Studio: pause, and the microphone goes off
+    function leave() { pause(); setSing(false); }
 
     /* ---------- wiring ---------- */
-    el.speed.value = prefs.speed; setOn(el.click, prefs.click);
-    el.pct.textContent = prefs.speed + "%";
+    setSpeed(speed);
     applyVolumes();
 
     el.file.addEventListener("change", () => { addFiles(el.file.files); el.file.value = ""; });
@@ -619,19 +818,17 @@
 
     el.go.addEventListener("click", () => { if (api && ready) api.playPause(); });
     el.stop.addEventListener("click", () => { if (api && ready) api.stop(); });
-    el.speed.addEventListener("input", applySpeed);
-    document.querySelectorAll("[data-cspeed]").forEach((b) => b.addEventListener("click", () => { el.speed.value = b.dataset.cspeed; applySpeed(); }));
+    speedKeys.forEach((b) => b.addEventListener("click", () => setSpeed(+b.dataset.cspeed)));
     el.track.addEventListener("change", () => {
         if (!api || !api.score) return;
-        trackIdx = +el.track.value;
-        const t = curTrack();
-        if (t) api.renderTracks([t]);
-        ed.beat = t ? t.staves[0].bars[0].voices[0].beats[0] : null;
-        ed.string = nStrings();
-        applyVolumes(); updateEditBar();
+        const i = +el.track.value.slice(1), vocal = el.track.value[0] === "v";
+        if (!vocal) guitarIdx = i;
+        showTrack(vocal ? vocalTracks[i] : guitarTracks[i]);
+        trackChanged();
     });
-    el.click.addEventListener("click", () => { setOn(el.click, !isOn(el.click)); applyPlayerOptions(); });
-    el.notation.addEventListener("click", () => { if (el.notation.disabled) return; setOn(el.notation, !isOn(el.notation)); applyNotation(); });
+    el.sing.addEventListener("click", () => setSing(!isOn(el.sing)));
+    el.vocMute.addEventListener("click", () => { prefs.muted.vocals = !prefs.muted.vocals; savePrefs(); applyVolumes(); });
+    document.addEventListener("visibilitychange", () => { if (document.hidden) setSing(false); });
 
     Object.keys(vol).forEach((k) => vol[k].addEventListener("input", () => {
         prefs[k] = +vol[k].value;
@@ -711,5 +908,5 @@
 
     window.addEventListener("metronomechange", applyPlayerOptions);
 
-    window.tabStudio = { pause, show() { window.metronome.bind(metro); } };
+    window.tabStudio = { pause: leave, show() { window.metronome.bind(metro); } };
 })();
