@@ -565,23 +565,10 @@ html.tabfull,html.tabfull body{overflow:hidden}
 .at-selection div{background:rgba(242,179,61,.22)}
 .at-cursor-beat{background:var(--amber);width:3px}
 .at-highlight *{fill:var(--amber);stroke:var(--amber)}
-.looplayer,.edlayer,.singlayer{position:absolute;inset:0 auto auto 0;width:0;height:0;pointer-events:none;z-index:5}
+.edlayer,.singlayer{position:absolute;inset:0 auto auto 0;width:0;height:0;pointer-events:none;z-index:5}
 .edcol{position:absolute;background:rgba(36,80,200,.10);border-radius:4px}
 .edbox{position:absolute;border:2px solid var(--blue);border-radius:5px;background:rgba(36,80,200,.12);box-shadow:0 0 0 3px rgba(36,80,200,.15)}
 
 /* loop markers: repeat-sign bars with a loop badge */
-.loopmark{position:absolute;width:0}
-.loopmark .lm-bars{position:absolute;top:0;bottom:0;width:7px;border-left:3px solid var(--amber);border-right:1.5px solid var(--amber)}
-.loopmark.start .lm-bars{left:-1px}
-.loopmark.end .lm-bars{right:-1px}
-.loopmark .lm-dots{position:absolute;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:7px}
-.loopmark .lm-dots i{display:block;width:5px;height:5px;border-radius:50%;background:var(--amber)}
-.loopmark.start .lm-dots{left:9px}
-.loopmark.end .lm-dots{right:9px}
-.loopmark .lm-badge{position:absolute;top:-13px;width:24px;height:24px;border-radius:50%;background:var(--amber);color:var(--amber-ink);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}
-.loopmark.start .lm-badge{left:-11px}
-.loopmark.end .lm-badge{right:-11px}
-.loopmark .lm-badge svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-.loopmark.end .lm-badge svg{transform:scaleX(-1)}
 
 @media (prefers-reduced-motion:reduce){.sg-dot,.readout,.pn,.gstr,.modes button,.autobtn,.emptystate,.pstrobe{transition:none}.headstock .gstr.active,.headstock .gstr.in{animation:none}}

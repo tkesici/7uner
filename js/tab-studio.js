@@ -174,7 +174,6 @@
         api.playerFinished.on(passOver);
         api.playbackRangeHighlightChanged.on(onRangeHighlight);
         api.playbackRangeChanged.on((e) => setLoopState(!!(e && e.playbackRange)));
-        api.renderStarted.on(() => { rendering = true; });
         api.noteMouseDown.on(onNoteDown);
         api.beatMouseDown.on(onBeatDown);
         api.error.on(() => { setStatus("Couldn’t open this file. Supported formats: Guitar Pro 3–8 (.gp3, .gp4, .gp5, .gpx, .gp) and MusicXML.", true); });
@@ -248,7 +247,7 @@
         el.track.disabled = vocalTracks.length + guitarTracks.length < 2;
         guitarIdx = 0;
 
-        loopBars = null; setLoopState(false); drawLoopMarks(null);
+        setLoopState(false);
 
         // a song with vocals opens on them (the lead line, if there are several), ready to sing
         const first = vocalTracks.find((t) => /lead|main/i.test(t.name || "")) || vocalTracks[0] || guitarTracks[0] || null;
@@ -337,14 +336,14 @@
     }
 
     /* ---------- loop ----------
-       Dragging across bars sets a playback range, which alphaTab loops; a click
-       in the tab clears it. */
-    let loopBars = null, loopOn = false, rendering = false;
+       Dragging across bars sets a playback range, which alphaTab highlights and
+       loops, as in Practice; a click in the tab clears it. */
+    let loopBars = null, loopOn = false;
 
     function setLoopState(on) {
         loopOn = on;
         if (api) api.isLooping = on;
-        if (!on) { loopBars = null; drawLoopMarks(null); }
+        if (!on) loopBars = null;
     }
     function beatsForBars(a, b) {
         const t = shown;
@@ -354,35 +353,15 @@
         const fb = first.voices[0].beats, lb = last.voices[0].beats;
         return { start: fb[0], end: lb[lb.length - 1] };
     }
+    // remember the looped bars, to select them again after the tab is redrawn
     function onRangeHighlight(e) {
-        if (e && e.startBeat && e.endBeat) {
-            loopBars = { a: e.startBeat.voice.bar.index + 1, b: e.endBeat.voice.bar.index + 1 };
-            drawLoopMarks(e.highlightBlocks);
-        } else if (!rendering) {
-            drawLoopMarks(null);
-        }
+        if (e && e.startBeat && e.endBeat) loopBars = { a: e.startBeat.voice.bar.index + 1, b: e.endBeat.voice.bar.index + 1 };
     }
 
-    const LOOP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>';
     function layer(cls) {
         let l = el.score.querySelector(":scope > ." + cls);
         if (!l) { l = document.createElement("div"); l.className = cls; el.score.appendChild(l); }
         return l;
-    }
-    function drawLoopMarks(blocks) {
-        const l = layer("looplayer");
-        l.innerHTML = "";
-        if (!blocks || !blocks.length) return;
-        const first = blocks[0], last = blocks[blocks.length - 1];
-        const mark = (cls, x, y, h, title) => {
-            const m = document.createElement("div");
-            m.className = "loopmark " + cls;
-            m.style.left = x + "px"; m.style.top = y + "px"; m.style.height = h + "px";
-            m.innerHTML = '<span class="lm-bars"></span><span class="lm-dots"><i></i><i></i></span><span class="lm-badge" title="' + title + '">' + LOOP_ICON + "</span>";
-            l.appendChild(m);
-        };
-        mark("start", first.x, first.y, first.h, "Loop start");
-        mark("end", last.x + last.w, last.y, last.h, "Loop end");
     }
 
     /* ---------- edit mode ---------- */
@@ -448,7 +427,6 @@
     }
 
     function onRenderFinished() {
-        rendering = false;
         if (!ready && !el.status.classList.contains("err")) setStatus("Loading sounds…");
         if (loopBars && loopOn) {
             const bt = beatsForBars(loopBars.a, loopBars.b);
@@ -827,7 +805,6 @@
             if (!api) createApi();
             else { api.stop(); ready = api.isReadyForPlayback; }
             setStatus("Opening…");
-            drawLoopMarks(null);
             if (api.load(new Uint8Array(rec.data), [0]) === false) setStatus("Couldn’t open this file.", true);
             if (ready) el.go.disabled = false;
         }).catch(() => setStatus("Couldn’t load the tab player. Check your internet connection and try again.", true));
