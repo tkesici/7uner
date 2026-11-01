@@ -453,12 +453,15 @@ button{cursor:pointer}
 
 .studio{display:grid;grid-template-columns:minmax(220px,280px) 1fr;gap:1.4rem;align-items:start}
 @media (max-width:860px){.studio{grid-template-columns:1fr}}
-.tabside-head{display:flex;align-items:center;justify-content:space-between;gap:.6rem}
-.tabside-head h3{font-size:1.35rem}
-.addfile{cursor:pointer;font-weight:600;padding:.4rem .8rem}
-.addfile:focus-within{outline:3px solid var(--blue);outline-offset:2px}
-.tabside>.hint{margin:.3rem 0 .6rem}
-.tablist .empty{font-size:.88rem;color:var(--muted);padding:.2rem .75rem}
+.tabside h3{font-size:1.35rem;margin-bottom:.6rem}
+/* the add card heads the list: dashed and faintly amber, unlike the songs under it */
+.tablist .addcard{display:grid;grid-template-columns:2.4rem 1fr;align-items:center;gap:.05rem .7rem;padding:.75rem .8rem;border:1.5px dashed color-mix(in srgb,var(--amber) 55%,var(--line));border-radius:9px;
+  background:color-mix(in srgb,var(--amber-soft) 55%,transparent);text-align:left;transition:border-color .15s,background-color .15s}
+.tablist .addcard:hover,.tablist .addcard.over{border-color:var(--amber);background:var(--amber-soft)}
+.tablist .addcard svg{grid-row:span 2;width:2.4rem;height:2.4rem;fill:none;stroke:var(--amber);stroke-width:2.6;stroke-linejoin:round;stroke-linecap:round}
+.ac-main{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.15rem;color:var(--ink)}
+.ac-sub{font-size:.8rem;line-height:1.35;color:var(--muted)}
+.addtab{margin-bottom:.3rem}
 .mytab{display:flex;align-items:stretch;gap:.2rem}
 .mytab .pick{flex:1;min-width:0}
 .mytab .pick .nm{overflow-wrap:anywhere}
@@ -466,11 +469,8 @@ button{cursor:pointer}
 .mytab .del:hover{color:var(--bad);border-color:var(--bad)}
 .exlist .mytab .no{font-size:.7rem;padding-top:.2rem}
 
-.emptystate{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;min-height:22rem;padding:2rem;border:2px dashed var(--line);border-radius:14px;background:var(--panel);text-align:center;cursor:pointer;transition:border-color .15s,background-color .15s}
-.emptystate:hover,.emptystate.over{border-color:var(--amber);background:var(--amber-soft)}
-.es-icon svg{width:64px;height:64px;fill:none;stroke:var(--amber);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
-.es-main{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.9rem}
-.es-sub{color:var(--muted);max-width:40ch}
+/* nothing open: a quiet line where the player goes */
+.tabnone{align-self:start;margin:0;padding:1.4rem 1.2rem;border:1px solid var(--line);border-radius:10px;color:var(--muted)}
 
 .tp-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:.8rem 1.2rem}
 .tp-actions{display:flex;align-items:center;gap:.4rem}
@@ -535,7 +535,7 @@ button.chip:hover:not(:disabled){border-color:var(--amber);color:var(--ink)}
   .tp-head{flex-direction:column;align-items:stretch}
   .transport .go{flex:1;min-width:0}
   .transport .trackpick{flex:1 1 100%;max-width:none}
-  .emptystate{min-height:14rem;padding:1.4rem}
+  .tabnone{display:none}
   .player{padding:1rem}
   .atwrap{max-height:65vh}
 }
@@ -577,4 +577,4 @@ html.tabfull,html.tabfull body{overflow:hidden}
 
 /* loop markers: repeat-sign bars with a loop badge */
 
-@media (prefers-reduced-motion:reduce){.sg-dot,.readout,.pn,.gstr,.modes button,.autobtn,.emptystate,.pstrobe{transition:none}.headstock .gstr.active,.headstock .gstr.in{animation:none}}
+@media (prefers-reduced-motion:reduce){.sg-dot,.readout,.pn,.gstr,.modes button,.autobtn,.addcard,.pstrobe{transition:none}.headstock .gstr.active,.headstock .gstr.in{animation:none}}

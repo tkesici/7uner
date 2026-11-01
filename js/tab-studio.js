@@ -73,15 +73,22 @@
     /* ---------- file list ---------- */
     let tabs = [], current = null;
 
+    // the first item, always: a card to add files, by a click or by dropping them on it
+    const ADD_ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 6h20l8 8v28H10z"/><path d="M30 6v8h8"/><path d="M24 20v14M17 27h14"/></svg>';
+    function addCard() {
+        const li = document.createElement("li"), b = document.createElement("button");
+        li.className = "addtab";
+        b.className = "addcard";
+        b.innerHTML = ADD_ICON + '<span class="ac-main">Add a Guitar Pro file</span><span class="ac-sub">Guitar Pro 3–8 or MusicXML: click, or drop it here</span>';
+        b.addEventListener("click", () => el.file.click());
+        li.appendChild(b);
+        return li;
+    }
+    const dropping = (on) => { const c = el.list.querySelector(".addcard"); if (c) c.classList.toggle("over", on); };
+
     function renderList() {
         el.list.innerHTML = "";
-        if (!tabs.length) {
-            const li = document.createElement("li");
-            li.className = "empty";
-            li.textContent = "No files yet.";
-            el.list.appendChild(li);
-            return;
-        }
+        el.list.appendChild(addCard());
         tabs.slice().sort((a, b) => b.added - a.added).forEach((rec) => {
             const li = document.createElement("li");
             li.className = "mytab";
@@ -861,10 +868,9 @@
     applyVolumes();
 
     el.file.addEventListener("change", () => { addFiles(el.file.files); el.file.value = ""; });
-    el.empty.addEventListener("click", (e) => { e.preventDefault(); el.file.click(); });
-    [el.empty, el.list, document.querySelector(".tabside")].forEach((zone) => {
-        ["dragenter", "dragover"].forEach((t) => zone.addEventListener(t, (e) => { e.preventDefault(); el.empty.classList.add("over"); }));
-        ["dragleave", "drop"].forEach((t) => zone.addEventListener(t, () => el.empty.classList.remove("over")));
+    [el.empty, document.querySelector(".tabside")].forEach((zone) => {
+        ["dragenter", "dragover"].forEach((t) => zone.addEventListener(t, (e) => { e.preventDefault(); dropping(true); }));
+        ["dragleave", "drop"].forEach((t) => zone.addEventListener(t, () => dropping(false)));
         zone.addEventListener("drop", (e) => { e.preventDefault(); addFiles(e.dataTransfer && e.dataTransfer.files); });
     });
     // dropping a file anywhere on the open player also adds it
