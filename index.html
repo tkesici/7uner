@@ -27,7 +27,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=567038f7">
+  <link rel="stylesheet" href="css/style.css?v=c9aafc50">
 </head>
 <body>
 <noscript><p class="noscript">7uner needs JavaScript: the tuner, the exercises and the tab player all run in your browser. Please turn JavaScript on, or open the page in another browser.</p></noscript>
@@ -265,7 +265,12 @@
           <div class="controls transport">
             <button id="cGo" class="go" disabled>Play</button>
             <span class="ctime" id="cTime"></span>
-            <label class="sel trackpick">Track <select id="cTrack" aria-label="Track"></select></label>
+            <div class="tracktabs" id="cTrack" role="group" aria-label="Track"></div>
+            <div class="fsctl" id="cFsCtl" role="group" aria-label="Speed and mix">
+              <div class="fsspeed" role="group" aria-label="Playback speed">
+                <button data-cspeed="50" aria-pressed="false">50%</button><button data-cspeed="75" aria-pressed="false">75%</button><button data-cspeed="100" aria-pressed="false">100%</button>
+              </div>
+            </div>
           </div>
           <p class="hint loophint">Drag across bars in the tab to loop them. Click anywhere in the tab to clear the loop.</p>
 
@@ -273,11 +278,8 @@
             <div class="sg-live">
               <span class="sg-note">Song <b id="sgTarget">–</b></span>
               <div class="sg-meter" aria-hidden="true"><span class="sg-zone"></span><span class="sg-mid"></span><span class="sg-dot" id="sgDot"></span></div>
-              <span class="sg-note">You <b id="sgYou">–</b> <span class="sg-cents" id="sgCents"></span></span>
-            </div>
-            <div class="sg-score">
-              <span>This pass <b id="sgNow">–</b></span>
-              <span>Last passes <span class="sg-passes" id="sgPasses">none yet</span></span>
+              <span class="sg-note">You <b id="sgYou">–</b><span class="sg-cents" id="sgCents"></span></span>
+              <span class="sg-score" title="The share of note time on pitch: this pass, then the last ones">Pass <b id="sgNow">–</b><span class="sg-passes" id="sgPasses"></span></span>
             </div>
             <p class="hint" id="sgMsg" aria-live="polite"></p>
           </div>
@@ -314,7 +316,7 @@
   <div class="bubble" id="cInfo" role="dialog" aria-label="Help" hidden>
     <p data-help="tuner">Turn on the microphone and play a note: the dot shows how far off it is, and its trail scrolls down behind the instrument. Tap a string’s note to lock the tuner to it and hear it (tap again to let go); ▲ ▼ beside it retune it by a semitone. The picker under the headstock sets the number of strings and the tuning.</p>
     <p data-help="practice">Pick an exercise and press Play, or the space bar. Set the tempo on the metronome by sliding its weight or with − and +; its knob sets the click (0 silences it) and its COUNT switch counts in a bar. Scales and modes come in positions along the neck. Rhythm is a course from counting sixteenths to odd and mixed meters; the tab shows each pick stroke, and the metronome clicks the bar’s own beats. Voice, the microphone, is for singing: your pitch as a line, your range, and exercises in it.</p>
-    <p data-help="tab-studio">Add a Guitar Pro (3–8) or MusicXML file; it stays in this browser. Drag across bars to loop them (a click clears the loop), and slow down with the 50%, 75% and 100% keys under the metronome or with its weight; its knob sets the click. A song with a vocal track opens on it, as notation: press Play and sing, and the microphone follows your voice against the note being played (an octave either way counts) and scores each pass. The knobs in the amp’s second row mix guitar, vocals and backing; turn the vocals down, or use headphones. The pencil turns on edit mode (guitar tracks), the disk saves a copy, the arrow downloads the file and the corners button fills the screen.</p>
+    <p data-help="tab-studio">Add a Guitar Pro (3–8) or MusicXML file; it stays in this browser. Drag across bars to loop them (a click clears the loop); ← and → step a bar, F fills the screen, and slow down with the 50%, 75% and 100% keys under the metronome or with its weight; its knob sets the click. A song with a vocal track opens on it, as notation: press Play and sing, and the microphone follows your voice against the note being played (an octave either way counts) and scores each pass. The knobs in the amp’s second row mix guitar, vocals and backing; turn the vocals down, or use headphones. The pencil turns on edit mode (guitar tracks), the disk saves a copy, the arrow downloads the file and the corners button fills the screen, with the speed keys and the mix beside Play.</p>
     <p class="bsmall">Private by design: the microphone is processed only in your browser, files stay on this device, and there’s no account, ads or analytics. Tabs by <a href="https://alphatab.net" rel="noopener">alphaTab</a> (MPL-2.0).</p>
   </div>
   <button class="cbtn" id="cGearBtn" aria-expanded="false" aria-controls="cSettings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.54 9.33L22.27 9.81L22.27 14.19L19.54 14.67L19.22 15.45L20.81 17.71L17.71 20.81L15.45 19.22L14.67 19.54L14.19 22.27L9.81 22.27L9.33 19.54L8.55 19.22L6.29 20.81L3.19 17.71L4.78 15.45L4.46 14.67L1.73 14.19L1.73 9.81L4.46 9.33L4.78 8.55L3.19 6.29L6.29 3.19L8.55 4.78L9.33 4.46L9.81 1.73L14.19 1.73L14.67 4.46L15.45 4.78L17.71 3.19L20.81 6.29L19.22 8.55Z"/><circle cx="12" cy="12" r="3.4"/></svg></button>
@@ -329,7 +331,7 @@
 <script src="js/alphatab.js?v=ea58a266"></script>
 <script src="js/exercises.js?v=c3737bc3"></script>
 <script src="js/practice.js?v=78b58b7b"></script>
-<script src="js/tab-studio.js?v=e48a2f14"></script>
+<script src="js/tab-studio.js?v=aa88a5ff"></script>
 <script src="js/app.js?v=94279ae0"></script>
 </body>
 </html>

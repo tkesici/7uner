@@ -25,7 +25,7 @@
         title: $("cTitle"), meta: $("cMeta"), notice: $("cNotice"), status: $("cStatus"), time: $("cTime"),
         edit: $("cEdit"), dirty: $("cDirty"), save: $("cSave"), download: $("cDownload"),
         go: $("cGo"), track: $("cTrack"),
-        full: $("cFull"), singBar: $("cSingBar"),
+        full: $("cFull"), fsCtl: $("cFsCtl"), singBar: $("cSingBar"),
         sgTarget: $("sgTarget"), sgYou: $("sgYou"), sgCents: $("sgCents"), sgDot: $("sgDot"), sgNow: $("sgNow"), sgPasses: $("sgPasses"), sgMsg: $("sgMsg"),
         eBar: $("eBar"), ePos: $("ePos"), eFret: $("eFret"),
         wrap: $("cWrap"), score: $("cScoreEl")
@@ -142,7 +142,11 @@
     function createApi() {
         el.score.innerHTML = "";
         const settings = window.at7.baseSettings(el.wrap);
-        api =new (AT().AlphaTabApi)(el.score, settings);
+        api = new (AT().AlphaTabApi)(el.score, settings);
+        // the title, artist and credits are in the player's heading already
+        const NE = AT().NotationElement, els = api.settings.notation.elements;
+        ["ScoreTitle", "ScoreSubTitle", "ScoreArtist", "ScoreAlbum", "ScoreWords", "ScoreMusic", "ScoreWordsAndMusic", "ScoreCopyright"].forEach((k) => els.set(NE[k], false));
+        api.updateSettings();
         window.at7.holdCursorDuringCountIn(api, el.score);
         ready = false; playing = false;
 
@@ -230,18 +234,19 @@
         el.notice.hidden = !!(guitarTracks.length || vocalTracks.length);
         el.notice.textContent = "This file has no guitar or vocal tracks. 7uner shows guitar tabs and vocal lines only.";
 
-        const opt = (v, label) => '<option value="' + v + '">' + escapeHtml(label) + "</option>";
-        const gOpts = guitarTracks.map((t, i) => opt("g" + i, (t.name || "Guitar " + (i + 1)) + " (" + t.staves[0].tuning.length + " strings)")).join("");
-        const vOpts = vocalTracks.map((t, i) => opt("v" + i, t.name || "Vocals " + (i + 1))).join("");
-        el.track.innerHTML = gOpts && vOpts ? '<optgroup label="Guitar">' + gOpts + '</optgroup><optgroup label="Vocals, as notation">' + vOpts + "</optgroup>" : gOpts + vOpts;
-        el.track.disabled = guitarTracks.length + vocalTracks.length < 2;
+        // a tab for each track: guitars as tab, vocals (with a microphone) as notation
+        const tab = (v, name, sub, icon) => '<button data-t="' + v + '" aria-pressed="false" title="' + escapeHtml(name + (sub ? ", " + sub : "")) + '">' +
+            icon + '<span class="tt-name">' + escapeHtml(name) + "</span>" + (sub ? '<small>' + sub + "</small>" : "") + "</button>";
+        el.track.innerHTML =
+            guitarTracks.map((t, i) => tab("g" + i, t.name || "Guitar " + (i + 1), t.staves[0].tuning.length + " str", GUITAR_ICON)).join("") +
+            vocalTracks.map((t, i) => tab("v" + i, t.name || "Vocals " + (i + 1), "", MIC_ICON)).join("");
         guitarIdx = 0;
 
         loopBars = null; setLoopState(false); drawLoopMarks(null);
 
         // a song with vocals opens on them, ready to sing
         const first = vocalTracks[0] || guitarTracks[0] || null;
-        if (first) { el.track.value = isVocal(first) ? "v0" : "g0"; showTrack(first, first === score.tracks[0]); }
+        if (first) showTrack(first, first === score.tracks[0]);
         setSpeed(speed);
         ed.beat = null; ed.undo = []; ed.redo = []; setDirty(false);
         trackChanged();
@@ -254,9 +259,14 @@
     const isVocal = (t) => vocalTracks.includes(t);
     const curTrack = () => (shown && !isVocal(shown) ? shown : null); // the guitar track on screen, for edit mode
 
+    const GUITAR_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 10l6-6m-1-1 2 2"/><path d="M14.5 9.5a4 4 0 0 0-5.6-.4c-.6.5-.8 1.3-1.6 1.6-1.5.6-3.6.4-4.6 1.9-1.4 2.1.1 4.6 1.6 6s3.9 3 6 1.6c1.5-1 1.3-3.1 1.9-4.6.3-.8 1.1-1 1.6-1.6a4 4 0 0 0-.4-5.6"/><circle cx="9.5" cy="14.5" r="1.3"/></svg>';
+    const MIC_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5v4M8.5 21.5h7"/></svg>';
+    const trackKey = (t) => (isVocal(t) ? "v" + vocalTracks.indexOf(t) : "g" + guitarTracks.indexOf(t));
+
     // a guitar track as tab, a vocal track as notation; now: alphaTab has already drawn it
     function showTrack(t, now) {
         shown = t;
+        el.track.querySelectorAll("button").forEach((b) => setOn(b, b.dataset.t === trackKey(t)));
         const prof = isVocal(t) ? AT().StaveProfile.Score : AT().StaveProfile.Tab;
         if (api.settings.display.staveProfile !== prof) { api.settings.display.staveProfile = prof; api.updateSettings(); now = false; }
         if (!now) api.renderTracks([t]);
@@ -276,6 +286,7 @@
     let speed = Math.max(25, Math.min(125, Math.round(+prefs.speed) || 100));
     function setSpeed(pct) {
         speed = pct;
+        document.querySelectorAll("[data-cspeed]").forEach((b) => setOn(b, +b.dataset.cspeed === pct));
         if (api) api.playbackSpeed = pct / 100;
         prefs.speed = pct; savePrefs();
     }
@@ -597,7 +608,7 @@
     // a held note still counts when it gets quieter or less clear, as long as it stays within a semitone
     const QUIET = Object.assign({}, SING, { minRms: 0.0008 }), SUSTAIN = { clarity: 0.2, near: 1 };
     const TICK_MS = 20, SILENCE_TICKS = 8, TOLERANCE = 40, GRACE_MS = 80, MIN_PASS = 50, PASSES = 5;
-    const HINT = "Sing along as the song plays. Within 40 cents of the vocal note counts, an octave up or down too. Turn the amp’s Vocals knob down, or use headphones, so the microphone hears only you.";
+    const HINT = "Turn the amp’s Vocals knob down, or use headphones, so the microphone hears only you. Within 40 cents counts, an octave either way too.";
     const ASK = "Press Play and sing along. The browser asks once for the microphone; what it hears stays in your browser.";
     const NOTE_NAMES = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
     const noteLabel = (m) => NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
@@ -695,14 +706,14 @@
         if (sg.pass.total >= MIN_PASS) { // at least a second of notes
             sg.passes.unshift(pct(sg.pass));
             sg.passes.length = Math.min(sg.passes.length, PASSES);
-            el.sgPasses.innerHTML = sg.passes.map((v, i) => (i ? v + "%" : "<b>" + v + "%</b>")).join(" · ");
+            el.sgPasses.textContent = "last " + sg.passes.map((v) => v + "%").join(" · ");
         }
         sg.pass = { hit: 0, total: 0 }; sg.passNo++;
         el.sgNow.textContent = "–";
     }
     function resetSing() {
         sg.pass = { hit: 0, total: 0 }; sg.passes = []; sg.notes.clear();
-        el.sgPasses.textContent = "none yet";
+        el.sgPasses.textContent = "";
         drawMarks();
         showSing(null, null);
     }
@@ -841,9 +852,13 @@
        whole screen too where it may (not on iPhone, nor in some embedded views). */
     let full = false;
     const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+    const mixHome = document.getElementById("ampMix").parentNode, mixNext = document.getElementById("ampMix").nextSibling;
     function setFull(on) {
         if (on === full) return;
         full = on;
+        // the amp stays on the page, so its mix row comes along beside Play
+        const mix = document.getElementById("ampMix");
+        if (on) el.fsCtl.appendChild(mix); else mixHome.insertBefore(mix, mixNext);
         el.player.classList.toggle("full", on);
         document.documentElement.classList.toggle("tabfull", on); // the page under it doesn't scroll
         setOn(el.full, on);
@@ -879,9 +894,10 @@
     }));
 
     el.go.addEventListener("click", playPause);
-    el.track.addEventListener("change", () => {
-        if (!api || !api.score) return;
-        const i = +el.track.value.slice(1), vocal = el.track.value[0] === "v";
+    el.track.addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b || !api || !api.score) return;
+        const i = +b.dataset.t.slice(1), vocal = b.dataset.t[0] === "v";
         if (!vocal) guitarIdx = i;
         showTrack(vocal ? vocalTracks[i] : guitarTracks[i]);
         trackChanged();
@@ -890,6 +906,18 @@
     document.addEventListener("visibilitychange", () => setSing(!document.hidden && onPage && !!shown && isVocal(shown)));
 
     el.full.addEventListener("click", () => setFull(!full));
+    el.fsCtl.querySelectorAll("[data-cspeed]").forEach((b) => b.addEventListener("click", () => setSpeed(+b.dataset.cspeed)));
+
+    // ← and →: a bar back or on, in playing order (repeats included); a little into a bar, ← goes to its start
+    function stepBar(d) {
+        const bars = api.tickCache && api.tickCache.masterBars;
+        if (!bars || !bars.length) return;
+        const tick = api.tickPosition;
+        let i = bars.findIndex((b) => tick < b.end);
+        if (i < 0) i = bars.length - 1;
+        if (d < 0 && tick - bars[i].start > 480) d = 0;
+        api.tickPosition = bars[Math.max(0, Math.min(bars.length - 1, i + d))].start;
+    }
     // leaving the browser's full screen (Esc) leaves the player's too
     ["fullscreenchange", "webkitfullscreenchange"].forEach((t) => document.addEventListener(t, () => { if (full && fsEl() !== el.player) setFull(false); }));
 
@@ -921,7 +949,7 @@
     el.wrap.addEventListener("pointerdown", (e) => { ed.lastY = e.clientY - el.score.getBoundingClientRect().top; }, true);
 
     document.addEventListener("keydown", (e) => {
-        if (!onPage || el.player.hidden || !api) return;
+        if (!onPage || el.player.hidden || !api || e.defaultPrevented) return; // a knob or the metronome took it
         if (e.key === "Escape" && full) { setFull(false); return; }
         const tag = e.target.tagName;
         if (["INPUT", "SELECT", "TEXTAREA"].includes(tag)) return;
@@ -929,6 +957,9 @@
             if (ready) { e.preventDefault(); playPause(); }
             return;
         }
+        const plain = !e.ctrlKey && !e.metaKey && !e.altKey;
+        if (plain && e.key.toLowerCase() === "f" && !ed.on) { e.preventDefault(); setFull(!full); return; }
+        if (plain && !ed.on && ready && (e.key === "ArrowLeft" || e.key === "ArrowRight")) { e.preventDefault(); stepBar(e.key === "ArrowLeft" ? -1 : 1); return; }
         if (!ed.on) return;
         const mod = e.ctrlKey || e.metaKey;
         if (mod && e.key.toLowerCase() === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
