@@ -415,17 +415,17 @@ button{cursor:pointer}
 .exlist .st{font-size:.88rem;color:var(--muted)}
 .exlist .st.done{color:var(--ok)}
 /* technique folders */
-/* a folder: a filled bar, amber-edged while open */
-.exlist .exfolder{display:flex;align-items:center;gap:.6rem;width:100%;border:1px solid var(--line);border-left:4px solid var(--line);border-radius:7px;background:var(--panel);padding:.65rem .8rem;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.15rem;letter-spacing:.01em;color:var(--ink);text-align:left;box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.exlist .exfolder:hover{background:var(--panel);border-color:var(--amber)}
+/* a folder: a warm amber bar, its edge lit while open; the exercises in it look like any other list */
+.exlist .exfolder{display:flex;align-items:center;gap:.6rem;width:100%;border:1px solid color-mix(in srgb,var(--amber) 35%,transparent);border-left:4px solid color-mix(in srgb,var(--amber) 45%,transparent);border-radius:7px;background:var(--amber-soft);padding:.65rem .8rem;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.15rem;letter-spacing:.01em;color:var(--ink);text-align:left;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.exlist .exfolder:hover{background:var(--amber-soft);border-color:var(--amber)}
 .exlist .exfolder[aria-expanded="true"]{border-left-color:var(--amber)}
 .exlist.grouped{gap:.5rem}
 .practice .exlist button:not(.exfolder){align-items:center}
 .practice .exlist .no{grid-row:auto}
-.exlist .exfolder::before{content:"";flex:none;width:.45rem;height:.45rem;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s}
+.exlist .exfolder::before{content:"";flex:none;width:.45rem;height:.45rem;border-right:2px solid var(--amber);border-bottom:2px solid var(--amber);transform:rotate(-45deg);transition:transform .15s}
 .exlist .exfolder[aria-expanded="true"]::before{transform:rotate(45deg)}
 .exlist .exfolder .cnt{margin-left:auto;min-width:1.6rem;padding:.1rem .45rem;border-radius:999px;background:var(--bg);font-family:"JetBrains Mono",monospace;font-size:.75rem;text-align:center;color:var(--muted)}
-.exsub{list-style:none;margin:.35rem 0 .3rem;padding:0 0 0 .7rem;display:flex;flex-direction:column;gap:.35rem}
+.exsub{list-style:none;margin:.35rem 0 .3rem;padding:0;display:flex;flex-direction:column;gap:.35rem}
 /* position picker for scales and modes */
 .posbar{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem;margin-top:.8rem}
 .poslab{margin-right:.3rem;color:var(--muted);font-weight:600;font-size:.95rem}
