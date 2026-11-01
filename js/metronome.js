@@ -4,11 +4,13 @@
    beat; it free-runs at the tempo and is pulled into phase by alphaTab's
    play position. Sliding the weight sets the tempo (higher is slower, as on
    the real thing), and the − and + buttons beside the readout move it by
-   10 BPM. On the sides, a brass knob sets the click volume and a brass
+   10 BPM. Where the page plays at a share of a song's own tempo (Tab
+   Studio), a drawer under the base holds 50, 75 and 100% keys. On the sides, a brass knob sets the click volume and a brass
    switch turns the one-bar count-in on or off.
 
    The open page binds itself as the source:
-     metronome.bind({ bpm(), setBpm(v), range: [min, max], playing() })
+     metronome.bind({ bpm(), setBpm(v), range: [min, max], playing(),
+                      speed(), setSpeed(pct) })   the last two optional
      metronome.sync(source, tick)   on alphaTab's playerPositionChanged
      metronome.level()              click volume for alphaTab, 0 to 2.5
      metronome.countIn()            whether to count in a bar before playing
@@ -42,6 +44,7 @@
     const bpmOf = (y) => MIN * Math.pow(MAX / MIN, (y - TOP) / SPAN);
 
     const MARKS = [40, 60, 80, 100, 120, 160, 200, 240];
+    const SPEEDS = [50, 75, 100];
     const scale = MARKS.map((b) => {
         const y = yOf(b).toFixed(1);
         return '<path d="M83 ' + y + 'h5"/><text x="90" y="' + (+y + 2.3) + '">' + b + "</text>";
@@ -96,7 +99,19 @@
         '<text class="metro-bpm" x="98" y="251" text-anchor="end">–</text>' +
         '<text class="metro-unit" x="101" y="251">BPM</text>' +
         step(-10, 15, "M22 245H32") + step(10, 121, "M128 245H138M133 240V250") +
+        // the speed drawer, tucked under the base
+        '<g class="metro-speed" role="group" aria-label="Playback speed">' +
+        '<rect x="16" y="258" width="128" height="34" rx="5" fill="url(#mBase)" stroke="#1A0C05" stroke-width="1.5"/>' +
+        SPEEDS.map((p, i) => speedKey(p, 21 + i * 40)).join("") +
+        "</g>" +
         "</svg>";
+
+    // a brass key in the speed drawer; the one in use reads like the display
+    function speedKey(p, x) {
+        return '<g class="metro-pct" data-p="' + p + '" role="button" tabindex="0" aria-pressed="false" aria-label="' + p + '% speed">' +
+            '<rect x="' + x + '" y="266" width="38" height="22" rx="4" stroke-width="1"/>' +
+            '<text x="' + (x + 19) + '" y="281" text-anchor="middle">' + p + "%</text></g>";
+    }
 
     // a brass button on the base, beside the readout, that moves the tempo by d
     function step(d, x, glyph) {
@@ -113,7 +128,8 @@
     const readout = root.querySelector(".metro-bpm"), vol = root.querySelector(".metro-vol"), volcap = root.querySelector(".metro-volcap");
 
     /* ---------- state ---------- */
-    let src = null, beat = 0, angle = 0, was = false, last = 0, shownBpm = null, offSince = 0;
+    let src = null, beat = 0, angle = 0, was = false, last = 0, shownBpm = null, shownPct, offSince = 0;
+    const pcts = root.querySelectorAll(".metro-pct");
     const bpmNow = () => (src ? src.bpm() : null);
 
     function setWeight(b) {
@@ -128,13 +144,22 @@
         if (b) { setWeight(b); weight.setAttribute("aria-valuenow", Math.round(b)); }
         root.classList.toggle("idle", !b);
     }
+    // the drawer only for a source with a speed; the key in use pressed
+    function showSpeed() {
+        const has = !!(src && src.setSpeed), p = has ? src.speed() : null;
+        if (has + ":" + p === shownPct) return;
+        shownPct = has + ":" + p;
+        root.classList.toggle("speeds", has);
+        svg.setAttribute("viewBox", "0 0 160 " + (has ? 296 : 270));
+        pcts.forEach((k) => k.setAttribute("aria-pressed", +k.dataset.p === p ? "true" : "false"));
+    }
 
     function frame(now) {
         requestAnimationFrame(frame);
         const dt = Math.min(100, now - (last || now));
         last = now;
         if (root.offsetParent === null) return; // not on screen
-        showBpm();
+        showBpm(); showSpeed();
         const on = !!(src && src.playing() && bpmNow());
         // started: the rod begins at one side. alphaTab reports a brief stop
         // when the count-in ends, which mustn't restart the swing.
@@ -161,7 +186,7 @@
         beat += (tb + Math.round(beat - tb) - beat) * 0.2;
     }
 
-    function bind(s) { src = s; shownBpm = undefined; was = false; showBpm(); }
+    function bind(s) { src = s; shownBpm = shownPct = undefined; was = false; showBpm(); showSpeed(); }
 
     /* ---------- tempo: slide the weight ---------- */
     const range = () => (src && src.range) || [MIN, MAX];
@@ -197,6 +222,12 @@
         const go = () => { if (bpmNow()) setBpm(bpmNow() + +b.dataset.d); };
         b.addEventListener("click", go);
         b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+    });
+
+    pcts.forEach((k) => {
+        const go = () => { if (src && src.setSpeed && src.speed()) { src.setSpeed(+k.dataset.p); showBpm(); showSpeed(); } };
+        k.addEventListener("click", go);
+        k.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
     });
 
     /* ---------- click volume: the brass knob, 0 to 10 ---------- */

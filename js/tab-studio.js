@@ -23,15 +23,14 @@
     const el = {
         list: $("tabList"), file: $("tabFile"), empty: $("tabEmpty"), player: $("tabPlayer"),
         title: $("cTitle"), meta: $("cMeta"), notice: $("cNotice"), status: $("cStatus"), time: $("cTime"),
-        edit: $("cEdit"), editPill: $("cEditPill"), dirty: $("cDirty"), save: $("cSave"), download: $("cDownload"),
-        go: $("cGo"), stop: $("cStop"), track: $("cTrack"),
+        edit: $("cEdit"), dirty: $("cDirty"), save: $("cSave"), download: $("cDownload"),
+        go: $("cGo"), track: $("cTrack"),
         singChips: $("cSingChips"), sing: $("cSing"), vocMute: $("cVocMute"), singBar: $("cSingBar"), mixVocals: $("mixVocals"),
         sgTarget: $("sgTarget"), sgYou: $("sgYou"), sgCents: $("sgCents"), sgDot: $("sgDot"), sgNow: $("sgNow"), sgPasses: $("sgPasses"), sgMsg: $("sgMsg"),
         eBar: $("eBar"), ePos: $("ePos"), eFret: $("eFret"),
         wrap: $("cWrap"), score: $("cScoreEl")
     };
     const vol = { master: $("v_master"), guitar: $("v_guitar"), vocals: $("v_vocals"), backing: $("v_backing") };
-    const speedKeys = document.querySelectorAll("[data-cspeed]");
 
     const extOf = (name) => (name.split(".").pop() || "").toLowerCase();
     const baseName = (name) => name.replace(/\.[^.]+$/, "");
@@ -154,7 +153,7 @@
         api.soundFontLoad.on((e) => { if (e.total && !ready) setStatus("Loading sounds… " + Math.round((e.loaded / e.total) * 100) + "%"); });
         api.playerReady.on(() => {
             ready = true;
-            el.go.disabled = false; el.stop.disabled = false;
+            el.go.disabled = false;
             if (!el.status.classList.contains("err")) setStatus("");
             applyPlayerOptions();
             applyVolumes();
@@ -199,19 +198,9 @@
 
         guitarTracks = score.tracks.filter((t) => trackKind(t) === "guitar");
         vocalTracks = score.tracks.filter((t) => trackKind(t) === "vocal");
-        const others = { drums: 0, bass: 0, other: 0 };
-        score.tracks.forEach((t) => { const k = trackKind(t); if (others[k] !== undefined) others[k]++; });
-        const parts = [];
-        if (others.drums) parts.push("drums");
-        if (others.bass) parts.push("bass");
-        if (others.other) parts.push(others.other === 1 ? "another instrument" : "other instruments");
-        if (!guitarTracks.length && !vocalTracks.length) {
-            el.notice.hidden = false;
-            el.notice.textContent = "This file has no guitar or vocal tracks. 7uner shows guitar tabs and vocal lines only.";
-        } else if (parts.length) {
-            el.notice.hidden = false;
-            el.notice.textContent = "This file also contains " + listJoin(parts) + ". 7uner shows guitar and vocal tracks only: those parts play along as backing (use the Backing volume) but can’t be shown or edited.";
-        } else el.notice.hidden = true;
+        // other parts (drums, bass, keys) just play along as backing
+        el.notice.hidden = !!(guitarTracks.length || vocalTracks.length);
+        el.notice.textContent = "This file has no guitar or vocal tracks. 7uner shows guitar tabs and vocal lines only.";
 
         const opt = (v, label) => '<option value="' + v + '">' + escapeHtml(label) + "</option>";
         const gOpts = guitarTracks.map((t, i) => opt("g" + i, (t.name || "Guitar " + (i + 1)) + " (" + t.staves[0].tuning.length + " strings)")).join("");
@@ -235,7 +224,6 @@
             putTab(current).then(refresh);
         }
     }
-    const listJoin = (a) => (a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]);
     const isVocal = (t) => vocalTracks.includes(t);
     const curTrack = () => (shown && !isVocal(shown) ? shown : null); // the guitar track on screen, for edit mode
 
@@ -261,7 +249,6 @@
     let speed = Math.max(25, Math.min(125, Math.round(+prefs.speed) || 100));
     function setSpeed(pct) {
         speed = pct;
-        speedKeys.forEach((b) => setOn(b, +b.dataset.cspeed === pct));
         if (api) api.playbackSpeed = pct / 100;
         prefs.speed = pct; savePrefs();
     }
@@ -274,12 +261,15 @@
     }
 
     /* the metronome (metronome.js) shows the playing tempo; sliding its
-       weight sets the speed relative to the song’s own tempo */
+       weight, or one of its 50/75/100% keys, sets the speed relative to the
+       song’s own tempo */
     const baseTempo = () => (api && api.score ? api.score.tempo : 0);
     const metro = {
         bpm: () => (baseTempo() ? (baseTempo() * speed) / 100 : null),
         setBpm(v) { setSpeed(Math.max(25, Math.min(125, Math.round((v / baseTempo()) * 100)))); },
         get range() { return [Math.ceil(baseTempo() * 0.25), Math.floor(baseTempo() * 1.25)]; },
+        speed: () => (baseTempo() ? speed : null),
+        setSpeed,
         playing: () => playing
     };
     function level(key) { return prefs.muted[key] ? 0 : prefs[key] / 100; }
@@ -355,13 +345,13 @@
         ed.dirty = on;
         el.dirty.hidden = !on;
         el.save.disabled = !on;
+        el.save.title = on ? "Save copy (unsaved changes)" : "Save copy";
     }
 
     function setEdit(on) {
         if (on && !curTrack()) return;
         ed.on = on;
         el.edit.setAttribute("aria-pressed", on ? "true" : "false");
-        el.editPill.textContent = on ? "ON" : "OFF";
         el.eBar.hidden = !on;
         el.player.classList.toggle("editing", on);
         if (on) {
@@ -773,7 +763,7 @@
         setSing(false);
         el.title.textContent = rec.title || baseName(rec.name);
         el.meta.textContent = ""; el.time.textContent = ""; el.notice.hidden = true;
-        el.go.disabled = true; el.stop.disabled = true;
+        el.go.disabled = true;
         el.go.textContent = "Play"; el.go.classList.remove("stop");
         setStatus(AT() ? "Opening…" : "Loading the tab player…");
         window.at7.load().then(() => {
@@ -782,7 +772,7 @@
             setStatus("Opening…");
             drawLoopMarks(null);
             if (api.load(new Uint8Array(rec.data), [0]) === false) setStatus("Couldn’t open this file.", true);
-            if (ready) { el.go.disabled = false; el.stop.disabled = false; }
+            if (ready) el.go.disabled = false;
         }).catch(() => setStatus("Couldn’t load the tab player. Check your internet connection and try again.", true));
     }
 
@@ -817,8 +807,6 @@
     }));
 
     el.go.addEventListener("click", () => { if (api && ready) api.playPause(); });
-    el.stop.addEventListener("click", () => { if (api && ready) api.stop(); });
-    speedKeys.forEach((b) => b.addEventListener("click", () => setSpeed(+b.dataset.cspeed)));
     el.track.addEventListener("change", () => {
         if (!api || !api.score) return;
         const i = +el.track.value.slice(1), vocal = el.track.value[0] === "v";
