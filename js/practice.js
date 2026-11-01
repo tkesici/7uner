@@ -230,12 +230,15 @@
     el.go.disabled = true;
     el.tabs.forEach((b) => b.addEventListener("click", () => showCat(b.dataset.cat)));
     el.go.addEventListener("click", toggle);
+    // the space bar plays and pauses wherever the focus is (but in a text box), as in Tab Studio
     document.addEventListener("keydown", (e) => {
-        if (e.code !== "Space" || !el.go.offsetParent) return;
-        if (["INPUT", "SELECT", "BUTTON", "TEXTAREA"].includes(e.target.tagName)) return;
-        e.preventDefault();
-        toggle();
-    });
+        if (e.code !== "Space" || !el.go.offsetParent || el.go.disabled) return;
+        const t = e.target;
+        if (t.isContentEditable || t.tagName === "TEXTAREA" || (t.tagName === "INPUT" && !["range", "checkbox", "radio", "button"].includes(t.type))) return;
+        e.preventDefault(); e.stopPropagation();
+        if (t !== document.body && t.blur) t.blur();
+        if (!e.repeat) toggle();
+    }, true);
     window.at7.followTheme(() => api);
     window.addEventListener("metronomechange", applyOptions);
 

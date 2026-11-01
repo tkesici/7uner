@@ -184,12 +184,18 @@
     // a vocal or melody line, by its name or its sound (choir aahs, voice oohs, synth voice, lead voice);
     // Guitar Pro 3–5 gives every track strings, so this comes before counting them
     const VOCAL = /\b(voc\w*|voice|vox|voz|sing\w*|melod\w*|choir)\b/i;
+    const OTHER = /piano|keys|keyboard|synth|organ|fx|sfx|effect|noise|sample|string|pad|brass|horn|sax|flute|violin|cello|perc/i;
     function trackKind(t) {
         const st = t.staves[0], prog = t.playbackInfo ? t.playbackInfo.program : -1;
         if (st.isPercussion) return "drums";
         if (VOCAL.test(t.name || "") || VOCAL.test(t.shortName || "") || [52, 53, 54, 85].includes(prog)) return "vocal";
-        const strings = st.tuning ? st.tuning.length : 0;
+        const strings = st.tuning ? st.tuning.length : 0, name = (t.name || "") + " " + (t.shortName || "");
         if ((prog >= 32 && prog <= 39) || (strings > 0 && strings < 6)) return "bass";
+        // Guitar Pro gives keys, effects and the like strings too: a guitar is named
+        // one, or has strings and neither another name nor another sound
+        if (/guit|gtr/i.test(name)) return strings >= 6 ? "guitar" : "other";
+        // program 0 (piano) is also what a file without one says, so it doesn't count
+        if (OTHER.test(name) || (prog >= 1 && prog < 24) || prog >= 40) return "other";
         if (strings >= 6) return "guitar";
         return "other";
     }
@@ -234,18 +240,18 @@
         el.notice.hidden = !!(guitarTracks.length || vocalTracks.length);
         el.notice.textContent = "This file has no guitar or vocal tracks. 7uner shows guitar tabs and vocal lines only.";
 
-        // a tab for each track: guitars as tab, vocals (with a microphone) as notation
-        const tab = (v, name, sub, icon) => '<button data-t="' + v + '" aria-pressed="false" title="' + escapeHtml(name + (sub ? ", " + sub : "")) + '">' +
-            icon + '<span class="tt-name">' + escapeHtml(name) + "</span>" + (sub ? '<small>' + sub + "</small>" : "") + "</button>";
-        el.track.innerHTML =
-            guitarTracks.map((t, i) => tab("g" + i, t.name || "Guitar " + (i + 1), t.staves[0].tuning.length + " str", GUITAR_ICON)).join("") +
-            vocalTracks.map((t, i) => tab("v" + i, t.name || "Vocals " + (i + 1), "", MIC_ICON)).join("");
+        // one dropdown: vocals (sung, as notation) first, then the guitars as tab
+        const opt = (v, label) => '<option value="' + v + '">' + escapeHtml(label) + "</option>";
+        const vOpts = vocalTracks.map((t, i) => opt("v" + i, t.name || "Vocals " + (i + 1))).join("");
+        const gOpts = guitarTracks.map((t, i) => opt("g" + i, t.name || "Guitar " + (i + 1))).join("");
+        el.track.innerHTML = vOpts && gOpts ? '<optgroup label="Sing">' + vOpts + '</optgroup><optgroup label="Guitar tab">' + gOpts + "</optgroup>" : vOpts + gOpts;
+        el.track.disabled = vocalTracks.length + guitarTracks.length < 2;
         guitarIdx = 0;
 
         loopBars = null; setLoopState(false); drawLoopMarks(null);
 
-        // a song with vocals opens on them, ready to sing
-        const first = vocalTracks[0] || guitarTracks[0] || null;
+        // a song with vocals opens on them (the lead line, if there are several), ready to sing
+        const first = vocalTracks.find((t) => /lead|main/i.test(t.name || "")) || vocalTracks[0] || guitarTracks[0] || null;
         if (first) showTrack(first, first === score.tracks[0]);
         setSpeed(speed);
         ed.beat = null; ed.undo = []; ed.redo = []; setDirty(false);
@@ -259,14 +265,12 @@
     const isVocal = (t) => vocalTracks.includes(t);
     const curTrack = () => (shown && !isVocal(shown) ? shown : null); // the guitar track on screen, for edit mode
 
-    const GUITAR_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 10l6-6m-1-1 2 2"/><path d="M14.5 9.5a4 4 0 0 0-5.6-.4c-.6.5-.8 1.3-1.6 1.6-1.5.6-3.6.4-4.6 1.9-1.4 2.1.1 4.6 1.6 6s3.9 3 6 1.6c1.5-1 1.3-3.1 1.9-4.6.3-.8 1.1-1 1.6-1.6a4 4 0 0 0-.4-5.6"/><circle cx="9.5" cy="14.5" r="1.3"/></svg>';
-    const MIC_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5v4M8.5 21.5h7"/></svg>';
     const trackKey = (t) => (isVocal(t) ? "v" + vocalTracks.indexOf(t) : "g" + guitarTracks.indexOf(t));
 
     // a guitar track as tab, a vocal track as notation; now: alphaTab has already drawn it
     function showTrack(t, now) {
         shown = t;
-        el.track.querySelectorAll("button").forEach((b) => setOn(b, b.dataset.t === trackKey(t)));
+        el.track.value = trackKey(t);
         const prof = isVocal(t) ? AT().StaveProfile.Score : AT().StaveProfile.Tab;
         if (api.settings.display.staveProfile !== prof) { api.settings.display.staveProfile = prof; api.updateSettings(); now = false; }
         if (!now) api.renderTracks([t]);
@@ -894,10 +898,9 @@
     }));
 
     el.go.addEventListener("click", playPause);
-    el.track.addEventListener("click", (e) => {
-        const b = e.target.closest("button");
-        if (!b || !api || !api.score) return;
-        const i = +b.dataset.t.slice(1), vocal = b.dataset.t[0] === "v";
+    el.track.addEventListener("change", () => {
+        if (!api || !api.score) return;
+        const i = +el.track.value.slice(1), vocal = el.track.value[0] === "v";
         if (!vocal) guitarIdx = i;
         showTrack(vocal ? vocalTracks[i] : guitarTracks[i]);
         trackChanged();
@@ -948,15 +951,21 @@
     // remember where in the score the pointer went down, to pick the string
     el.wrap.addEventListener("pointerdown", (e) => { ed.lastY = e.clientY - el.score.getBoundingClientRect().top; }, true);
 
+    // the space bar plays and pauses wherever the focus is (but in a text box): it's
+    // caught before a focused button, dropdown or metronome key can act on it
+    document.addEventListener("keydown", (e) => {
+        if (e.code !== "Space" || !onPage || el.player.hidden || !api || !ready) return;
+        const t = e.target;
+        if (t.isContentEditable || t.tagName === "TEXTAREA" || (t.tagName === "INPUT" && !["range", "checkbox", "radio", "button"].includes(t.type))) return;
+        e.preventDefault(); e.stopPropagation();
+        if (t !== document.body && t.blur) t.blur(); // so letting go of the key doesn't press it either
+        if (!e.repeat) playPause();
+    }, true);
     document.addEventListener("keydown", (e) => {
         if (!onPage || el.player.hidden || !api || e.defaultPrevented) return; // a knob or the metronome took it
         if (e.key === "Escape" && full) { setFull(false); return; }
         const tag = e.target.tagName;
         if (["INPUT", "SELECT", "TEXTAREA"].includes(tag)) return;
-        if (e.code === "Space" && tag !== "BUTTON") {
-            if (ready) { e.preventDefault(); playPause(); }
-            return;
-        }
         const plain = !e.ctrlKey && !e.metaKey && !e.altKey;
         if (plain && e.key.toLowerCase() === "f" && !ed.on) { e.preventDefault(); setFull(!full); return; }
         if (plain && !ed.on && ready && (e.key === "ArrowLeft" || e.key === "ArrowRight")) { e.preventDefault(); stepBar(e.key === "ArrowLeft" ? -1 : 1); return; }

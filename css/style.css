@@ -480,15 +480,12 @@ button{cursor:pointer}
 .notice{margin-top:.9rem;padding:.7rem .9rem .7rem 2.4rem;border-radius:8px;background:var(--amber-soft);border:1px solid var(--amber);font-size:.92rem;position:relative}
 .notice::before{content:"!";position:absolute;left:.75rem;top:.7rem;width:1.15rem;height:1.15rem;border-radius:50%;background:var(--amber);color:var(--amber-ink);font-weight:700;font-size:.8rem;display:flex;align-items:center;justify-content:center}
 .ctime{font-family:"JetBrains Mono",monospace;color:var(--ink);white-space:nowrap;margin-right:auto}
-/* track tabs: one segmented strip, the one on screen filled */
-.tracktabs{display:inline-flex;flex-wrap:wrap;gap:3px;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--bg);min-width:0}
-.tracktabs button{display:inline-flex;align-items:center;gap:.4rem;max-width:15rem;min-width:0;padding:.38rem .7rem;border:0;border-radius:6px;background:transparent;font-weight:600;font-size:.92rem;color:var(--muted)}
-.tracktabs button:hover{color:var(--ink)}
-.tracktabs button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.25)}
-.tracktabs svg{width:1rem;height:1rem;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-.tracktabs .tt-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tracktabs small{font-family:"JetBrains Mono",monospace;font-size:.7rem;font-weight:400;color:var(--muted)}
-.tracktabs button:only-child{cursor:default}
+/* the track dropdown: one quiet control with its own chevron */
+.trackpick{max-width:min(20rem,100%);min-width:0;height:2.5rem;padding:0 2.2rem 0 .8rem;border:1px solid var(--line);border-radius:8px;font:inherit;font-weight:600;font-size:.95rem;color:var(--ink);text-overflow:ellipsis;cursor:pointer;
+  -webkit-appearance:none;appearance:none;background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2397A2B0' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right .7rem center/1rem}
+.trackpick:hover:not(:disabled){border-color:var(--amber)}
+.trackpick:disabled{cursor:default;background-image:none;padding-right:.8rem}
+.trackpick:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 /* speed keys and the amp's mix row: beside Play only in full screen */
 .fsctl{display:none}
 .tabplayer.full .fsctl{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem}
@@ -531,9 +528,7 @@ button.chip:hover:not(:disabled){border-color:var(--amber);color:var(--ink)}
 @media (max-width:640px){
   .tp-head{flex-direction:column;align-items:stretch}
   .transport .go{flex:1;min-width:0}
-  .transport .tracktabs{flex:1 1 100%}
-  .tracktabs button{flex:1 1 0;justify-content:center}
-  .tracktabs small{display:none}
+  .transport .trackpick{flex:1 1 100%;max-width:none}
   .emptystate{min-height:14rem;padding:1.4rem}
   .player{padding:1rem}
   .atwrap{max-height:65vh}
