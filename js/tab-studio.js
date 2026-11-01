@@ -25,12 +25,11 @@
         title: $("cTitle"), meta: $("cMeta"), notice: $("cNotice"), status: $("cStatus"), time: $("cTime"),
         edit: $("cEdit"), dirty: $("cDirty"), save: $("cSave"), download: $("cDownload"),
         go: $("cGo"), track: $("cTrack"),
-        singChips: $("cSingChips"), sing: $("cSing"), vocMute: $("cVocMute"), singBar: $("cSingBar"), mixVocals: $("mixVocals"),
+        full: $("cFull"), singBar: $("cSingBar"),
         sgTarget: $("sgTarget"), sgYou: $("sgYou"), sgCents: $("sgCents"), sgDot: $("sgDot"), sgNow: $("sgNow"), sgPasses: $("sgPasses"), sgMsg: $("sgMsg"),
         eBar: $("eBar"), ePos: $("ePos"), eFret: $("eFret"),
         wrap: $("cWrap"), score: $("cScoreEl")
     };
-    const vol = { master: $("v_master"), guitar: $("v_guitar"), vocals: $("v_vocals"), backing: $("v_backing") };
 
     const extOf = (name) => (name.split(".").pop() || "").toLowerCase();
     const baseName = (name) => name.replace(/\.[^.]+$/, "");
@@ -38,12 +37,11 @@
     const mmss = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
     const escapeHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     const AT = () => window.alphaTab;
-    const isOn = (b) => b.getAttribute("aria-pressed") === "true";
     const setOn = (b, on) => b.setAttribute("aria-pressed", on ? "true" : "false");
 
     /* ---------- preferences ---------- */
     const PKEY = "7uner.tabstudio.v1";
-    let prefs = { speed: 100, master: 100, guitar: 100, vocals: 100, backing: 80, muted: {} };
+    let prefs = { speed: 100, guitar: 100, vocals: 100, backing: 80 };
     try { const o = JSON.parse(localStorage.getItem(PKEY) || "null"); if (o) prefs = Object.assign(prefs, o); } catch (e) {}
     const savePrefs = () => { try { localStorage.setItem(PKEY, JSON.stringify(prefs)); } catch (e) {} };
 
@@ -131,7 +129,8 @@
     }
 
     /* ---------- alphaTab ---------- */
-    let api = null, playing = false, ready = false;
+    // onPage: Tab Studio is the page on screen
+    let api = null, playing = false, ready = false, onPage = false;
     // shown: the track on screen; guitarIdx: the guitar track the Guitar volume is for
     let guitarTracks = [], vocalTracks = [], shown = null, guitarIdx = 0;
 
@@ -191,7 +190,36 @@
         return "other";
     }
 
+    /* alphaTab gives a syllable to every beat that isn't a rest, but Guitar Pro
+       (and Songsterr) skip held notes too: a note tied over from the one before
+       sings no new syllable. Each held note pushed the words a note later, so
+       lay each line's syllables again from the bar it starts in, skipping them. */
+    function placeLyrics(t) {
+        const beats = [];
+        t.staves[0].bars.forEach((b) => b.voices[0].beats.forEach((x) => beats.push(x)));
+        const lines = beats.reduce((n, x) => Math.max(n, x.lyrics ? x.lyrics.length : 0), 0);
+        const sung = (x) => !x.isEmpty && !x.isRest;
+        const held = (x) => x.notes.every((n) => n.isTieDestination);
+        const laid = beats.map(() => null);
+        for (let li = 0; li < lines; li++) {
+            let first = -1, last = -1;
+            beats.forEach((x, i) => { if (x.lyrics && x.lyrics[li]) { if (first < 0) first = i; last = i; } });
+            if (first < 0) continue;
+            const start = beats.indexOf(beats[first].voice.bar.voices[0].beats[0]);
+            const chunks = beats.slice(start, last + 1).filter(sung).map((x) => (x.lyrics && x.lyrics[li]) || "");
+            let i = start;
+            for (const c of chunks) {
+                while (i < beats.length && (!sung(beats[i]) || held(beats[i]))) i++;
+                if (i >= beats.length) break;
+                if (!laid[i]) laid[i] = new Array(lines).fill("");
+                laid[i][li] = c; i++;
+            }
+        }
+        if (lines) beats.forEach((x, i) => { x.lyrics = laid[i]; });
+    }
+
     function onScoreLoaded(score) {
+        score.tracks.forEach(placeLyrics);
         el.title.textContent = score.title || (current ? baseName(current.name) : "Untitled");
         const bits = [score.artist, score.album].filter(Boolean);
         el.meta.textContent = (bits.length ? bits.join(", ") + ", " : "") + score.masterBars.length + " bars, " + Math.round(score.tempo) + " BPM";
@@ -207,14 +235,13 @@
         const vOpts = vocalTracks.map((t, i) => opt("v" + i, t.name || "Vocals " + (i + 1))).join("");
         el.track.innerHTML = gOpts && vOpts ? '<optgroup label="Guitar">' + gOpts + '</optgroup><optgroup label="Vocals, as notation">' + vOpts + "</optgroup>" : gOpts + vOpts;
         el.track.disabled = guitarTracks.length + vocalTracks.length < 2;
-        el.singChips.hidden = !vocalTracks.length;
-        el.mixVocals.hidden = !vocalTracks.length;
         guitarIdx = 0;
 
         loopBars = null; setLoopState(false); drawLoopMarks(null);
 
-        const first = guitarTracks[0] || vocalTracks[0] || null;
-        if (first) showTrack(first, first === score.tracks[0]);
+        // a song with vocals opens on them, ready to sing
+        const first = vocalTracks[0] || guitarTracks[0] || null;
+        if (first) { el.track.value = isVocal(first) ? "v0" : "g0"; showTrack(first, first === score.tracks[0]); }
         setSpeed(speed);
         ed.beat = null; ed.undo = []; ed.redo = []; setDirty(false);
         trackChanged();
@@ -240,9 +267,9 @@
         const t = curTrack();
         ed.beat = t ? t.staves[0].bars[0].voices[0].beats[0] : null;
         ed.string = nStrings();
-        if (isOn(el.sing) && !isVocal(shown)) setSing(false);
         resetSing();
-        applyVolumes(); updateEditBar();
+        setSing(onPage && !!shown && isVocal(shown));
+        applyVolumes(); showMix(); updateEditBar();
     }
 
     /* ---------- playback options ---------- */
@@ -272,18 +299,26 @@
         setSpeed,
         playing: () => playing
     };
-    function level(key) { return prefs.muted[key] ? 0 : prefs[key] / 100; }
+    /* the mix is a row of channel knobs on the amp (amp.js), whose own volume
+       knob is the master: guitar (the one picked), vocals, and the rest */
+    const level = (key) => prefs[key] / 100;
     function applyVolumes() {
-        document.querySelectorAll(".mute").forEach((b) => b.setAttribute("aria-pressed", prefs.muted[b.dataset.mix] ? "true" : "false"));
-        setOn(el.vocMute, !!prefs.muted.vocals);
-        Object.keys(vol).forEach((k) => { vol[k].value = prefs[k]; vol[k].closest(".mix").classList.toggle("muted", !!prefs.muted[k]); });
         if (!api || !api.score) return;
-        api.masterVolume = level("master");
         const g = guitarTracks[guitarIdx];
         if (g) api.changeTrackVolume([g], level("guitar"));
         if (vocalTracks.length) api.changeTrackVolume(vocalTracks, level("vocals"));
         const rest = api.score.tracks.filter((t) => t !== g && !isVocal(t));
         if (rest.length) api.changeTrackVolume(rest, level("backing"));
+    }
+    function showMix() {
+        const sc = onPage && api && api.score;
+        const g = sc && guitarTracks[guitarIdx];
+        const list = !sc ? null : [
+            g && { key: "guitar", label: "Guitar" },
+            vocalTracks.length && { key: "vocals", label: "Vocals" },
+            sc.tracks.some((t) => t !== g && !isVocal(t)) && { key: "backing", label: "Backing" }
+        ].filter(Boolean).map((c) => Object.assign(c, { value: prefs[c.key] / 10 }));
+        window.amp.channels(list, (k, v) => { prefs[k] = Math.round(v * 10); applyVolumes(); }, savePrefs);
     }
 
     /* ---------- loop ----------
@@ -562,14 +597,15 @@
     // a held note still counts when it gets quieter or less clear, as long as it stays within a semitone
     const QUIET = Object.assign({}, SING, { minRms: 0.0008 }), SUSTAIN = { clarity: 0.2, near: 1 };
     const TICK_MS = 20, SILENCE_TICKS = 8, TOLERANCE = 40, GRACE_MS = 80, MIN_PASS = 50, PASSES = 5;
-    const HINT = "Play the song and sing along. Within 40 cents of the vocal note counts, an octave up or down too. Mute the vocals, or use headphones, so the microphone hears only you.";
+    const HINT = "Sing along as the song plays. Within 40 cents of the vocal note counts, an octave up or down too. Turn the amp’s Vocals knob down, or use headphones, so the microphone hears only you.";
+    const ASK = "Press Play and sing along. The browser asks once for the microphone; what it hears stays in your browser.";
     const NOTE_NAMES = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
     const noteLabel = (m) => NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
     const a4 = () => (window.tuner && window.tuner.a4 ? window.tuner.a4() : 440);
     // cents from the target, folded to the nearest octave (−600 to 600)
     const foldCents = (m, target) => ((((m - target) % 12) + 18) % 12 - 6) * 100;
     const pct = (x) => Math.round((100 * x.hit) / x.total);
-    const { detect, windowLen, median, wake } = window.pitch;
+    const { detect, windowLen, median, wake, micGranted } = window.pitch;
 
     // pass: this time through; notes: beat → { hit, total, pass, el }, the marks in the notation
     const sg = { on: false, want: false, starting: false, ctx: null, stream: null, analyser: null, buf: null, raf: 0, lastTick: 0,
@@ -708,18 +744,24 @@
         showSing(null, null);
     }
 
+    /* Sing is on whenever the vocal track is on screen in Tab Studio. The
+       microphone comes on at once if the browser already allows it, otherwise
+       at the next Play (which asks for it). */
     async function setSing(on) {
         sg.want = on;
-        setOn(el.sing, on);
-        if (!on) { closeMic(); el.singBar.hidden = true; return; }
-        if (sg.on || sg.starting || !vocalTracks.length) return;
-        if (!isVocal(shown)) { el.track.value = "v0"; showTrack(vocalTracks[0]); trackChanged(); }
-        el.singBar.hidden = false;
+        el.singBar.hidden = !on;
+        if (!on) { closeMic(); return; }
+        if (sg.on || sg.starting) return;
+        if (await micGranted()) startMic();
+        else if (sg.want && !sg.on && !sg.starting) say(ASK);
+    }
+    async function startMic() {
+        if (!sg.want || sg.on || sg.starting) return;
         say("Waiting for microphone permission…");
         sg.starting = true;
         const ok = await openMic();
         sg.starting = false;
-        if (!ok) { sg.want = false; setOn(el.sing, false); return; } // the bar stays, with the reason
+        if (!ok) return; // the bar stays, with the reason
         if (!sg.want) { closeMic(); return; }
         say(HINT);
     }
@@ -786,7 +828,37 @@
 
     function pause() { if (api && playing) api.pause(); }
     // leaving Tab Studio: pause, and the microphone goes off
-    function leave() { pause(); setSing(false); }
+    function leave() { onPage = false; pause(); setSing(false); showMix(); setFull(false); }
+    function show() {
+        onPage = true;
+        window.metronome.bind(metro);
+        showMix();
+        setSing(!!shown && isVocal(shown));
+    }
+
+    /* ---------- full screen: the player alone, the tab as tall as the screen ----------
+       The player covers the window by itself, and asks the browser for the
+       whole screen too where it may (not on iPhone, nor in some embedded views). */
+    let full = false;
+    const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+    function setFull(on) {
+        if (on === full) return;
+        full = on;
+        el.player.classList.toggle("full", on);
+        document.documentElement.classList.toggle("tabfull", on); // the page under it doesn't scroll
+        setOn(el.full, on);
+        el.full.title = on ? "Exit full screen (Esc)" : "Full screen";
+        el.full.setAttribute("aria-label", on ? "Exit full screen" : "Full screen");
+        const req = el.player.requestFullscreen || el.player.webkitRequestFullscreen;
+        if (on && !fsEl() && req) { const p = req.call(el.player); if (p && p.catch) p.catch(() => {}); }
+        if (!on && fsEl() === el.player) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    }
+
+    function playPause() {
+        if (!api || !ready) return;
+        if (sg.want && !sg.on) startMic(); // the first Play with the vocal track asks for the microphone
+        api.playPause();
+    }
 
     /* ---------- wiring ---------- */
     setSpeed(speed);
@@ -806,7 +878,7 @@
         if (t === "drop") addFiles(e.dataTransfer.files);
     }));
 
-    el.go.addEventListener("click", () => { if (api && ready) api.playPause(); });
+    el.go.addEventListener("click", playPause);
     el.track.addEventListener("change", () => {
         if (!api || !api.score) return;
         const i = +el.track.value.slice(1), vocal = el.track.value[0] === "v";
@@ -814,20 +886,12 @@
         showTrack(vocal ? vocalTracks[i] : guitarTracks[i]);
         trackChanged();
     });
-    el.sing.addEventListener("click", () => setSing(!isOn(el.sing)));
-    el.vocMute.addEventListener("click", () => { prefs.muted.vocals = !prefs.muted.vocals; savePrefs(); applyVolumes(); });
-    document.addEventListener("visibilitychange", () => { if (document.hidden) setSing(false); });
+    // a hidden tab lets go of the microphone; back on it, Sing picks up again
+    document.addEventListener("visibilitychange", () => setSing(!document.hidden && onPage && !!shown && isVocal(shown)));
 
-    Object.keys(vol).forEach((k) => vol[k].addEventListener("input", () => {
-        prefs[k] = +vol[k].value;
-        if (prefs[k] > 0) prefs.muted[k] = false;
-        savePrefs(); applyVolumes();
-    }));
-    document.querySelectorAll(".mute").forEach((b) => b.addEventListener("click", () => {
-        const k = b.dataset.mix;
-        prefs.muted[k] = !prefs.muted[k];
-        savePrefs(); applyVolumes();
-    }));
+    el.full.addEventListener("click", () => setFull(!full));
+    // leaving the browser's full screen (Esc) leaves the player's too
+    ["fullscreenchange", "webkitfullscreenchange"].forEach((t) => document.addEventListener(t, () => { if (full && fsEl() !== el.player) setFull(false); }));
 
     el.edit.addEventListener("click", () => setEdit(!ed.on));
     el.save.addEventListener("click", saveCopy);
@@ -857,11 +921,12 @@
     el.wrap.addEventListener("pointerdown", (e) => { ed.lastY = e.clientY - el.score.getBoundingClientRect().top; }, true);
 
     document.addEventListener("keydown", (e) => {
-        if (!el.player.offsetParent || !api) return;
+        if (!onPage || el.player.hidden || !api) return;
+        if (e.key === "Escape" && full) { setFull(false); return; }
         const tag = e.target.tagName;
         if (["INPUT", "SELECT", "TEXTAREA"].includes(tag)) return;
         if (e.code === "Space" && tag !== "BUTTON") {
-            if (ready) { e.preventDefault(); api.playPause(); }
+            if (ready) { e.preventDefault(); playPause(); }
             return;
         }
         if (!ed.on) return;
@@ -896,5 +961,5 @@
 
     window.addEventListener("metronomechange", applyPlayerOptions);
 
-    window.tabStudio = { pause: leave, show() { window.metronome.bind(metro); } };
+    window.tabStudio = { pause: leave, show };
 })();

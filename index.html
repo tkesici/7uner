@@ -27,7 +27,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=29fd7658">
+  <link rel="stylesheet" href="css/style.css?v=567038f7">
 </head>
 <body>
 <noscript><p class="noscript">7uner needs JavaScript: the tuner, the exercises and the tab player all run in your browser. Please turn JavaScript on, or open the page in another browser.</p></noscript>
@@ -118,6 +118,7 @@
               <span class="klab">Volume <b class="kval"></b></span>
             </div>
           </div>
+          <div class="amp-ctl amp-mix" id="ampMix" role="group" aria-label="Mix" hidden></div>
           <div class="amp-grille" aria-hidden="true"><span class="amp-badge">7uner<small>amp</small></span></div>
         </div>
         <div class="metro" id="metro"></div>
@@ -256,6 +257,7 @@
               <button class="toolbtn" id="cEdit" aria-pressed="false" aria-label="Edit mode" title="Edit mode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg></button>
               <button class="toolbtn" id="cSave" disabled aria-label="Save copy" title="Save copy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l4 4v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M8 3v5h7V3"/><rect x="7.5" y="13" width="9" height="6" rx="1"/></svg><span class="dirty" id="cDirty" hidden></span></button>
               <button class="toolbtn" id="cDownload" aria-label="Download" title="Download"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></button>
+              <button class="toolbtn" id="cFull" aria-pressed="false" aria-label="Full screen" title="Full screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fs-in" d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/><path class="fs-out" d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/></svg></button>
             </div>
           </div>
           <div class="notice" id="cNotice" hidden></div>
@@ -264,10 +266,6 @@
             <button id="cGo" class="go" disabled>Play</button>
             <span class="ctime" id="cTime"></span>
             <label class="sel trackpick">Track <select id="cTrack" aria-label="Track"></select></label>
-            <div class="chips" id="cSingChips" hidden>
-              <button class="chip" id="cSing" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5v4M8.5 21.5h7"/></svg><span>Sing</span></button>
-              <button class="chip" id="cVocMute" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 6 6m0-6-6 6"/></svg><span>Mute vocals</span></button>
-            </div>
           </div>
           <p class="hint loophint">Drag across bars in the tab to loop them. Click anywhere in the tab to clear the loop.</p>
 
@@ -282,32 +280,6 @@
               <span>Last passes <span class="sg-passes" id="sgPasses">none yet</span></span>
             </div>
             <p class="hint" id="sgMsg" aria-live="polite"></p>
-          </div>
-
-          <div class="tp-box vol">
-            <h4>Volume</h4>
-            <div class="mixes">
-              <div class="mix">
-                <button class="mute" data-mix="master" aria-pressed="false" aria-label="Mute master"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="x" d="m16 9 6 6m0-6-6 6"/></svg></button>
-                <label for="v_master">Master</label>
-                <input type="range" id="v_master" min="0" max="100" value="100">
-              </div>
-              <div class="mix">
-                <button class="mute" data-mix="guitar" aria-pressed="false" aria-label="Mute guitar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="x" d="m16 9 6 6m0-6-6 6"/></svg></button>
-                <label for="v_guitar">Guitar</label>
-                <input type="range" id="v_guitar" min="0" max="100" value="100">
-              </div>
-              <div class="mix" id="mixVocals" hidden>
-                <button class="mute" data-mix="vocals" aria-pressed="false" aria-label="Mute vocals"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="x" d="m16 9 6 6m0-6-6 6"/></svg></button>
-                <label for="v_vocals">Vocals</label>
-                <input type="range" id="v_vocals" min="0" max="100" value="100">
-              </div>
-              <div class="mix">
-                <button class="mute" data-mix="backing" aria-pressed="false" aria-label="Mute backing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="x" d="m16 9 6 6m0-6-6 6"/></svg></button>
-                <label for="v_backing">Backing</label>
-                <input type="range" id="v_backing" min="0" max="100" value="80">
-              </div>
-            </div>
           </div>
 
           <div class="editbar" id="eBar" hidden>
@@ -342,7 +314,7 @@
   <div class="bubble" id="cInfo" role="dialog" aria-label="Help" hidden>
     <p data-help="tuner">Turn on the microphone and play a note: the dot shows how far off it is, and its trail scrolls down behind the instrument. Tap a string’s note to lock the tuner to it and hear it (tap again to let go); ▲ ▼ beside it retune it by a semitone. The picker under the headstock sets the number of strings and the tuning.</p>
     <p data-help="practice">Pick an exercise and press Play, or the space bar. Set the tempo on the metronome by sliding its weight or with − and +; its knob sets the click (0 silences it) and its COUNT switch counts in a bar. Scales and modes come in positions along the neck. Rhythm is a course from counting sixteenths to odd and mixed meters; the tab shows each pick stroke, and the metronome clicks the bar’s own beats. Voice, the microphone, is for singing: your pitch as a line, your range, and exercises in it.</p>
-    <p data-help="tab-studio">Add a Guitar Pro (3–8) or MusicXML file; it stays in this browser. Drag across bars to loop them (a click clears the loop), and slow down with the 50%, 75% and 100% keys under the metronome or with its weight; its knob sets the click. Pick a vocal track to see it as notation, and press Sing: the microphone follows your voice against the note being played, an octave either way counts, and each pass gets a score. Mute the vocals, or use headphones. The pencil turns on edit mode, the disk saves a copy and the arrow downloads the file.</p>
+    <p data-help="tab-studio">Add a Guitar Pro (3–8) or MusicXML file; it stays in this browser. Drag across bars to loop them (a click clears the loop), and slow down with the 50%, 75% and 100% keys under the metronome or with its weight; its knob sets the click. A song with a vocal track opens on it, as notation: press Play and sing, and the microphone follows your voice against the note being played (an octave either way counts) and scores each pass. The knobs in the amp’s second row mix guitar, vocals and backing; turn the vocals down, or use headphones. The pencil turns on edit mode (guitar tracks), the disk saves a copy, the arrow downloads the file and the corners button fills the screen.</p>
     <p class="bsmall">Private by design: the microphone is processed only in your browser, files stay on this device, and there’s no account, ads or analytics. Tabs by <a href="https://alphatab.net" rel="noopener">alphaTab</a> (MPL-2.0).</p>
   </div>
   <button class="cbtn" id="cGearBtn" aria-expanded="false" aria-controls="cSettings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.54 9.33L22.27 9.81L22.27 14.19L19.54 14.67L19.22 15.45L20.81 17.71L17.71 20.81L15.45 19.22L14.67 19.54L14.19 22.27L9.81 22.27L9.33 19.54L8.55 19.22L6.29 20.81L3.19 17.71L4.78 15.45L4.46 14.67L1.73 14.19L1.73 9.81L4.46 9.33L4.78 8.55L3.19 6.29L6.29 3.19L8.55 4.78L9.33 4.46L9.81 1.73L14.19 1.73L14.67 4.46L15.45 4.78L17.71 3.19L20.81 6.29L19.22 8.55Z"/><circle cx="12" cy="12" r="3.4"/></svg></button>
@@ -352,12 +324,12 @@
 <script src="js/pitch.js?v=618cee19"></script>
 <script src="js/voice.js?v=003abb53"></script>
 <script src="js/tuner.js?v=ab634ae1"></script>
-<script src="js/amp.js?v=27f64277"></script>
+<script src="js/amp.js?v=be2acf6a"></script>
 <script src="js/metronome.js?v=ec51a10f"></script>
 <script src="js/alphatab.js?v=ea58a266"></script>
 <script src="js/exercises.js?v=c3737bc3"></script>
 <script src="js/practice.js?v=78b58b7b"></script>
-<script src="js/tab-studio.js?v=01dbd3a5"></script>
+<script src="js/tab-studio.js?v=e48a2f14"></script>
 <script src="js/app.js?v=94279ae0"></script>
 </body>
 </html>

@@ -1,6 +1,10 @@
 /* 7uner – amp
    One amp for everything alphaTab plays (Practice and Tab Studio): a drive
-   knob (0 is clean, turning it up adds distortion) and a volume knob.
+   knob (0 is clean, turning it up adds distortion) and a volume knob. A page
+   with a mix of its own (Tab Studio) puts its channels on the amp as a second
+   row of knobs:
+     amp.channels([{ key, label, value 0–10 }], onChange(key, value), onDone)
+     amp.channels(null)   takes them off again
 
    alphaTab plays through a ScriptProcessorNode that it connects to its audio
    context's speakers. That connection is redirected into an amp chain built
@@ -82,36 +86,59 @@
     }
 
     /* ---------- panel ---------- */
-    const panel = document.getElementById("amp");
-    if (!panel) return;
+    const panel = document.getElementById("amp"), mix = document.getElementById("ampMix");
+    if (!panel) { window.amp = { channels() {} }; return; }
 
-    /* knobs: drag up or down, scroll, or use the arrow keys; 0 to 10 in tenths */
-    panel.querySelectorAll(".knob").forEach((k) => {
-        const key = k.dataset.k, val = k.querySelector(".kval");
-        const set = (v) => {
-            st[key] = Math.round(Math.max(0, Math.min(10, v)) * 10) / 10;
-            k.style.setProperty("--a", (st[key] / 10) * 270 - 135 + "deg");
-            k.setAttribute("aria-valuenow", st[key]);
-            val.textContent = st[key].toFixed(1);
-            applyAll();
+    /* a knob: drag up or down, scroll, or use the arrow keys; 0 to 10 in tenths.
+       put(v) takes each new value, done() when a turn ends. */
+    function knob(k, v, put, done) {
+        const val = k.querySelector(".kval");
+        const set = (x) => {
+            v = Math.round(Math.max(0, Math.min(10, x)) * 10) / 10;
+            k.style.setProperty("--a", (v / 10) * 270 - 135 + "deg");
+            k.setAttribute("aria-valuenow", v);
+            val.textContent = v.toFixed(1);
+            put(v);
         };
-        set(st[key]);
+        set(v);
         let y0 = 0, v0 = 0;
         k.addEventListener("pointerdown", (e) => {
             k.setPointerCapture(e.pointerId);
-            y0 = e.clientY; v0 = st[key];
+            y0 = e.clientY; v0 = v;
             k.classList.add("turning");
         });
         k.addEventListener("pointermove", (e) => { if (k.hasPointerCapture(e.pointerId)) set(v0 + (y0 - e.clientY) / 15); });
-        const end = () => { k.classList.remove("turning"); save(); };
+        const end = () => { k.classList.remove("turning"); done(); };
         k.addEventListener("pointerup", end);
         k.addEventListener("pointercancel", end);
-        k.addEventListener("wheel", (e) => { e.preventDefault(); set(st[key] + (e.deltaY < 0 ? 0.5 : -0.5)); save(); }, { passive: false });
+        k.addEventListener("wheel", (e) => { e.preventDefault(); set(v + (e.deltaY < 0 ? 0.5 : -0.5)); done(); }, { passive: false });
         k.addEventListener("keydown", (e) => {
             const d = { ArrowUp: 0.5, ArrowRight: 0.5, ArrowDown: -0.5, ArrowLeft: -0.5, PageUp: 2, PageDown: -2 }[e.key];
-            if (e.key === "Home" || e.key === "End") { e.preventDefault(); set(e.key === "Home" ? 0 : 10); save(); return; }
+            if (e.key === "Home" || e.key === "End") { e.preventDefault(); set(e.key === "Home" ? 0 : 10); done(); return; }
             if (d === undefined) return;
-            e.preventDefault(); set(st[key] + d); save();
+            e.preventDefault(); set(v + d); done();
         });
+    }
+    panel.querySelectorAll(".knob").forEach((k) => {
+        const key = k.dataset.k;
+        knob(k, st[key], (v) => { st[key] = v; applyAll(); }, save);
     });
+
+    /* ---------- channels: the open page's mix, a second row of knobs ---------- */
+    const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    function channels(list, onChange, onDone) {
+        mix.hidden = !list || !list.length;
+        panel.classList.toggle("mixing", !mix.hidden);
+        const sig = mix.hidden ? "" : list.map((c) => c.key).join();
+        if (mix.dataset.sig === sig) return; // the same channels: leave the knobs as they are
+        mix.dataset.sig = sig;
+        mix.innerHTML = mix.hidden ? "" : list.map((c) =>
+            '<div class="knob" role="slider" tabindex="0" aria-label="' + esc(c.label) + ' volume" aria-valuemin="0" aria-valuemax="10" title="' + esc(c.label) + ': drag up or down, scroll, or use the arrow keys">' +
+            '<span class="kcap" aria-hidden="true"></span><span class="klab">' + esc(c.label) + ' <b class="kval"></b></span></div>').join("");
+        mix.querySelectorAll(".knob").forEach((k, i) => {
+            const key = list[i].key;
+            knob(k, list[i].value, (v) => onChange(key, v), onDone || (() => {}));
+        });
+    }
+    window.amp = { channels };
 })();
