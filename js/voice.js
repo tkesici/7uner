@@ -502,7 +502,7 @@
     current = null; live = false; recent = []; trail = [];
     show(); draw();
     el.cover.hidden = false;
-    el.status.textContent = "The microphone turns off when you leave Voice.";
+    el.status.textContent = "The microphone turns off when you leave Voice. Audio stays in your browser.";
   }
 
   /* ---------- wiring ---------- */

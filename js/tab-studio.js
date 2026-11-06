@@ -25,7 +25,8 @@
         title: $("cTitle"), meta: $("cMeta"), notice: $("cNotice"), status: $("cStatus"), time: $("cTime"),
         edit: $("cEdit"), dirty: $("cDirty"), save: $("cSave"), download: $("cDownload"),
         go: $("cGo"), track: $("cTrack"),
-        full: $("cFull"), fsCtl: $("cFsCtl"), singBar: $("cSingBar"),
+        full: $("cFull"), fsCtl: $("cFsCtl"), singBar: $("cSingBar"), mic: $("sgMic"), micBtn: $("sgStart"), live: $("sgLive"),
+        mix: $("cMix"), mixPop: $("cMixPop"), mixBox: $("cMixBox"),
         sgTarget: $("sgTarget"), sgYou: $("sgYou"), sgCents: $("sgCents"), sgDot: $("sgDot"), sgNow: $("sgNow"), sgPasses: $("sgPasses"), sgMsg: $("sgMsg"),
         eBar: $("eBar"), ePos: $("ePos"), eFret: $("eFret"),
         wrap: $("cWrap"), score: $("cScoreEl")
@@ -41,7 +42,8 @@
 
     /* ---------- preferences ---------- */
     const PKEY = "7uner.tabstudio.v1";
-    let prefs = { speed: 100, guitar: 100, vocals: 100, backing: 80 };
+    // tracks: the track last picked in each file, by the file's id
+    let prefs = { speed: 100, guitar: 100, vocals: 100, backing: 80, tracks: {} };
     try { const o = JSON.parse(localStorage.getItem(PKEY) || "null"); if (o) prefs = Object.assign(prefs, o); } catch (e) {}
     const savePrefs = () => { try { localStorage.setItem(PKEY, JSON.stringify(prefs)); } catch (e) {} };
 
@@ -146,13 +148,18 @@
         el.status.classList.toggle("err", !!isError);
     }
 
+    const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span>Play</span>';
+    const PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h3.5v15H7zM13.5 4.5H17v15h-3.5z"/></svg><span>Pause</span>';
+
     function createApi() {
         el.score.innerHTML = "";
         const settings = window.at7.baseSettings(el.wrap);
         api = new (AT().AlphaTabApi)(el.score, settings);
         // the title, artist and credits are in the player's heading already
         const NE = AT().NotationElement, els = api.settings.notation.elements;
-        ["ScoreTitle", "ScoreSubTitle", "ScoreArtist", "ScoreAlbum", "ScoreWords", "ScoreMusic", "ScoreWordsAndMusic", "ScoreCopyright"].forEach((k) => els.set(NE[k], false));
+        // and, as in Practice, the tempo (it's on the metronome), the tuning, track names and dynamics
+        ["ScoreTitle", "ScoreSubTitle", "ScoreArtist", "ScoreAlbum", "ScoreWords", "ScoreMusic", "ScoreWordsAndMusic", "ScoreCopyright",
+            "EffectTempo", "GuitarTuning", "TrackNames", "EffectDynamics"].forEach((k) => { if (NE[k] !== undefined) els.set(NE[k], false); });
         api.updateSettings();
         window.at7.holdCursorDuringCountIn(api, el.score);
         ready = false; playing = false;
@@ -170,7 +177,7 @@
         });
         api.playerStateChanged.on((e) => {
             playing = e.state === 1;
-            el.go.textContent = playing ? "Pause" : "Play";
+            el.go.innerHTML = playing ? PAUSE : PLAY;
             el.go.classList.toggle("stop", playing);
         });
         api.playerPositionChanged.on((e) => {
@@ -256,8 +263,11 @@
 
         setLoopState(false);
 
-        // a song with vocals opens on them (the lead line, if there are several), ready to sing
-        const first = vocalTracks.find((t) => /lead|main/i.test(t.name || "")) || vocalTracks[0] || guitarTracks[0] || null;
+        // the track picked last time in this file; the first time, a guitar (the lead, if it's named), else the vocals
+        const lead = (list) => list.find((t) => /lead|main/i.test(t.name || "")) || list[0];
+        const kept = current && prefs.tracks[current.id], k = kept ? +kept.slice(1) : -1;
+        const first = (kept && (kept[0] === "v" ? vocalTracks[k] : guitarTracks[k])) || lead(guitarTracks) || lead(vocalTracks) || null;
+        if (first && guitarTracks.includes(first)) guitarIdx = guitarTracks.indexOf(first);
         if (first) showTrack(first, first === score.tracks[0]);
         setSpeed(speed);
         ed.beat = null; ed.undo = []; ed.redo = []; setDirty(false);
@@ -340,6 +350,8 @@
             sc.tracks.some((t) => t !== g && !isVocal(t)) && { key: "backing", label: "Backing" }
         ].filter(Boolean).map((c) => Object.assign(c, { value: prefs[c.key] / 10 }));
         window.amp.channels(list, (k, v) => { prefs[k] = Math.round(v * 10); applyVolumes(); }, savePrefs);
+        el.mixBox.hidden = !list || !list.length;
+        if (el.mixBox.hidden) setMixOpen(false);
     }
 
     /* ---------- loop ----------
@@ -381,7 +393,7 @@
         ed.dirty = on;
         el.dirty.hidden = !on;
         el.save.disabled = !on;
-        el.save.title = on ? "Save copy (unsaved changes)" : "Save copy";
+        el.save.title = on ? "Save a copy (unsaved changes)" : "Save a copy";
     }
 
     function setEdit(on) {
@@ -598,7 +610,6 @@
     const QUIET = Object.assign({}, SING, { minRms: 0.0008 }), SUSTAIN = { clarity: 0.2, near: 1 };
     const TICK_MS = 20, SILENCE_TICKS = 8, TOLERANCE = 40, GRACE_MS = 80, MIN_PASS = 50, PASSES = 5;
     const HINT = "Turn the amp’s Vocals knob down, or use headphones, so the microphone hears only you. Within 40 cents counts, an octave either way too.";
-    const ASK = "Press Play and sing along. The browser asks once for the microphone; what it hears stays in your browser.";
     const NOTE_NAMES = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
     const noteLabel = (m) => NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
     const a4 = () => (window.tuner && window.tuner.a4 ? window.tuner.a4() : 440);
@@ -730,6 +741,7 @@
         src.connect(hp).connect(lp).connect(sg.analyser);
         sg.buf = new Float32Array(sg.analyser.fftSize);
         sg.on = true;
+        showMicState();
         sg.raf = requestAnimationFrame(loop);
         return true;
     }
@@ -742,18 +754,21 @@
         sg.ctx = sg.stream = sg.analyser = null;
         sg.live = false; sg.recent = [];
         showSing(null, null);
+        showMicState();
     }
+    // until the microphone is on, the Sing bar is its button; then the meter
+    function showMicState() { el.mic.hidden = sg.on; el.live.hidden = !sg.on; }
 
-    /* Sing is on whenever the vocal track is on screen in Tab Studio. The
-       microphone comes on at once if the browser already allows it, otherwise
-       at the next Play (which asks for it). */
+    /* The Sing bar is there whenever a vocal track is on screen in Tab Studio.
+       The microphone comes on at once if the browser already allows it;
+       otherwise only from the bar's button, as on the tuner and in Voice. */
     async function setSing(on) {
         sg.want = on;
         el.singBar.hidden = !on;
         if (!on) { closeMic(); return; }
+        showMicState();
         if (sg.on || sg.starting) return;
         if (await micGranted()) startMic();
-        else if (sg.want && !sg.on && !sg.starting) say(ASK);
     }
     async function startMic() {
         if (!sg.want || sg.on || sg.starting) return;
@@ -761,7 +776,7 @@
         sg.starting = true;
         const ok = await openMic();
         sg.starting = false;
-        if (!ok) return; // the bar stays, with the reason
+        if (!ok) { el.mic.hidden = false; return; } // the button stays, with the reason
         if (!sg.want) { closeMic(); return; }
         say(HINT);
     }
@@ -806,7 +821,7 @@
         el.title.textContent = rec.title || baseName(rec.name);
         el.meta.textContent = ""; el.time.textContent = ""; el.notice.hidden = true;
         el.go.disabled = true;
-        el.go.textContent = "Play"; el.go.classList.remove("stop");
+        el.go.innerHTML = PLAY; el.go.classList.remove("stop");
         setStatus(AT() ? "Opening…" : "Loading the tab player…");
         window.at7.load().then(() => {
             if (!api) createApi();
@@ -827,7 +842,7 @@
 
     function pause() { if (api && playing) api.pause(); }
     // leaving Tab Studio: pause, and the microphone goes off
-    function leave() { onPage = false; pause(); setSing(false); showMix(); setFull(false); }
+    function leave() { onPage = false; pause(); setSing(false); setFull(false); setMixOpen(false); showMix(); }
     function show() {
         onPage = true;
         window.metronome.bind(metro);
@@ -838,14 +853,25 @@
     /* ---------- full screen: the player alone, the tab as tall as the screen ----------
        The player covers the window by itself, and asks the browser for the
        whole screen too where it may (not on iPhone, nor in some embedded views). */
-    let full = false;
+    let full = false, mixOpen = false;
+    const mixEl = () => document.getElementById("ampMix");
+    /* the Mix button: the amp's channel knobs, lent to a bubble beside the player */
+    function setMixOpen(on) {
+        on = on && !full && !mixEl().hidden;
+        if (on === mixOpen) return;
+        mixOpen = on;
+        if (on) el.mixPop.appendChild(mixEl()); else if (!full) mixHome.insertBefore(mixEl(), mixNext);
+        el.mixPop.hidden = !on;
+        el.mix.setAttribute("aria-expanded", on ? "true" : "false");
+    }
     const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
     const mixHome = document.getElementById("ampMix").parentNode, mixNext = document.getElementById("ampMix").nextSibling;
     function setFull(on) {
         if (on === full) return;
+        setMixOpen(false);
         full = on;
         // the amp stays on the page, so its mix row comes along beside Play
-        const mix = document.getElementById("ampMix");
+        const mix = mixEl();
         if (on) el.fsCtl.appendChild(mix); else mixHome.insertBefore(mix, mixNext);
         el.player.classList.toggle("full", on);
         document.documentElement.classList.toggle("tabfull", on); // the page under it doesn't scroll
@@ -859,7 +885,6 @@
 
     function playPause() {
         if (!api || !ready) return;
-        if (sg.want && !sg.on) startMic(); // the first Play with the vocal track asks for the microphone
         api.playPause();
     }
 
@@ -885,6 +910,7 @@
         if (!api || !api.score) return;
         const i = +el.track.value.slice(1), vocal = el.track.value[0] === "v";
         if (!vocal) guitarIdx = i;
+        if (current) { prefs.tracks[current.id] = el.track.value; savePrefs(); }
         showTrack(vocal ? vocalTracks[i] : guitarTracks[i]);
         trackChanged();
     });
@@ -892,6 +918,12 @@
     document.addEventListener("visibilitychange", () => setSing(!document.hidden && onPage && !!shown && isVocal(shown)));
 
     el.full.addEventListener("click", () => setFull(!full));
+    el.mix.addEventListener("click", () => setMixOpen(!mixOpen));
+    document.addEventListener("pointerdown", (e) => { if (mixOpen && !e.target.closest("#cMixBox")) setMixOpen(false); });
+    el.micBtn.addEventListener("click", startMic);
+    // back to the start: a click on the time, or Home
+    const toStart = () => { if (api && ready) api.tickPosition = 0; };
+    el.time.addEventListener("click", toStart);
     el.fsCtl.querySelectorAll("[data-cspeed]").forEach((b) => b.addEventListener("click", () => setSpeed(+b.dataset.cspeed)));
 
     // ← and →: a bar back or on, in playing order (repeats included); a little into a bar, ← goes to its start
@@ -934,22 +966,25 @@
     // remember where in the score the pointer went down, to pick the string
     el.wrap.addEventListener("pointerdown", (e) => { ed.lastY = e.clientY - el.score.getBoundingClientRect().top; }, true);
 
-    // the space bar plays and pauses wherever the focus is (but in a text box): it's
-    // caught before a focused button, dropdown or metronome key can act on it
+    // the space bar plays and pauses wherever the focus is, but in a text box or on a
+    // button reached with the keyboard (at7.spaceFor); it's caught before a clicked
+    // button, the dropdown or a knob can act on it
     document.addEventListener("keydown", (e) => {
         if (e.code !== "Space" || !onPage || el.player.hidden || !api || !ready) return;
         const t = e.target;
-        if (t.isContentEditable || t.tagName === "TEXTAREA" || (t.tagName === "INPUT" && !["range", "checkbox", "radio", "button"].includes(t.type))) return;
+        if (!window.at7.spaceFor(t)) return;
         e.preventDefault(); e.stopPropagation();
         if (t !== document.body && t.blur) t.blur(); // so letting go of the key doesn't press it either
         if (!e.repeat) playPause();
     }, true);
     document.addEventListener("keydown", (e) => {
         if (!onPage || el.player.hidden || !api || e.defaultPrevented) return; // a knob or the metronome took it
+        if (e.key === "Escape" && mixOpen) { setMixOpen(false); el.mix.focus(); return; }
         if (e.key === "Escape" && full) { setFull(false); return; }
         const tag = e.target.tagName;
         if (["INPUT", "SELECT", "TEXTAREA"].includes(tag)) return;
         const plain = !e.ctrlKey && !e.metaKey && !e.altKey;
+        if (plain && e.key === "Home" && !ed.on && ready) { e.preventDefault(); toStart(); return; }
         if (plain && e.key.toLowerCase() === "f" && !ed.on) { e.preventDefault(); setFull(!full); return; }
         if (plain && !ed.on && ready && (e.key === "ArrowLeft" || e.key === "ArrowRight")) { e.preventDefault(); stepBar(e.key === "ArrowLeft" ? -1 : 1); return; }
         if (!ed.on) return;

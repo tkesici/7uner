@@ -25,7 +25,7 @@
     const el = {
         tabs: document.querySelectorAll("#page-test .tabs button"), list: $("exlist"),
         title: $("exTitle"), desc: $("exDesc"), facts: $("exFacts"), pos: $("exPos"),
-        go: $("go"),
+        go: $("go"), time: $("pTime"),
         wrap: $("pWrap"), score: $("pScoreEl"), msg: $("msg"), player: $("pPlayer"), page: $("page-test")
     };
     const visible = () => !el.page.hidden;
@@ -155,7 +155,14 @@
     const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span>Play</span>';
     const PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h3.5v15H7zM13.5 4.5H17v15h-3.5z"/></svg><span>Pause</span>';
 
-    const metro = { bpm: () => (cur ? tempo : null), setBpm: setTempo, range: [30, 300], playing: () => playing };
+    /* the metronome sets the tempo; its 50, 75 and 100% keys are shares of the
+       exercise's starting tempo, as they are of a song's own tempo in Tab Studio */
+    const metro = {
+        bpm: () => (cur ? tempo : null), setBpm: setTempo, range: [30, 300], playing: () => playing,
+        speed: () => (cur ? Math.round((tempo / cur.start) * 100) : null),
+        setSpeed: (p) => { if (cur) setTempo((cur.start * p) / 100); }
+    };
+    const mmss = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 
     // on phones a bar of sixteenths is too cramped to wrap, so the tab
     // becomes one line that scrolls sideways with the cursor
@@ -170,7 +177,7 @@
             const settings = window.at7.baseSettings(el.wrap);
             settings.display.layoutMode = layout();
             // the page already shows the name and tempo
-            settings.notation = { elements: { scoreTitle: false, scoreArtist: false, guitarTuning: false, trackNames: false, effectTempo: false } };
+            settings.notation = { elements: { scoreTitle: false, scoreArtist: false, guitarTuning: false, trackNames: false, effectTempo: false, effectDynamics: false } };
             api = new (AT().AlphaTabApi)(el.score, settings);
             window.at7.holdCursorDuringCountIn(api, el.score);
             api.isLooping = true;
@@ -186,7 +193,10 @@
                 el.go.innerHTML = playing ? PAUSE : PLAY;
                 el.go.classList.toggle("stop", playing);
             });
-            api.playerPositionChanged.on((e) => window.metronome.sync(metro, e.currentTick));
+            api.playerPositionChanged.on((e) => {
+                el.time.textContent = mmss(e.currentTime) + " / " + mmss(e.endTime);
+                window.metronome.sync(metro, e.currentTick);
+            });
             api.error.on(() => setMsg("Couldn’t play this exercise.", true));
         });
     }
@@ -230,13 +240,16 @@
     el.go.disabled = true;
     el.tabs.forEach((b) => b.addEventListener("click", () => showCat(b.dataset.cat)));
     el.go.addEventListener("click", toggle);
-    // the space bar plays and pauses wherever the focus is (but in a text box), as in Tab Studio
+    // back to the start: a click on the time, or Home
+    const toStart = () => { if (api && ready && api.score) api.tickPosition = 0; };
+    el.time.addEventListener("click", toStart);
+    // the space bar plays and pauses, as in Tab Studio (at7.spaceFor says where it doesn't)
     document.addEventListener("keydown", (e) => {
-        if (e.code !== "Space" || !el.go.offsetParent || el.go.disabled) return;
-        const t = e.target;
-        if (t.isContentEditable || t.tagName === "TEXTAREA" || (t.tagName === "INPUT" && !["range", "checkbox", "radio", "button"].includes(t.type))) return;
+        if (!el.go.offsetParent || el.go.disabled) return;
+        if (e.key === "Home" && !window.at7.typing(e.target)) { e.preventDefault(); toStart(); return; }
+        if (e.code !== "Space" || !window.at7.spaceFor(e.target)) return;
         e.preventDefault(); e.stopPropagation();
-        if (t !== document.body && t.blur) t.blur();
+        if (e.target !== document.body && e.target.blur) e.target.blur();
         if (!e.repeat) toggle();
     }, true);
     window.at7.followTheme(() => api);

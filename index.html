@@ -27,7 +27,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=84ae1c85">
+  <link rel="stylesheet" href="css/style.css?v=ab0b3491">
 </head>
 <body>
 <noscript><p class="noscript">7uner needs JavaScript: the tuner, the exercises and the tab player all run in your browser. Please turn JavaScript on, or open the page in another browser.</p></noscript>
@@ -36,18 +36,34 @@
     <a class="brand" href="#tuner">7uner</a>
     <!-- the tuner's instrument picker (tuner.js), shown on the tuner page -->
     <div class="modes hmodes" id="tModes" role="radiogroup" aria-label="Instrument" hidden></div>
-    <nav class="sitenav" aria-label="Sections">
-      <a href="#tuner" data-page="tuner">Tuner</a>
-      <a href="#practice" data-page="practice">Practice</a>
-      <a href="#tab-studio" data-page="tab-studio">Tab Studio</a>
-    </nav>
+    <!-- Practice's picker (app.js): guitar or voice, in the same place and style as the tuner's -->
+    <div class="modes hmodes" id="lModes" role="radiogroup" aria-label="Instrument" hidden></div>
+    <div class="hright">
+      <nav class="sitenav" aria-label="Sections">
+        <a href="#tuner" data-page="tuner">Tuner</a>
+        <a href="#practice" data-page="practice">Practice</a>
+        <a href="#tab-studio" data-page="tab-studio">Tab Studio</a>
+      </nav>
+      <!-- help for the open page, and the few settings, in one bubble (app.js) -->
+      <button class="cbtn" id="cInfoBtn" aria-expanded="false" aria-controls="cInfo" aria-label="Help and settings" title="Help and settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></button>
+      <div class="bubble hpop" id="cInfo" role="dialog" aria-label="Help and settings" hidden>
+        <p data-help="tuner">Turn on the microphone and play a note: the dot shows how far off it is, and its trail scrolls down behind the instrument. Tap a string’s note to lock the tuner to it and hear it (tap again to let go); ▲ ▼ beside it retune it by a semitone. The picker under the headstock sets the number of strings and the tuning.</p>
+        <p data-help="practice">A catalogue of exercises: pick one and press Play, or the space bar; it loops until you pause it, and dragging across bars loops just those. Start slow, and raise the tempo only when it’s clean. Set the tempo on the metronome by sliding its weight, with − and +, or with its 50, 75 and 100% keys (of the exercise’s starting tempo); its knob sets the click (0 silences it) and its COUNT switch counts in a bar. Scales and modes come in positions along the neck. Rhythm is a course from counting sixteenths to odd and mixed meters; the tab shows each pick stroke. Voice, the second instrument at the top, is for singing: see your pitch as a line, find your range, sing exercises set in it, and see how far to move a song to fit your voice.</p>
+        <p data-help="tab-studio">Add a Guitar Pro (3–8) or MusicXML file with the card at the top of your files, or drop it there; it stays in this browser. Play it, slow it down with the metronome’s 50, 75 and 100% keys or its weight, and drag across bars to loop them (a click clears the loop). Keys: space plays and pauses, ← and → step a bar, Home or a click on the time goes back to the start, F fills the screen. Mix sets the guitar, vocals and backing (also on the amp). Pick a vocal track to sing along: turn on the microphone in the Sing bar and it scores each pass against the notes (an octave either way counts); turn the vocals down, or use headphones. The pencil turns on edit mode for guitar tracks: click a string position, type 0–9 for a fret, ↑ ↓ change string, ← → move between beats, Delete removes the note (Shift+Delete the beat), Insert adds a beat, Ctrl+Z / Ctrl+Y undo and redo. Then save a copy, or download the file.</p>
+        <div class="brow"><span class="blab">Reference pitch A4</span>
+          <span class="a4"><button id="a4Down" aria-label="Lower reference pitch">−</button><input id="a4" type="number" min="415" max="466" inputmode="numeric" aria-label="A4 reference frequency"><button id="a4Up" aria-label="Raise reference pitch">+</button> Hz</span>
+        </div>
+        <div class="brow" id="tAutoRow"><span class="blab">Auto-detect string</span><button class="switch" id="tAuto" role="switch" aria-checked="true" aria-label="Auto-detect string"><span></span></button></div>
+        <p class="bsmall">Private by design: audio stays in your browser, files stay on this device, and there’s no account, ads or analytics. Tabs by <a href="https://alphatab.net" rel="noopener">alphaTab</a> (MPL-2.0).</p>
+      </div>
+    </div>
   </div>
 </header>
 
 
 <section class="page" id="page-tuner">
+  <div class="wrap test-top pagetitle"><h1>Tuner</h1></div>
   <div class="tuner off" id="tRoot">
-    <h1 class="vh">Tuner</h1>
     <!-- the gauge (tuner.js): the note between two bars, flat to the left and sharp to the right;
          its history scrolls down behind whatever comes below -->
     <div class="tstage" id="tStage">
@@ -90,7 +106,7 @@
     <div class="cover" id="tCover">
       <div class="micgate">
         <button class="go micbtn" id="tStart"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5v4M8.5 21.5h7"/></svg><span>Turn on microphone</span></button>
-        <p class="hint" id="tStatus">Audio is processed only in your browser and is never sent anywhere.</p>
+        <p class="hint" id="tStatus">Audio stays in your browser.</p>
       </div>
     </div>
 
@@ -100,13 +116,13 @@
 <section class="page" id="page-test" hidden>
   <div class="wrap test-top pagehead">
     <div class="ph-main">
-      <div class="modes learn-modes" id="lModes" role="radiogroup" aria-label="Instrument"></div>
       <h1>Practice</h1>
-      <p class="lede" id="pLede">A catalogue of exercises. Pick one, set the tempo and play along with the moving tab; it loops until you pause it. Start slow, and raise the tempo only when it’s clean.</p>
     </div>
     <div class="amp-slot">
       <!-- the amp (js/amp.js) and metronome (js/metronome.js); app.js moves them to the open page's slot -->
       <div class="rig" id="rig">
+        <!-- on a phone the rig folds into this strip until it's tapped (app.js) -->
+        <button class="rigbar" id="rigBar" aria-expanded="false" aria-controls="amp metro"><span>Amp and metronome</span><b id="rigBpm"></b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         <div class="amp" id="amp" role="group" aria-label="Amp">
           <div class="amp-ctl">
             <div class="knob" data-k="drive" role="slider" tabindex="0" aria-label="Drive" aria-valuemin="0" aria-valuemax="10" title="Drag up or down, scroll, or use the arrow keys">
@@ -146,10 +162,10 @@
             <dl class="exfacts" id="exFacts" hidden></dl>
             <div class="posbar" id="exPos" role="radiogroup" aria-label="Position on the neck" hidden></div>
           </div>
-          <div class="controls">
+          <div class="controls transport">
             <button id="go" class="go playbtn" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span>Play</span></button>
+            <button class="ctime" id="pTime" title="Back to start (Home)" aria-label="Back to start"></button>
           </div>
-          <p class="hint">Set the tempo, click volume and count-in on the metronome at the top. The space bar plays and pauses.</p>
           <div class="stage">
             <div class="atwrap" id="pWrap"><div id="pScoreEl"></div></div>
           </div>
@@ -171,7 +187,7 @@
       <div class="cover" id="vCover">
         <div class="micgate">
           <button class="go micbtn" id="vStart"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5v4M8.5 21.5h7"/></svg><span>Turn on microphone</span></button>
-          <p class="hint" id="vStatus">Sing a note and watch it draw a line across the staff. Audio stays in your browser.</p>
+          <p class="hint" id="vStatus">Audio stays in your browser.</p>
         </div>
       </div>
     </div>
@@ -223,7 +239,6 @@
     <div class="wrap pagehead">
       <div class="ph-main">
         <h1>Tab Studio</h1>
-        <p class="lede">Open a Guitar Pro file to play it, slow it down and loop a passage, sing along with its vocal track and see how close you are, or switch on edit mode to change the tab and download it again.</p>
       </div>
       <div class="amp-slot"></div>
     </div>
@@ -245,7 +260,7 @@
             </div>
             <div class="tp-actions">
               <button class="toolbtn" id="cEdit" aria-pressed="false" aria-label="Edit mode" title="Edit mode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg></button>
-              <button class="toolbtn" id="cSave" disabled aria-label="Save copy" title="Save copy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l4 4v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M8 3v5h7V3"/><rect x="7.5" y="13" width="9" height="6" rx="1"/></svg><span class="dirty" id="cDirty" hidden></span></button>
+              <button class="toolbtn" id="cSave" disabled aria-label="Save a copy" title="Save a copy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"/><path d="M14 12v5M11.5 14.5h5"/></svg><span class="dirty" id="cDirty" hidden></span></button>
               <button class="toolbtn" id="cDownload" aria-label="Download" title="Download"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></button>
               <button class="toolbtn" id="cFull" aria-pressed="false" aria-label="Full screen" title="Full screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fs-in" d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/><path class="fs-out" d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/></svg></button>
             </div>
@@ -253,19 +268,28 @@
           <div class="notice" id="cNotice" hidden></div>
 
           <div class="controls transport">
-            <button id="cGo" class="go" disabled>Play</button>
-            <span class="ctime" id="cTime"></span>
+            <button id="cGo" class="go playbtn" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span>Play</span></button>
+            <button class="ctime" id="cTime" title="Back to start (Home)" aria-label="Back to start"></button>
             <select class="trackpick" id="cTrack" aria-label="Track" title="Track"></select>
+            <!-- the amp's mix knobs, in a bubble beside the player (tab-studio.js) -->
+            <div class="mixbox" id="cMixBox">
+              <button class="toolbtn" id="cMix" aria-expanded="false" aria-controls="cMixPop" aria-label="Mix" title="Mix"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4v16M12 4v16M18 4v16"/><rect x="3.5" y="13" width="5" height="3" rx="1"/><rect x="9.5" y="7" width="5" height="3" rx="1"/><rect x="15.5" y="11" width="5" height="3" rx="1"/></svg></button>
+              <div class="bubble mixpop" id="cMixPop" role="dialog" aria-label="Mix" hidden></div>
+            </div>
             <div class="fsctl" id="cFsCtl" role="group" aria-label="Speed and mix">
               <div class="fsspeed" role="group" aria-label="Playback speed">
                 <button data-cspeed="50" aria-pressed="false">50%</button><button data-cspeed="75" aria-pressed="false">75%</button><button data-cspeed="100" aria-pressed="false">100%</button>
               </div>
             </div>
           </div>
-          <p class="hint loophint">Drag across bars in the tab to loop them. Click anywhere in the tab to clear the loop.</p>
 
           <div class="singbar" id="cSingBar" hidden>
-            <div class="sg-live">
+            <!-- the microphone is asked for only from here, as on the tuner and Voice -->
+            <div class="sg-mic" id="sgMic" hidden>
+              <button class="go micbtn" id="sgStart"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5v4M8.5 21.5h7"/></svg><span>Turn on microphone</span></button>
+              <p class="hint">Sing along with this track and see how close you are. Audio stays in your browser.</p>
+            </div>
+            <div class="sg-live" id="sgLive">
               <span class="sg-note">Song <b id="sgTarget">–</b></span>
               <div class="sg-meter" aria-hidden="true"><span class="sg-zone"></span><span class="sg-mid"></span><span class="sg-dot" id="sgDot"></span></div>
               <span class="sg-note">You <b id="sgYou">–</b><span class="sg-cents" id="sgCents"></span></span>
@@ -284,7 +308,6 @@
               <div class="eg"><button class="eb wide" data-act="addbeat">Insert beat</button><button class="eb wide" data-act="delnote">Delete note</button><button class="eb wide" data-act="delbeat">Delete beat</button></div>
               <div class="eg"><button class="eb wide" data-act="undo">Undo</button><button class="eb wide" data-act="redo">Redo</button></div>
             </div>
-            <p class="hint">Click a string position in the tab to place the cursor. Keys: 0–9 type a fret, ↑ ↓ change string, ← → move between beats, Delete removes the note, Shift+Delete removes the beat, Insert adds a beat, Ctrl+Z undo, Ctrl+Y redo.</p>
           </div>
 
           <p class="msg" id="cStatus" aria-live="polite"></p>
@@ -295,33 +318,15 @@
   </div>
 </section>
 
-<!-- settings and help, in the bottom-left corner of every page (app.js) -->
-<div class="corner">
-  <div class="bubble" id="cSettings" role="dialog" aria-label="Settings" hidden>
-    <div class="brow"><span class="blab">Reference pitch A4</span>
-      <span class="a4"><button id="a4Down" aria-label="Lower reference pitch">−</button><input id="a4" type="number" min="415" max="466" inputmode="numeric" aria-label="A4 reference frequency"><button id="a4Up" aria-label="Raise reference pitch">+</button> Hz</span>
-    </div>
-    <div class="brow" id="tAutoRow"><span class="blab">Auto-detect string</span><button class="switch" id="tAuto" role="switch" aria-checked="true" aria-label="Auto-detect string"><span></span></button></div>
-  </div>
-  <div class="bubble" id="cInfo" role="dialog" aria-label="Help" hidden>
-    <p data-help="tuner">Turn on the microphone and play a note: the dot shows how far off it is, and its trail scrolls down behind the instrument. Tap a string’s note to lock the tuner to it and hear it (tap again to let go); ▲ ▼ beside it retune it by a semitone. The picker under the headstock sets the number of strings and the tuning.</p>
-    <p data-help="practice">Pick an exercise and press Play, or the space bar. Set the tempo on the metronome by sliding its weight or with − and +; its knob sets the click (0 silences it) and its COUNT switch counts in a bar. Scales and modes come in positions along the neck. Rhythm is a course from counting sixteenths to odd and mixed meters; the tab shows each pick stroke, and the metronome clicks the bar’s own beats. Voice, the microphone, is for singing: your pitch as a line, your range, and exercises in it.</p>
-    <p data-help="tab-studio">Add a Guitar Pro (3–8) or MusicXML file with the card at the top of your files, or drop it there; it stays in this browser. Drag across bars to loop them (a click clears the loop); ← and → step a bar, F fills the screen, and slow down with the 50%, 75% and 100% keys under the metronome or with its weight; its knob sets the click. A song with a vocal track opens on it, as notation: press Play and sing, and the microphone follows your voice against the note being played (an octave either way counts) and scores each pass. The knobs in the amp’s second row mix guitar, vocals and backing; turn the vocals down, or use headphones. The pencil turns on edit mode (guitar tracks), the disk saves a copy, the arrow downloads the file and the corners button fills the screen, with the speed keys and the mix beside Play.</p>
-    <p class="bsmall">Private by design: the microphone is processed only in your browser, files stay on this device, and there’s no account, ads or analytics. Tabs by <a href="https://alphatab.net" rel="noopener">alphaTab</a> (MPL-2.0).</p>
-  </div>
-  <button class="cbtn" id="cGearBtn" aria-expanded="false" aria-controls="cSettings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.54 9.33L22.27 9.81L22.27 14.19L19.54 14.67L19.22 15.45L20.81 17.71L17.71 20.81L15.45 19.22L14.67 19.54L14.19 22.27L9.81 22.27L9.33 19.54L8.55 19.22L6.29 20.81L3.19 17.71L4.78 15.45L4.46 14.67L1.73 14.19L1.73 9.81L4.46 9.33L4.78 8.55L3.19 6.29L6.29 3.19L8.55 4.78L9.33 4.46L9.81 1.73L14.19 1.73L14.67 4.46L15.45 4.78L17.71 3.19L20.81 6.29L19.22 8.55Z"/><circle cx="12" cy="12" r="3.4"/></svg></button>
-  <button class="cbtn" id="cInfoBtn" aria-expanded="false" aria-controls="cInfo" aria-label="Help" title="Help"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></button>
-</div>
-
 <script src="js/pitch.js?v=618cee19"></script>
-<script src="js/voice.js?v=003abb53"></script>
+<script src="js/voice.js?v=722d6e1d"></script>
 <script src="js/tuner.js?v=ab634ae1"></script>
 <script src="js/amp.js?v=be2acf6a"></script>
-<script src="js/metronome.js?v=ec51a10f"></script>
-<script src="js/alphatab.js?v=ea58a266"></script>
+<script src="js/metronome.js?v=20109cc0"></script>
+<script src="js/alphatab.js?v=146457db"></script>
 <script src="js/exercises.js?v=745860bb"></script>
-<script src="js/practice.js?v=66d73c41"></script>
-<script src="js/tab-studio.js?v=11c028f6"></script>
-<script src="js/app.js?v=94279ae0"></script>
+<script src="js/practice.js?v=f5782755"></script>
+<script src="js/tab-studio.js?v=62bc4dd9"></script>
+<script src="js/app.js?v=2aa64581"></script>
 </body>
 </html>

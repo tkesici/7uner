@@ -4,8 +4,8 @@
    beat; it free-runs at the tempo and is pulled into phase by alphaTab's
    play position. Sliding the weight sets the tempo (higher is slower, as on
    the real thing), and the − and + buttons beside the readout move it by
-   10 BPM. Where the page plays at a share of a song's own tempo (Tab
-   Studio), a drawer under the base holds 50, 75 and 100% keys. On the sides, a brass knob sets the click volume and a brass
+   10 BPM. A drawer under the base holds 50, 75 and 100% keys: of a song's
+   own tempo in Tab Studio, of the exercise's starting tempo in Practice. On the sides, a brass knob sets the click volume and a brass
    switch turns the one-bar count-in on or off.
 
    The open page binds itself as the source:
@@ -125,6 +125,7 @@
     if (!root) { window.metronome = { bind() {}, sync() {}, level, countIn }; return; }
     root.innerHTML = SVG;
     const svg = root.querySelector("svg"), rod = root.querySelector(".metro-rod"), weight = root.querySelector(".metro-weight");
+    const rigBpm = document.getElementById("rigBpm"); // the folded rig's strip on a phone (app.js)
     const readout = root.querySelector(".metro-bpm"), vol = root.querySelector(".metro-vol"), volcap = root.querySelector(".metro-volcap");
 
     /* ---------- state ---------- */
@@ -141,6 +142,7 @@
         if (b === shownBpm) return;
         shownBpm = b;
         readout.textContent = b ? Math.round(b) : "–";
+        if (rigBpm) rigBpm.textContent = b ? Math.round(b) + " BPM" : "";
         if (b) { setWeight(b); weight.setAttribute("aria-valuenow", Math.round(b)); }
         root.classList.toggle("idle", !b);
     }
@@ -158,7 +160,7 @@
         requestAnimationFrame(frame);
         const dt = Math.min(100, now - (last || now));
         last = now;
-        if (root.offsetParent === null) return; // not on screen
+        if (!root.getClientRects().length) { showBpm(); return; } // not on screen (or folded away): just the strip's number
         showBpm(); showSpeed();
         const on = !!(src && src.playing() && bpmNow());
         // started: the rod begins at one side. alphaTab reports a brief stop

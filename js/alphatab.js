@@ -27,11 +27,35 @@
         staffLineColor: cssVar("--line"), barSeparatorColor: cssVar("--muted"), barNumberColor: cssVar("--muted")
     });
 
+    /* the site's typefaces in the notation too, instead of alphaTab's Georgia
+       and Arial: fret and bar numbers in JetBrains Mono, words and marks in
+       Barlow, at alphaTab's own sizes and styles. They go in with the settings
+       the player is made with: changing them on a made player stops its drawing. */
+    function siteFonts() {
+        const AT = window.alphaTab, r = new AT.Settings().display.resources;
+        const MONO = "'JetBrains Mono', monospace", SANS = "Barlow, sans-serif";
+        const recast = (font, family) => font.toCssString().replace(/^(.*?\d+(?:\.\d+)?px)\s.*$/, "$1 " + family);
+        const out = { tablatureFont: "bold 13px " + MONO, graceFont: "bold 10px " + MONO, elementFonts: {} };
+        ["effectFont", "fingeringFont", "inlineFingeringFont", "numberedNotationFont", "numberedNotationGraceFont"].forEach((k) => { if (r[k]) out[k] = recast(r[k], SANS); });
+        r.elementFonts.forEach((font, k) => { const name = AT.NotationElement[k]; out.elementFonts[name] = recast(font, name === "BarNumber" ? MONO : SANS); });
+        return out;
+    }
+
+    /* the space bar plays and pauses wherever the focus is, but where it means
+       something else: typing in a box, or a button or switch reached with the
+       keyboard (a clicked one keeps the focus, but Space still plays) */
+    const typing = (t) => t.isContentEditable || t.tagName === "TEXTAREA" || (t.tagName === "INPUT" && !["range", "checkbox", "radio", "button"].includes(t.type));
+    function spaceFor(t) {
+        if (typing(t)) return false;
+        const pressable = t.matches("button, a[href], summary, [role=button], [role=switch], [role=radio], [role=checkbox], [role=tab]");
+        return !(pressable && t.matches(":focus-visible"));
+    }
+
     /* settings shared by both players: rendering, sound font and fonts from the CDN */
     function baseSettings(scrollElement) {
         return {
             core: { scriptFile: BASE + "alphaTab.min.js", fontDirectory: BASE + "font/", includeNoteBounds: true },
-            display: { staveProfile: "Tab", layoutMode: "Page", resources: colors() },
+            display: { staveProfile: "Tab", layoutMode: "Page", resources: Object.assign(colors(), siteFonts()) },
             player: {
                 // the script-processor output needs no extra module download, so it also
                 // works where loading an audio worklet from the CDN is blocked
@@ -109,5 +133,5 @@
         });
     }
 
-    window.at7 = { VERSION, BASE, load, baseSettings, followTheme, holdCursorDuringCountIn };
+    window.at7 = { typing, spaceFor, VERSION, BASE, load, baseSettings, followTheme, holdCursorDuringCountIn };
 })();
