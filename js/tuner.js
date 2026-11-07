@@ -701,6 +701,9 @@
     return (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toFixed(dec) + "<small>¢</small>";
   }
 
+  // a note's frequency at the current A4: 440 Hz, 329.63 Hz
+  function noteHz(m) { return +mtof(m).toFixed(2) + " Hz"; }
+
   /* What the stage draws: the latest reading, shown as it is heard (the
      detector already steadies it a little with a median and a short
      average, so it doesn't shake). */
@@ -711,9 +714,9 @@
     const c = cfg(), ok = Math.abs(cents) <= c.inTune;
     el.note.textContent = noteName(targetMidi);
     el.oct.textContent = octave(targetMidi);
-    // the frequency heard, then how far it is from the note in cents (whole cents beyond the bars)
+    // under the note only how far off it is, in cents (whole cents beyond the bars); the note's own frequency sits small beside it
     el.cents.innerHTML = fmtCents(cents, Math.abs(cents) > c.range ? 0 : c.decimals);
-    el.hz.textContent = freq.toFixed(c.decimals ? 2 : 1) + " Hz";
+    el.hz.textContent = noteHz(targetMidi);
     lastHeard = targetMidi;
     el.readout.classList.remove("idle", "held");
     el.readout.classList.toggle("in", ok);
@@ -727,7 +730,7 @@
     el.readout.classList.remove("in", "held");
     el.note.textContent = noteName(lastHeard);
     el.oct.textContent = octave(lastHeard);
-    el.hz.textContent = mtof(lastHeard).toFixed(cfg().decimals ? 2 : 1) + " Hz";
+    el.hz.textContent = noteHz(lastHeard);
     el.cents.textContent = "";
     view.active = false; view.held = false; view.idx = null; view.tgt = null;
     if (instr()) highlight(-1, false);
