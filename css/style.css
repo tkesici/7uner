@@ -200,9 +200,11 @@ button{cursor:pointer}
 .tstage .readout{position:absolute;top:.4rem;left:0;right:0;pointer-events:none}
 .tstage .note{font-size:clamp(3.6rem,13vw,4.8rem)}
 .tline{display:flex;justify-content:center;align-items:center;gap:.6rem;height:1.8rem;margin-top:.5rem;white-space:nowrap;font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
-/* the note's own frequency, small at its bottom right (off the flow, so the note stays centred) */
-.note sub{position:relative}
-.nhz{position:absolute;left:100%;bottom:.1em;margin-left:.45rem;font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:500;font-size:.75rem;line-height:1;white-space:nowrap;color:var(--muted)}
+/* one axis: the note's own frequency above it, the note's name centred (its octave hangs off to the right), the cents under it */
+.tstage .readout{top:.1rem}
+.nhz{height:1rem;margin-bottom:.35rem;font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:500;font-size:.75rem;line-height:1rem;white-space:nowrap;color:var(--muted)}
+.tstage .note{position:relative;width:max-content;margin:0 auto}
+.tstage .note sub{position:absolute;left:100%;bottom:0;line-height:1}
 /* under the note, only the cents off it, in a pill: amber, green in tune */
 .tcents{font-weight:700;font-size:.9rem;line-height:1;padding:.3rem .55rem;border-radius:999px;color:var(--amber);background:var(--amber-soft);border:1px solid color-mix(in srgb,var(--amber) 40%,transparent)}
 .tcents:empty{display:none}
