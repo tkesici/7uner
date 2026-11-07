@@ -711,8 +711,8 @@
     const c = cfg(), ok = Math.abs(cents) <= c.inTune;
     el.note.textContent = noteName(targetMidi);
     el.oct.textContent = octave(targetMidi);
-    // beyond the bars, a number of cents means little: say which way to turn
-    el.cents.innerHTML = Math.abs(cents) > c.range ? (cents < 0 ? "Tune up ↑" : "Tune down ↓") : fmtCents(cents, c.decimals);
+    // the frequency heard, then how far it is from the note in cents (whole cents beyond the bars)
+    el.cents.innerHTML = fmtCents(cents, Math.abs(cents) > c.range ? 0 : c.decimals);
     el.hz.textContent = freq.toFixed(c.decimals ? 2 : 1) + " Hz";
     lastHeard = targetMidi;
     el.readout.classList.remove("idle", "held");

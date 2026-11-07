@@ -199,12 +199,14 @@ button{cursor:pointer}
 /* the tuner's readout sits on the stage: the note between the bars, the cents and the frequencies under it */
 .tstage .readout{position:absolute;top:.4rem;left:0;right:0;pointer-events:none}
 .tstage .note{font-size:clamp(3.6rem,13vw,4.8rem)}
-.tline{display:flex;justify-content:center;align-items:baseline;gap:.9rem;height:1.6rem;margin-top:.5rem;white-space:nowrap;font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
-.tcents{font-weight:700;font-size:1.15rem;color:var(--amber)}
+.tline{display:flex;justify-content:center;align-items:center;gap:.6rem;height:1.8rem;margin-top:.5rem;white-space:nowrap;font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+/* the frequency heard, and beside it a pill with the cents off the note: amber, green in tune */
+.thz{font-weight:700;font-size:1.15rem;color:var(--ink)}
+.readout.idle .thz{font-weight:400;font-size:.95rem;color:var(--muted)}
+.tcents{font-weight:700;font-size:.9rem;line-height:1;padding:.3rem .55rem;border-radius:999px;color:var(--amber);background:var(--amber-soft);border:1px solid color-mix(in srgb,var(--amber) 40%,transparent)}
 .tcents:empty{display:none}
-.tcents small{margin-left:.08em;font-weight:500;font-size:.8em}
-.readout.in .tcents{color:var(--ok)}
-.thz{font-size:.85rem;color:var(--muted)}
+.tcents small{margin-left:.08em;font-weight:500;font-size:.85em}
+.readout.in .tcents{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
 
 /* strobe stage (tuner.js): a canvas, with the microphone button over it until it's on */
 .tstage{position:relative;margin:.2rem auto .4rem;height:clamp(320px,50vh,460px)}
