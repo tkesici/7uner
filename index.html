@@ -27,7 +27,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=ab0b3491">
+  <link rel="stylesheet" href="css/style.css?v=4cc7f517">
 </head>
 <body>
 <noscript><p class="noscript">7uner needs JavaScript: the tuner, the exercises and the tab player all run in your browser. Please turn JavaScript on, or open the page in another browser.</p></noscript>
@@ -62,7 +62,7 @@
 
 
 <section class="page" id="page-tuner">
-  <div class="wrap test-top pagetitle"><h1>Tuner</h1></div>
+  <h1 class="vh">Tuner</h1>
   <div class="tuner off" id="tRoot">
     <!-- the gauge (tuner.js): the note between two bars, flat to the left and sharp to the right;
          its history scrolls down behind whatever comes below -->
@@ -84,7 +84,7 @@
       <!-- three small pickers side by side (tuner.js): the number of strings, the tuning, and the reference pitch -->
       <div class="tset">
         <div class="tsetbox" id="tCountBox">
-          <button class="tround tcount" id="tCountBtn" aria-expanded="false" aria-controls="tCountPop" title="Number of strings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v18M10 3v18M14 3v18M18 3v18"/><path d="M4 7h16"/></svg><b id="tCountLab"></b><span class="vh"> strings</span></button>
+          <button class="tround tcount" id="tCountBtn" aria-expanded="false" aria-controls="tCountPop" title="Number of strings"><b id="tCountLab"></b><small aria-hidden="true">str</small><span class="vh"> strings</span></button>
           <div class="bubble tsetpop" id="tCountPop" hidden><div class="tstrings" id="tCount" role="radiogroup" aria-label="Number of strings"></div></div>
         </div>
         <div class="tsetbox">
@@ -114,10 +114,8 @@
 </section>
 
 <section class="page" id="page-test" hidden>
+  <h1 class="vh">Practice</h1>
   <div class="wrap test-top pagehead">
-    <div class="ph-main">
-      <h1>Practice</h1>
-    </div>
     <div class="amp-slot">
       <!-- the amp (js/amp.js) and metronome (js/metronome.js); app.js moves them to the open page's slot -->
       <div class="rig" id="rig">
@@ -236,10 +234,8 @@
 
 <section class="page" id="page-studio" hidden>
   <div class="test-top">
+    <h1 class="vh">Tab Studio</h1>
     <div class="wrap pagehead">
-      <div class="ph-main">
-        <h1>Tab Studio</h1>
-      </div>
       <div class="amp-slot"></div>
     </div>
     <main class="wrap test-main">

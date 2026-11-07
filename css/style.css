@@ -250,14 +250,13 @@ button{cursor:pointer}
 .tpick svg{width:1rem;height:1rem;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tround{position:relative;display:grid;place-items:center;width:2.75rem;height:2.75rem;border-radius:50%;padding:0}
 .tround>*{grid-area:1/1}
-/* the number of strings, written over a faint fretboard */
-.tcount svg{width:2.1rem;height:2.1rem;fill:none;stroke:var(--muted);stroke-width:1.3;stroke-linecap:round;opacity:.4}
-.tcount b{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.4rem;color:var(--amber);text-shadow:0 0 4px var(--panel),0 0 2px var(--panel)}
-.tpitch{line-height:1}
-.tpitch b{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:.82rem;margin-top:-.55rem}
-.tpitch small{font-family:"JetBrains Mono",monospace;font-size:.6rem;color:var(--muted);margin-top:.85rem}
+/* the number of strings and the reference pitch: twin buttons, the value over its unit */
+.tpitch,.tcount{line-height:1}
+.tpitch b,.tcount b{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:.82rem;margin-top:-.55rem}
+.tcount b{font-size:.95rem;color:var(--amber)}
+.tpitch small,.tcount small{font-family:"JetBrains Mono",monospace;font-size:.6rem;color:var(--muted);margin-top:.85rem}
 .tsetpop button{user-select:none;-webkit-user-select:none}
-.tsetpop{position:absolute;top:calc(100% + .45rem);left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 2rem);z-index:5;display:flex;flex-direction:column;align-items:center;gap:.5rem}
+.tsetpop{position:absolute;top:calc(100% + .45rem);left:50%;translate:-50% 0;width:max-content;max-width:calc(100vw - 2rem);z-index:5;display:flex;flex-direction:column;align-items:center;gap:.5rem}
 .tsetpop[hidden]{display:none}
 .tsetpop::after{content:"";position:absolute;top:-6px;left:50%;width:10px;height:10px;margin-left:-5px;background:var(--panel);border-left:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
 .tpickpop{width:17rem;align-items:stretch}
@@ -392,8 +391,6 @@ button{cursor:pointer}
 
 /* ---------- practice ---------- */
 .test-top{padding-top:1.8rem}
-.pagetitle{padding-bottom:.2rem}
-.pagehead .ph-main{align-self:start}
 .lede{color:var(--muted);max-width:62ch}
 .exfacts{display:grid;grid-template-columns:auto 1fr;gap:.25rem .9rem;margin:.7rem 0 0;font-size:.95rem}
 .exfacts dt{color:var(--muted);font-weight:600}
