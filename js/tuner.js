@@ -153,6 +153,8 @@
   const HOLD_MS = 600;       // how long a string must stay in tune to get a tick
   const STROBE = 3;          // strobe speed: degrees per second for each cent off
   const HIST_SPEED = 40;     // the history trace scrolls down this many pixels a second
+  const HIST_FULL = 5000;    // ms the trace stays fully drawn
+  const HIST_FADE = 4000;    // ms (at least) it then takes to fade out
 
   const $ = (id) => document.getElementById(id);
   const el = {
@@ -753,13 +755,15 @@
   // the history scrolls on behind it
   function resize() {
     const top = el.stage.getBoundingClientRect().top;
-    el.canvas.style.height = instr() && !el.panel.hidden ? Math.max(el.stage.offsetHeight, el.panel.getBoundingClientRect().bottom - top) + "px" : "";
-    const r = el.canvas.getBoundingClientRect();
-    if (!r.width) return;
     const nb = el.noteBox, size = parseFloat(getComputedStyle(nb).fontSize) || 72;
     geo.barY = el.readout.offsetTop + nb.offsetTop + nb.offsetHeight / 2;
     geo.gap = size * 1.8; // room for the widest name, C♯ and its octave
     geo.histTop = el.readout.offsetTop + el.readout.offsetHeight + 6;
+    // tall enough for the history to stay a while and then fade out before the canvas ends
+    const room = geo.histTop + ((HIST_FULL + HIST_FADE) / 1000) * HIST_SPEED;
+    el.canvas.style.height = Math.max(el.stage.offsetHeight, room, instr() && !el.panel.hidden ? el.panel.getBoundingClientRect().bottom - top : 0) + "px";
+    const r = el.canvas.getBoundingClientRect();
+    if (!r.width) return;
     const dpr = window.devicePixelRatio || 1;
     el.canvas.width = Math.round(r.width * dpr);
     el.canvas.height = Math.round(r.height * dpr);
@@ -820,10 +824,12 @@
   }
 
   /* history: like a chart recorder. The newest reading sits under the
-     readout, straight below the dot, and the trace scrolls down from there
-     and slowly fades. */
+     readout, straight below the dot, and the trace scrolls down from there:
+     clear for its first seconds, then fading out to nothing by the time it
+     reaches the bottom of the canvas. */
   function drawHistory(g, now, X, dpr, H) {
     const top = geo.histTop * dpr, speed = (HIST_SPEED * dpr) / 1000, maxAge = Math.max(1, H - top) / speed;
+    const full = Math.min(HIST_FULL, Math.max(maxAge / 2, maxAge - HIST_FADE)), fade = maxAge - full;
     if (view.active) view.hist.push({ t: now, c: view.cents, ok: view.ok, k: view.idx != null ? view.idx : view.tgt });
     const h = view.hist;
     while (h.length && now - h[0].t > maxAge) h.shift();
@@ -832,8 +838,9 @@
     for (let i = 1; i < h.length; i++) {
       const a = h[i - 1], b = h[i];
       if (b.t - a.t > 150 || a.k !== b.k) continue; // a pause, or another string or note: don't join them
-      const age = (now - b.t) / maxAge;
-      g.globalAlpha = (1 - 0.75 * age) * (instr() ? 0.45 : 1); // fainter behind an instrument
+      const age = now - b.t, a1 = age <= full ? 1 : Math.max(0, 1 - (age - full) / fade);
+      if (!a1) continue;
+      g.globalAlpha = a1 * a1 * (3 - 2 * a1) * (instr() ? 0.45 : 1); // eased out; fainter behind an instrument
       g.strokeStyle = b.ok ? colors.ok : colors.amber;
       g.beginPath();
       g.moveTo(X(a.c), top + (now - a.t) * speed);
